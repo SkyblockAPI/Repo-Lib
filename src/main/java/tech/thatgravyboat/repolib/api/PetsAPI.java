@@ -3,6 +3,8 @@ package tech.thatgravyboat.repolib.api;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import tech.thatgravyboat.repolib.api.types.DoubleDoublePair;
+import tech.thatgravyboat.repolib.api.types.Pair;
 
 import java.util.HashMap;
 import java.util.List;
@@ -52,8 +54,15 @@ public final class PetsAPI {
 
         public record Tier(
                 String texture,
-                List<String> lore
+                List<String> lore,
+                Map<String, DoubleDoublePair> variables
         ) {
+
+            public double getStat(String key, int level) {
+                var variable = this.variables.get(key);
+                var stat = variable.first() + (level / 100.0) * (variable.second() - variable.first());
+                return Math.floor(stat * 10.0) / 10.0; // round to 1 decimal place
+            }
 
             private static Tier fromJson(JsonObject json) {
                 JsonArray lore = json.get("lore").getAsJsonArray();
@@ -62,7 +71,13 @@ public final class PetsAPI {
                         IntStream.range(0, lore.size())
                                 .mapToObj(lore::get)
                                 .map(JsonElement::getAsString)
-                                .toList()
+                                .toList(),
+                        json.get("variables").getAsJsonObject().entrySet().stream()
+                                .map(entry -> new Pair<>(
+                                        entry.getKey(),
+                                        new DoubleDoublePair(entry.getValue().getAsJsonArray().get(0).getAsDouble(), entry.getValue().getAsJsonArray().get(1).getAsDouble())
+                                ))
+                                .collect(Collectors.toMap(Pair::first, Pair::second))
                 );
             }
         }
