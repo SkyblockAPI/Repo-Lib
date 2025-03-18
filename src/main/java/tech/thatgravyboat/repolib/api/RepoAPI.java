@@ -36,6 +36,10 @@ public final class RepoAPI {
         });
     }
 
+    public static boolean isInitialized() {
+        return RepoAPI.initialized;
+    }
+
     @Blocking
     private static void load() throws Exception {
         Files.createDirectories(impl.getRepoPath());
@@ -43,12 +47,14 @@ public final class RepoAPI {
         JsonObject shas = Utils.getJsonFromApi("shas.json").getAsJsonObject();
         JsonElement localShas = Utils.getJsonFromFile(impl.getShasFile());
         ThrowingBiFunction<String, String, JsonElement> getData = (key, path) -> {
-            if (localShas == null || (localShas instanceof JsonObject obj && !Objects.equals(obj.get(key), shas.get(key)))) {
+            var loc = impl.getRepoPath().resolve(path);
+            var shasMatch = localShas instanceof JsonObject obj && Objects.equals(obj.get(key), shas.get(key));
+            if (!shasMatch || !Files.exists(loc)) {
                 JsonElement element = Utils.getJsonFromApi(path);
-                Files.writeString(impl.getRepoPath().resolve(path), element.toString());
+                Files.writeString(loc, element.toString());
                 return element;
             } else {
-                return Utils.getJsonFromFileOrThrow(impl.getRepoPath().resolve(path));
+                return Utils.getJsonFromFileOrThrow(loc);
             }
         };
 
