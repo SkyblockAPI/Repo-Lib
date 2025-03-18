@@ -19,6 +19,7 @@ public final class RepoAPI {
 
     private static PetsAPI pets;
     private static ItemsAPI items;
+    private static RecipesAPI recipes;
 
     public static void setup() {
         if (RepoAPI.setup) return;
@@ -53,6 +54,7 @@ public final class RepoAPI {
 
         RepoAPI.pets = PetsAPI.load(getData.apply("pets", "pets.min.json"));
         RepoAPI.items = ItemsAPI.load(getData.apply("items", "items.min.json"));
+        RepoAPI.recipes = RecipesAPI.load(getData.apply("recipes", "recipes.min.json"));
 
         Files.writeString(impl.getShasFile(), shas.toString());
     }
@@ -65,6 +67,11 @@ public final class RepoAPI {
     public static ItemsAPI items() {
         if (!RepoAPI.initialized) throw new IllegalStateException("RepoAPI has not been initialized yet");
         return RepoAPI.items;
+    }
+
+    public static RecipesAPI recipes() {
+        if (!RepoAPI.initialized) throw new IllegalStateException("RepoAPI has not been initialized yet");
+        return RepoAPI.recipes;
     }
 
 }
