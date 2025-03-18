@@ -9,6 +9,7 @@ import tech.thatgravyboat.repolib.api.types.Pair;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -58,10 +59,21 @@ public final class PetsAPI {
                 Map<String, DoubleDoublePair> variables
         ) {
 
+            private static final Pattern VARIABLE_PATTERN = Pattern.compile("\\{(?<key>[a-zA-Z0-9_]+)}");
+
             public double getStat(String key, int level) {
                 var variable = this.variables.get(key);
                 var stat = variable.first() + (level / 100.0) * (variable.second() - variable.first());
                 return Math.floor(stat * 10.0) / 10.0; // round to 1 decimal place
+            }
+
+            public List<String> getFormattedLore(int level) {
+                return this.lore.stream()
+                        .map(line -> VARIABLE_PATTERN.matcher(line).replaceAll(match -> {
+                            var key = match.group("key");
+                            return String.format("%.1f", this.getStat(key, level));
+                        }))
+                        .toList();
             }
 
             private static Tier fromJson(JsonObject json) {
