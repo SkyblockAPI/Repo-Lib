@@ -13,12 +13,16 @@ import java.util.function.Function;
 @ApiStatus.Internal
 public class JsonHelper {
 
-    public static <T> List<T> getList(@NotNull JsonObject json, @NotNull String key, Function<JsonElement, T> mapper) {
+    public static <T> List<T> getList(@NotNull JsonElement array, Function<JsonElement, T> mapper) {
         List<T> list = new ArrayList<>();
-        for (JsonElement element : json.getAsJsonArray(key)) {
+        for (JsonElement element : array.getAsJsonArray()) {
             list.add(mapper.apply(element));
         }
         return list;
+    }
+
+    public static <T> List<T> getList(@NotNull JsonObject json, @NotNull String key, Function<JsonElement, T> mapper) {
+        return getList(json.getAsJsonArray(key), mapper);
     }
 
     public static int getInt(@NotNull JsonObject json, @NotNull String key, int fallback) {

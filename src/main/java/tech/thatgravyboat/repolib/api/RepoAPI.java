@@ -58,7 +58,9 @@ public final class RepoAPI {
             }
         };
 
-        RepoAPI.pets = PetsAPI.load(getData.apply("pets", "pets.min.json"));
+        JsonObject constants = getData.apply("constants", "constants.min.json").getAsJsonObject();
+
+        RepoAPI.pets = PetsAPI.load(getData.apply("pets", "pets.min.json"), constants);
         RepoAPI.items = ItemsAPI.load(getData.apply("items", "items.min.json"));
         RepoAPI.recipes = RecipesAPI.load(getData.apply("recipes", "recipes.min.json"));
 
