@@ -31,7 +31,9 @@ public final class ItemsAPI {
     }
 
     public JsonObject getItem(String name) {
-        return this.items.entrySet().stream()
+        JsonObject caseSensitiveObject = this.items.get(name);
+
+        return caseSensitiveObject != null ? caseSensitiveObject : this.items.entrySet().stream()
                 .filter(entry -> entry.getKey().equalsIgnoreCase(name))
                 .findFirst()
                 .map(Map.Entry::getValue)

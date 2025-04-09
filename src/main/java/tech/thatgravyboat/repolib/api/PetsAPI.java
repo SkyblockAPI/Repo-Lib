@@ -61,7 +61,9 @@ public final class PetsAPI {
     }
 
     public Data getPet(String name) {
-        return this.pets.entrySet().stream()
+        Data caseSensitiveObject = this.pets.get(name);
+
+        return caseSensitiveObject != null ? caseSensitiveObject : this.pets.entrySet().stream()
                 .filter(entry -> entry.getKey().equalsIgnoreCase(name))
                 .findFirst()
                 .map(Map.Entry::getValue)
