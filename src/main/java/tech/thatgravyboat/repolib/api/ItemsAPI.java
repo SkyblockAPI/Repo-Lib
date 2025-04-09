@@ -31,6 +31,10 @@ public final class ItemsAPI {
     }
 
     public JsonObject getItem(String name) {
-        return this.items.get(name);
+        return this.items.entrySet().stream()
+                .filter(entry -> entry.getKey().equalsIgnoreCase(name))
+                .findFirst()
+                .map(Map.Entry::getValue)
+                .orElse(null);
     }
 }

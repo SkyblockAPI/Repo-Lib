@@ -61,7 +61,11 @@ public final class PetsAPI {
     }
 
     public Data getPet(String name) {
-        return this.pets.get(name);
+        return this.pets.entrySet().stream()
+                .filter(entry -> entry.getKey().equalsIgnoreCase(name))
+                .findFirst()
+                .map(Map.Entry::getValue)
+                .orElse(null);
     }
 
     public Map<String, DoubleUnaryOperator> getPetItemStats(String item) {
