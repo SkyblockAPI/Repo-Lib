@@ -5,6 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 public final class ItemsAPI {
@@ -20,7 +21,7 @@ public final class ItemsAPI {
                 JsonObject customData = components.getAsJsonObject("minecraft:custom_data");
                 JsonElement id = customData.get("id");
                 if (id == null) throw new IllegalStateException("Item is missing id, item " + object);
-                api.items.put(id.getAsString(), object);
+                api.items.put(id.getAsString().toUpperCase(Locale.ROOT), object);
             }
         }
         return api;
@@ -31,12 +32,6 @@ public final class ItemsAPI {
     }
 
     public JsonObject getItem(String name) {
-        JsonObject caseSensitiveObject = this.items.get(name);
-
-        return caseSensitiveObject != null ? caseSensitiveObject : this.items.entrySet().stream()
-                .filter(entry -> entry.getKey().equalsIgnoreCase(name))
-                .findFirst()
-                .map(Map.Entry::getValue)
-                .orElse(null);
+        return this.items.get(name.toUpperCase(Locale.ROOT));
     }
 }

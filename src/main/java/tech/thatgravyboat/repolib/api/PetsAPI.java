@@ -9,6 +9,7 @@ import tech.thatgravyboat.repolib.api.types.Pair;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.DoubleUnaryOperator;
 import java.util.regex.Pattern;
@@ -49,7 +50,7 @@ public final class PetsAPI {
                                     );
                                 })
                                 .collect(Collectors.toMap(Pair::first, Pair::second));
-                api.petItems.put(item, operators);
+                api.petItems.put(item.toUpperCase(Locale.ROOT), operators);
             }
         }
 
@@ -61,13 +62,7 @@ public final class PetsAPI {
     }
 
     public Data getPet(String name) {
-        Data caseSensitiveObject = this.pets.get(name);
-
-        return caseSensitiveObject != null ? caseSensitiveObject : this.pets.entrySet().stream()
-                .filter(entry -> entry.getKey().equalsIgnoreCase(name))
-                .findFirst()
-                .map(Map.Entry::getValue)
-                .orElse(null);
+        return this.pets.get(name.toUpperCase(Locale.ROOT));
     }
 
     public Map<String, DoubleUnaryOperator> getPetItemStats(String item) {
