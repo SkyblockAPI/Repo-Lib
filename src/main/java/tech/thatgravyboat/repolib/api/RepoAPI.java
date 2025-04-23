@@ -21,6 +21,7 @@ public final class RepoAPI {
     private static PetsAPI pets;
     private static ItemsAPI items;
     private static RecipesAPI recipes;
+    private static MobsAPI mobs;
 
     public static void setup(RepoVersion version) {
         if (RepoAPI.version != null && version != RepoAPI.version) {
@@ -75,6 +76,7 @@ public final class RepoAPI {
         RepoAPI.pets = PetsAPI.load(tryVersionedLoad(shas, localShas, "pets", "pets.min.json"), constants);
         RepoAPI.items = ItemsAPI.load(tryVersionedLoad(shas, localShas, "items", "items.min.json"));
         RepoAPI.recipes = RecipesAPI.load(tryVersionedLoad(shas, localShas, "recipes", "recipes.min.json"));
+        RepoAPI.mobs = MobsAPI.load(tryVersionedLoad(shas, localShas, "mobs", "mobs.min.json"));
 
         Files.writeString(impl.getShasFile(), shas.toString());
     }
@@ -92,6 +94,11 @@ public final class RepoAPI {
     public static RecipesAPI recipes() {
         if (!RepoAPI.initialized) throw new IllegalStateException("RepoAPI has not been initialized yet");
         return RepoAPI.recipes;
+    }
+
+    public static MobsAPI mobs() {
+        if (!RepoAPI.initialized) throw new IllegalStateException("RepoAPI has not been initialized yet");
+        return RepoAPI.mobs;
     }
 
 }
