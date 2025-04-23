@@ -6,6 +6,7 @@ import tech.thatgravyboat.repolib.api.types.Position;
 public record Mob(
         @Nullable String island,
         @Nullable Position position,
-        @Nullable String texture
+        @Nullable String texture,
+        String name
 ) {
 }
