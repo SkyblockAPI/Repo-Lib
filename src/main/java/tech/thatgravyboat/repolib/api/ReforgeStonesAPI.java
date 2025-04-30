@@ -3,7 +3,6 @@ package tech.thatgravyboat.repolib.api;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
-import java.sql.Ref;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -15,11 +14,11 @@ public final class ReforgeStonesAPI {
     static ReforgeStonesAPI load(JsonElement json) {
         ReforgeStonesAPI api = new ReforgeStonesAPI();
         if (json instanceof JsonObject object) {
-            object.entrySet().stream().map(Map.Entry::getValue).forEach(element -> {
-                if (element instanceof JsonObject jsonObject) {
-                    ReforgeData reforge = ReforgeData.fromJson(jsonObject);
-                    api.reforgeStones.put(reforge.name().toUpperCase(Locale.ROOT), reforge);
-                }
+            object.entrySet().stream().map(entry -> {
+                String id = entry.getKey().toUpperCase(Locale.ROOT);
+                ReforgeData data = ReforgeData.fromJson(entry.getValue().getAsJsonObject());
+                api.reforgeStones.put(id, data);
+                return data;
             });
         }
         return api;
@@ -29,8 +28,8 @@ public final class ReforgeStonesAPI {
         return this.reforgeStones;
     }
 
-    public ReforgeData getReforgeStone(String name) {
-        return this.reforgeStones.get(name.toUpperCase(Locale.ROOT));
+    public ReforgeData getReforgeStone(String id) {
+        return this.reforgeStones.get(id.toUpperCase(Locale.ROOT));
     }
 
     public record ReforgeData(
