@@ -54,11 +54,11 @@ public final class RepoAPI {
         return tryLoad(remoteVersioned, localVersioned, key, String.format("%s/%s", RepoAPI.version.version(), path));
     }
 
-    private static JsonElement tryLoad(JsonObject remote, JsonElement local, String key, String path) throws Exception {
+    private static JsonElement tryLoad(JsonObject remote, JsonElement local, String key, String urlpath) throws Exception {
         var loc = impl.getRepoPath().resolve(key + ".min.json");
         var shasMatch = local instanceof JsonObject obj && Objects.equals(obj.get(key), remote.get(key));
         if (!shasMatch || !Files.exists(loc)) {
-            JsonElement element = Utils.getJsonFromApi(path);
+            JsonElement element = Utils.getJsonFromApi(urlpath);
             Files.writeString(loc, element.toString());
             return element;
         } else {
@@ -78,7 +78,9 @@ public final class RepoAPI {
         RepoAPI.items = ItemsAPI.load(tryVersionedLoad(shas, localShas, "items", "items.min.json"));
         RepoAPI.recipes = RecipesAPI.load(tryVersionedLoad(shas, localShas, "recipes", "recipes.min.json"));
         RepoAPI.mobs = MobsAPI.load(tryVersionedLoad(shas, localShas, "mobs", "mobs.min.json"));
-        RepoAPI.refogeStones = ReforgeStonesAPI.load(tryVersionedLoad(shas, localShas, "reforge_stones", "reforge_stones.min.json"));
+
+        // Constants
+        RepoAPI.refogeStones = ReforgeStonesAPI.load(tryLoad(shas, localShas, "reforge_stones", "constants/reforge_stones.min.json"));
 
         Files.writeString(impl.getShasFile(), shas.toString());
     }

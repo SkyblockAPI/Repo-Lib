@@ -14,12 +14,11 @@ public final class ReforgeStonesAPI {
     static ReforgeStonesAPI load(JsonElement json) {
         ReforgeStonesAPI api = new ReforgeStonesAPI();
         if (json instanceof JsonObject object) {
-            object.entrySet().stream().map(entry -> {
+            for (var entry : object.entrySet()) {
                 String id = entry.getKey().toUpperCase(Locale.ROOT);
                 ReforgeData data = ReforgeData.fromJson(entry.getValue().getAsJsonObject());
                 api.reforgeStones.put(id, data);
-                return data;
-            });
+            }
         }
         return api;
     }
