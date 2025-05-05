@@ -41,7 +41,7 @@ public class RunesAPI {
     ) {
         static Rune fromJson(JsonObject json) {
             return new Rune(
-                    json.get("id").getAsInt(),
+                    json.get("tier").getAsInt(),
                     json.get("texture").getAsString(),
                     json.get("name").getAsString(),
                     json.getAsJsonArray("lore").asList()

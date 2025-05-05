@@ -110,7 +110,7 @@ public final class PetsAPI {
             public List<String> getFormattedLore(int level, @Nullable String heldItem) {
                 return this.lore.stream()
                         .map(line -> VARIABLE_PATTERN.matcher(line).replaceAll(match -> {
-                            var key = match.group("key");
+                            var key = match.group(1);
                             return String.format("%.1f", this.getStat(key, level, heldItem));
                         }))
                         .toList();
