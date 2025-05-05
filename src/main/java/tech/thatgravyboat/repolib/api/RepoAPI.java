@@ -23,6 +23,7 @@ public final class RepoAPI {
     private static RecipesAPI recipes;
     private static MobsAPI mobs;
     private static ReforgeStonesAPI refogeStones;
+    private static RunesAPI runes;
 
     public static void setup(RepoVersion version) {
         if (RepoAPI.version != null && version != RepoAPI.version) {
@@ -78,6 +79,7 @@ public final class RepoAPI {
         RepoAPI.items = ItemsAPI.load(tryVersionedLoad(shas, localShas, "items", "items.min.json"));
         RepoAPI.recipes = RecipesAPI.load(tryVersionedLoad(shas, localShas, "recipes", "recipes.min.json"));
         RepoAPI.mobs = MobsAPI.load(tryVersionedLoad(shas, localShas, "mobs", "mobs.min.json"));
+        RepoAPI.runes = RunesAPI.load(tryVersionedLoad(shas, localShas, "runes", "runes.min.json").getAsJsonObject());
 
         // Constants
         RepoAPI.refogeStones = ReforgeStonesAPI.load(tryLoad(shas, localShas, "reforge_stones", "constants/reforge_stones.min.json"));
@@ -108,6 +110,11 @@ public final class RepoAPI {
     public static ReforgeStonesAPI reforgeStones() {
         if (!RepoAPI.initialized) throw new IllegalStateException("RepoAPI has not been initialized yet");
         return RepoAPI.refogeStones;
+    }
+
+    public static RunesAPI runes() {
+        if (!RepoAPI.initialized) throw new IllegalStateException("RepoAPI has not been initialized yet");
+        return RepoAPI.runes;
     }
 
 }
