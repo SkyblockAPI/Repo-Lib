@@ -26,7 +26,7 @@ public class RunesAPI {
             String id = entry.getKey().toUpperCase(Locale.ROOT);
             List<Rune> data = entry.getValue().getAsJsonArray().asList().stream()
                     .map(JsonElement::getAsJsonObject)
-                    .map(Rune::fromJson)
+                    .map($1 -> Rune.fromJson(id, $1))
                     .toList();
             api.runes.put(id, data);
         }
@@ -34,13 +34,15 @@ public class RunesAPI {
     }
 
     public record Rune(
+            String id,
             int tier,
             String texture,
             String name,
             List<String> lore
     ) {
-        static Rune fromJson(JsonObject json) {
+        static Rune fromJson(String id, JsonObject json) {
             return new Rune(
+                    id,
                     json.get("tier").getAsInt(),
                     json.get("texture").getAsString(),
                     json.get("name").getAsString(),
