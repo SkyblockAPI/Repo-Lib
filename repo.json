@@ -1,0 +1,18 @@
+{
+  "versions": [
+    "1_21_4",
+    "1_21_5"
+  ],
+  "versioned": [
+    "items.min.json",
+    "mobs.min.json",
+    "pets.min.json",
+    "recipes.min.json",
+    "runes.min.json"
+  ],
+  "static": [
+    "constants.min.json",
+    "shas.json",
+    "constants/reforge_stones.min.json"
+  ]
+}
