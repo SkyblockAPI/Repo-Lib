@@ -1,14 +1,14 @@
 import tech.thatgravyboat.repolib.api.RepoAPI;
+import tech.thatgravyboat.repolib.api.RepoVersion;
 import tech.thatgravyboat.repolib.internal.RepoImplementation;
 
 import java.nio.file.Path;
-import java.util.regex.Pattern;
 
 public class Test {
 
     public static void main(String[] args) throws InterruptedException {
         System.setProperty(RepoImplementation.PROPERTY, Impl.class.getName());
-        RepoAPI.setup();
+        RepoAPI.setup(RepoVersion.V1_21_4);
 
         Thread.sleep(5000);
 
