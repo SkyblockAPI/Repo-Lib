@@ -52,7 +52,7 @@ val baseUrl = "https://raw.githubusercontent.com/SkyblockAPI/Repo/refs/heads/mai
 
 val downloadRepo = tasks.create("downloadRepo") {
     val outDir = layout.buildDirectory.dir("backup_repo")
-    val outDirPath = outDir.get().asFile.toPath()
+    val outDirPath = outDir.get().asFile.toPath().resolve("backup")
     outputs.dir(outDir)
     outputs.upToDateWhen { false }
 
@@ -93,7 +93,10 @@ sourceSets.main.configure {
     resources.srcDir(downloadRepo.outputs)
 }
 
-tasks.build.configure { this.dependsOn(downloadRepo); mustRunAfter(downloadRepo) }
+tasks.build.configure {
+    this.dependsOn(downloadRepo);
+    this.mustRunAfter(downloadRepo)
+}
 
 publishing {
     publications {
