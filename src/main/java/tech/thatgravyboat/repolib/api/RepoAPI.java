@@ -3,6 +3,8 @@ package tech.thatgravyboat.repolib.api;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.jetbrains.annotations.Blocking;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import tech.thatgravyboat.repolib.internal.RepoImplementation;
 import tech.thatgravyboat.repolib.internal.Utils;
 
@@ -49,29 +51,33 @@ public final class RepoAPI {
         return RepoAPI.initialized;
     }
 
-    private static JsonElement tryVersionedLoad(JsonObject remote, JsonElement local, String key, String path) throws Exception {
-        JsonObject remoteVersioned = remote.getAsJsonObject(RepoAPI.version.version());
+    private static @NotNull JsonElement tryVersionedLoad(@Nullable JsonObject remote, @Nullable JsonElement local, String key, String path) throws Exception {
+        JsonObject remoteVersioned = remote != null ? remote.getAsJsonObject(RepoAPI.version.version()) : null;
         JsonElement localVersioned = local instanceof JsonObject obj ? obj.getAsJsonObject(RepoAPI.version.version()) : null;
         return tryLoad(remoteVersioned, localVersioned, key, String.format("%s/%s", RepoAPI.version.version(), path));
     }
 
-    private static JsonElement tryLoad(JsonObject remote, JsonElement local, String key, String urlpath) throws Exception {
+    private static @NotNull JsonElement tryLoad(@Nullable JsonObject remote, @Nullable JsonElement local, String key, String urlpath) throws Exception {
         var loc = impl.getRepoPath().resolve(key + ".min.json");
-        var shasMatch = local instanceof JsonObject obj && Objects.equals(obj.get(key), remote.get(key));
+        var shasMatch = local instanceof JsonObject obj && remote != null && Objects.equals(obj.get(key), remote.get(key));
         if (!shasMatch || !Files.exists(loc)) {
             JsonElement element = Utils.getJsonFromApi(urlpath);
-            Files.writeString(loc, element.toString());
-            return element;
-        } else {
-            return Utils.getJsonFromFileOrThrow(loc);
+            if (element != null) {
+                Files.writeString(loc, element.toString());
+                return element;
+            }
         }
+
+        var localElement = Utils.getJsonFromFile(loc);
+        if (localElement != null) return localElement;
+        return Utils.getJsonFromResources(urlpath);
     }
 
     @Blocking
     private static void load() throws Exception {
         Files.createDirectories(impl.getRepoPath());
 
-        JsonObject shas = Utils.getJsonFromApi("shas.json").getAsJsonObject();
+        JsonObject shas = Utils.mapNotNull(Utils.getJsonFromApi("shas.json"), JsonElement::getAsJsonObject);
         JsonElement localShas = Utils.getJsonFromFile(impl.getShasFile());
         JsonObject constants = tryLoad(shas, localShas, "constants", "constants.min.json").getAsJsonObject();
 
@@ -84,7 +90,9 @@ public final class RepoAPI {
         // Constants
         RepoAPI.refogeStones = ReforgeStonesAPI.load(tryLoad(shas, localShas, "reforge_stones", "constants/reforge_stones.min.json"));
 
-        Files.writeString(impl.getShasFile(), shas.toString());
+        if (shas != null) {
+            Files.writeString(impl.getShasFile(), shas.toString());
+        }
     }
 
     public static PetsAPI pets() {
