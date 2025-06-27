@@ -68,7 +68,7 @@ public final class RepoAPI {
             try {
                 load();
                 RepoAPI.status = RepoStatus.SUCCESS;
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 System.out.println("Failed to load data from the repo");
                 e.printStackTrace();
                 RepoAPI.status = RepoStatus.FAILED;

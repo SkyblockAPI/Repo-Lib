@@ -40,7 +40,7 @@ public class Utils {
             }
 
             return GSON.fromJson(response.body(), JsonElement.class);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             e.printStackTrace();
         }
         return null;
