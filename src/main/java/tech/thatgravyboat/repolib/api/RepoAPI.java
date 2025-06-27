@@ -9,14 +9,19 @@ import tech.thatgravyboat.repolib.internal.RepoImplementation;
 import tech.thatgravyboat.repolib.internal.Utils;
 
 import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 public final class RepoAPI {
 
-    private static boolean setup = false;
-    private static boolean initialized = false;
     private static final RepoImplementation impl = RepoImplementation.getImplementation();
+    private static final List<Consumer<RepoStatus>> listeners = new ArrayList<>();
+
+    private static boolean setup = false;
+    private static RepoStatus status = null;
 
     private static RepoVersion version;
 
@@ -27,28 +32,53 @@ public final class RepoAPI {
     private static ReforgeStonesAPI refogeStones;
     private static RunesAPI runes;
 
-    public static void setup(RepoVersion version) {
+    //region Setup
+
+    private static void assertVersion(RepoVersion version) {
         if (RepoAPI.version != null && version != RepoAPI.version) {
             throw new IllegalStateException("RepoAPI has already been setup with a different version");
         }
+    }
 
-        if (RepoAPI.setup) return;
+    public static void setup(RepoVersion version, Consumer<RepoStatus> listener) {
+        assertVersion(version);
+        if (RepoAPI.status != null) {
+            listener.accept(RepoAPI.status);
+        } else {
+            RepoAPI.listeners.add(listener);
+            RepoAPI.version = version;
+            setup(version);
+        }
+    }
+
+    public static void setup(RepoVersion version) {
+        assertVersion(version);
         RepoAPI.version = version;
-        RepoAPI.setup = true;
+        RepoAPI.setup();
+    }
 
+    //endregion
+
+    //region Loading
+
+    private static void setup() {
+        if (RepoAPI.setup) return;
+        RepoAPI.setup = true;
         CompletableFuture.runAsync(() -> {
             try {
                 load();
-                RepoAPI.initialized = true;
+                RepoAPI.status = RepoStatus.SUCCESS;
             } catch (Exception e) {
                 System.out.println("Failed to load data from the repo");
                 e.printStackTrace();
+                RepoAPI.status = RepoStatus.FAILED;
             }
-        });
-    }
 
-    public static boolean isInitialized() {
-        return RepoAPI.initialized;
+            for (var listener : RepoAPI.listeners) {
+                listener.accept(RepoAPI.status);
+            }
+            RepoAPI.listeners.clear();
+        });
     }
 
     private static @NotNull JsonElement tryVersionedLoad(@Nullable JsonObject remote, @Nullable JsonElement local, String key, String path) throws Exception {
@@ -95,33 +125,39 @@ public final class RepoAPI {
         }
     }
 
+    //endregion
+
+    public static boolean isInitialized() {
+        return RepoAPI.status == RepoStatus.SUCCESS;
+    }
+
     public static PetsAPI pets() {
-        if (!RepoAPI.initialized) throw new IllegalStateException("RepoAPI has not been initialized yet");
+        if (!RepoAPI.isInitialized()) throw new IllegalStateException("RepoAPI has not been initialized yet");
         return RepoAPI.pets;
     }
 
     public static ItemsAPI items() {
-        if (!RepoAPI.initialized) throw new IllegalStateException("RepoAPI has not been initialized yet");
+        if (!RepoAPI.isInitialized()) throw new IllegalStateException("RepoAPI has not been initialized yet");
         return RepoAPI.items;
     }
 
     public static RecipesAPI recipes() {
-        if (!RepoAPI.initialized) throw new IllegalStateException("RepoAPI has not been initialized yet");
+        if (!RepoAPI.isInitialized()) throw new IllegalStateException("RepoAPI has not been initialized yet");
         return RepoAPI.recipes;
     }
 
     public static MobsAPI mobs() {
-        if (!RepoAPI.initialized) throw new IllegalStateException("RepoAPI has not been initialized yet");
+        if (!RepoAPI.isInitialized()) throw new IllegalStateException("RepoAPI has not been initialized yet");
         return RepoAPI.mobs;
     }
 
     public static ReforgeStonesAPI reforgeStones() {
-        if (!RepoAPI.initialized) throw new IllegalStateException("RepoAPI has not been initialized yet");
+        if (!RepoAPI.isInitialized()) throw new IllegalStateException("RepoAPI has not been initialized yet");
         return RepoAPI.refogeStones;
     }
 
     public static RunesAPI runes() {
-        if (!RepoAPI.initialized) throw new IllegalStateException("RepoAPI has not been initialized yet");
+        if (!RepoAPI.isInitialized()) throw new IllegalStateException("RepoAPI has not been initialized yet");
         return RepoAPI.runes;
     }
 
