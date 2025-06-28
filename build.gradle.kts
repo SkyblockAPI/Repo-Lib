@@ -8,7 +8,7 @@ plugins {
     id("maven-publish")
 }
 
-version = "1.6.1"
+version = "1.6.2"
 group = "tech.thatgravyboat.repo-lib"
 
 repositories {
