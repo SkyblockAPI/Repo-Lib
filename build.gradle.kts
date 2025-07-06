@@ -8,9 +8,6 @@ plugins {
     id("maven-publish")
 }
 
-version = "2.0.0"
-group = "tech.thatgravyboat.repo-lib"
-
 repositories {
     mavenCentral()
     maven("https://maven.fabricmc.net/")
