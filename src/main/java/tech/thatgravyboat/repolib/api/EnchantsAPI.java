@@ -42,17 +42,21 @@ public final class EnchantsAPI {
             @NotNull Map<Integer, EnchantLevel> levels
     ) {
         public static Enchant fromJson(JsonObject object) {
-            return new Enchant(
-                    object.get("id").getAsString(),
-                    object.get("name").getAsString(),
-                    object.get("isUltimate").getAsBoolean(),
-                    object.getAsJsonArray("levels")
-                            .asList()
-                            .stream()
-                            .map(JsonElement::getAsJsonObject)
-                            .map(EnchantLevel::fromJson)
-                            .collect(Collectors.toMap(EnchantLevel::level, Function.identity()))
-            );
+            try {
+                return new Enchant(
+                        object.get("id").getAsString(),
+                        object.get("name").getAsString(),
+                        object.get("isUltimate").getAsBoolean(),
+                        object.getAsJsonArray("levels")
+                                .asList()
+                                .stream()
+                                .map(JsonElement::getAsJsonObject)
+                                .map(EnchantLevel::fromJson)
+                                .collect(Collectors.toMap(EnchantLevel::level, Function.identity()))
+                );
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Invalid Enchant JSON: " + object, e);
+            }
         }
     }
 

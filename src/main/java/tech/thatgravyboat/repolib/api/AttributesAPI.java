@@ -33,7 +33,7 @@ public final class AttributesAPI {
         return this.attributes;
     }
 
-    public Attribute getAttributes(String id) {
+    public Attribute getAttribute(String id) {
         return this.attributes.get(id.toUpperCase(Locale.ROOT));
     }
 
@@ -44,7 +44,9 @@ public final class AttributesAPI {
             @NotNull String shardName,
             @NotNull String name,
             @NotNull String item,
-            @Nullable String texture
+            @Nullable String texture,
+            @NotNull String rarity,
+            int max
     ) {
         public static Attribute fromJson(JsonObject jsonObject) {
             return new Attribute(
@@ -54,7 +56,9 @@ public final class AttributesAPI {
                     jsonObject.get("shard_name").getAsString(),
                     jsonObject.get("name").getAsString(),
                     jsonObject.get("item").getAsString(),
-                    Optional.ofNullable(jsonObject.get("texture")).map(JsonElement::getAsString).orElse(null)
+                    Optional.ofNullable(jsonObject.get("texture")).map(JsonElement::getAsString).orElse(null),
+                    jsonObject.get("rarity").getAsString(),
+                    jsonObject.get("max").getAsInt()
             );
         }
     }

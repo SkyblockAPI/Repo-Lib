@@ -23,7 +23,7 @@ public class Utils {
 
     private static final HttpClient CLIENT = HttpClient.newHttpClient();
     private static final Gson GSON = new GsonBuilder().create();
-    private static final String BASE_URL = "https://skyblock-repo.thatgravyboat.tech/";
+    private static final String BASE_URL = "https://skyblock-api-repo.thatgravyboat.tech/";
 
     @Nullable
     public static JsonElement getJsonFromApi(@NotNull String path) {
