@@ -16,7 +16,9 @@ public interface CraftingIngredient {
         return switch (type == null ? "item" : type.getAsString()) {
             case "pet" -> PetIngredient.fromJson(json);
             case "item" -> ItemIngredient.fromJson(json);
-            default -> throw new IllegalArgumentException("Unknown result type: " + type);
+            case "enchantment" -> EnchantmentIngredient.fromJson(json);
+            case "attribute" -> AttributeIngredient.fromJson(json);
+            default -> new UnknownIngredient(json, 1);
         };
     }
 }

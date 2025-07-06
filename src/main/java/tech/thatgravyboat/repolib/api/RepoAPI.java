@@ -31,6 +31,8 @@ public final class RepoAPI {
     private static MobsAPI mobs;
     private static ReforgeStonesAPI refogeStones;
     private static RunesAPI runes;
+    private static EnchantsAPI enchants;
+    private static AttributesAPI attributes;
 
     //region Setup
 
@@ -116,6 +118,8 @@ public final class RepoAPI {
         RepoAPI.recipes = RecipesAPI.load(tryVersionedLoad(shas, localShas, "recipes", "recipes.min.json"));
         RepoAPI.mobs = MobsAPI.load(tryVersionedLoad(shas, localShas, "mobs", "mobs.min.json"));
         RepoAPI.runes = RunesAPI.load(tryVersionedLoad(shas, localShas, "runes", "runes.min.json").getAsJsonObject());
+        RepoAPI.enchants = EnchantsAPI.load(tryVersionedLoad(shas, localShas, "enchantments", "enchantments.min.json"));
+        RepoAPI.attributes = AttributesAPI.load(tryVersionedLoad(shas, localShas, "attributes", "attributes.min.json"));
 
         // Constants
         RepoAPI.refogeStones = ReforgeStonesAPI.load(tryLoad(shas, localShas, "reforge_stones", "constants/reforge_stones.min.json"));
@@ -159,6 +163,16 @@ public final class RepoAPI {
     public static RunesAPI runes() {
         if (!RepoAPI.isInitialized()) throw new IllegalStateException("RepoAPI has not been initialized yet");
         return RepoAPI.runes;
+    }
+
+    public static AttributesAPI attributes() {
+        if (!RepoAPI.isInitialized()) throw new IllegalStateException("RepoAPI has not been initialized yet");
+        return RepoAPI.attributes;
+    }
+
+    public static EnchantsAPI enchantments() {
+        if (!RepoAPI.isInitialized()) throw new IllegalStateException("RepoAPI has not been initialized yet");
+        return RepoAPI.enchants;
     }
 
 }

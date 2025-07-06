@@ -17,7 +17,7 @@ public interface Recipe<T extends Recipe<T>> {
         return switch (JsonHelper.getString(json, "type", "crafting")) {
             case "crafting" -> CraftingRecipe.fromJson(json);
             case "forge" -> ForgeRecipe.fromJson(json);
-            default -> throw new IllegalArgumentException("Unknown recipe type");
+            default -> null;
         };
     }
 }

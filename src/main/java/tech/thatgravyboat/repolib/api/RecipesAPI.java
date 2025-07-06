@@ -19,6 +19,7 @@ public final class RecipesAPI {
         if (json instanceof JsonArray array) {
             for (var element : array) {
                 Recipe<?> recipe = Recipe.parse(element.getAsJsonObject());
+                if (recipe == null) continue;
                 recipes.computeIfAbsent(recipe.type(), k -> new ArrayList<>()).add(recipe);
             }
         }

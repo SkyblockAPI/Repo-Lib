@@ -35,6 +35,11 @@ dependencies {
     "neoforgeImplementation"("net.neoforged.fancymodloader:loader:3.0.13") { isTransitive = false}
 }
 
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
 tasks.jar {
     from(fabric.output)
     from(neoforge.output)
