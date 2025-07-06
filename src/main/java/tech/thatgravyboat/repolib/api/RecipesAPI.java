@@ -20,7 +20,7 @@ public final class RecipesAPI {
             for (var element : array) {
                 Recipe<?> recipe = Recipe.parse(element.getAsJsonObject());
                 if (recipe == null) continue;
-                recipes.computeIfAbsent(recipe.type(), _ -> new ArrayList<>()).add(recipe);
+                recipes.computeIfAbsent(recipe.type(), k -> new ArrayList<>()).add(recipe);
             }
         }
         recipes.forEach((type, list) -> api.recipes.put(type, List.copyOf(list)));
