@@ -7,6 +7,7 @@ import org.jetbrains.annotations.Nullable;
 import tech.thatgravyboat.repolib.api.types.DoubleDoublePair;
 import tech.thatgravyboat.repolib.api.types.Pair;
 
+import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -20,6 +21,8 @@ public final class PetsAPI {
 
     private final Map<String, Data> pets = new HashMap<>();
     private final Map<String, Map<String, DoubleUnaryOperator>> petItems = new HashMap<>();
+
+    private static final DecimalFormat loreFormatter = new DecimalFormat("0.##");
 
     static PetsAPI load(JsonElement json, JsonObject constants) {
         PetsAPI api = new PetsAPI();
@@ -111,7 +114,8 @@ public final class PetsAPI {
                 return this.lore.stream()
                         .map(line -> VARIABLE_PATTERN.matcher(line).replaceAll(match -> {
                             var key = match.group(1);
-                            return String.format("%.1f", this.getStat(key, level, heldItem));
+                            double stat = this.getStat(key, level, heldItem);
+                            return loreFormatter.format(stat);
                         }))
                         .toList();
             }
