@@ -111,7 +111,8 @@ public final class PetsAPI {
                 return this.lore.stream()
                         .map(line -> VARIABLE_PATTERN.matcher(line).replaceAll(match -> {
                             var key = match.group(1);
-                            return String.format("%.1f", this.getStat(key, level, heldItem));
+                            double stat = this.getStat(key, level, heldItem);
+                            return (stat == Math.floor(stat)) ? String.format("%.0f", stat) : String.format("%.1f", stat);
                         }))
                         .toList();
             }
