@@ -11,12 +11,14 @@ public interface Recipe<T extends Recipe<T>> {
     record Type<T extends Recipe<T>>(String type, Class<T> clazz) {
         public static final Type<CraftingRecipe> CRAFTING = new Type<>("crafting", CraftingRecipe.class);
         public static final Type<ForgeRecipe> FORGE = new Type<>("forge", ForgeRecipe.class);
+        public static final Type<KatRecipe> KAT = new Type<>("kat", KatRecipe.class);
     }
 
     static Recipe<?> parse(@NotNull JsonObject json) {
         return switch (JsonHelper.getString(json, "type", "crafting")) {
             case "crafting" -> CraftingRecipe.fromJson(json);
             case "forge" -> ForgeRecipe.fromJson(json);
+            case "kat" -> KatRecipe.fromJson(json);
             default -> null;
         };
     }
