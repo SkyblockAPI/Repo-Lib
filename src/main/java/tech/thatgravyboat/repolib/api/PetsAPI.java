@@ -24,11 +24,10 @@ public final class PetsAPI {
 
     private static final DecimalFormat loreFormatter = new DecimalFormat("0.##");
 
-    static PetsAPI load(JsonElement json, JsonObject constants) {
-        PetsAPI api = new PetsAPI();
+    void load(JsonElement json, JsonObject constants) {
         if (json instanceof JsonObject object) {
             for (var entry : object.entrySet()) {
-                api.pets.put(entry.getKey(), Data.fromJson(entry.getValue().getAsJsonObject()));
+                this.pets.put(entry.getKey(), Data.fromJson(entry.getValue().getAsJsonObject()));
             }
         }
         if (constants.get("PetItems") instanceof JsonObject object) {
@@ -53,11 +52,9 @@ public final class PetsAPI {
                                     );
                                 })
                                 .collect(Collectors.toMap(Pair::first, Pair::second));
-                api.petItems.put(item.toUpperCase(Locale.ROOT), operators);
+                this.petItems.put(item.toUpperCase(Locale.ROOT), operators);
             }
         }
-
-        return api;
     }
 
     public Map<String, Data> pets() {

@@ -15,16 +15,14 @@ public final class EnchantsAPI {
 
     private final Map<String, Enchant> enchantments = new HashMap<>();
 
-    static EnchantsAPI load(JsonElement json) {
-        EnchantsAPI api = new EnchantsAPI();
+    void load(JsonElement json) {
         if (json instanceof JsonObject object) {
             object.asMap().forEach((key, value) -> {
                 if (value instanceof JsonObject valueObject) {
-                    api.enchantments.put(key.toUpperCase(Locale.ROOT), Enchant.fromJson(valueObject));
+                    this.enchantments.put(key.toUpperCase(Locale.ROOT), Enchant.fromJson(valueObject));
                 }
             });
         }
-        return api;
     }
 
     public Map<String, Enchant> enchantments() {

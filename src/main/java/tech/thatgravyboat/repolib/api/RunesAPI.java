@@ -20,17 +20,15 @@ public class RunesAPI {
         return this.runes.get(id.toUpperCase(Locale.ROOT));
     }
 
-    static RunesAPI load(JsonObject json) {
-        RunesAPI api = new RunesAPI();
+    void load(JsonObject json) {
         for (var entry : json.entrySet()) {
             String id = entry.getKey().toUpperCase(Locale.ROOT);
             List<Rune> data = entry.getValue().getAsJsonArray().asList().stream()
                     .map(JsonElement::getAsJsonObject)
                     .map($1 -> Rune.fromJson(id, $1))
                     .toList();
-            api.runes.put(id, data);
+            this.runes.put(id, data);
         }
-        return api;
     }
 
     public record Rune(

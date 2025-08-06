@@ -12,8 +12,7 @@ public final class ItemsAPI {
 
     private final Map<String, JsonObject> items = new HashMap<>();
 
-    static ItemsAPI load(JsonElement json) {
-        ItemsAPI api = new ItemsAPI();
+    void load(JsonElement json) {
         if (json instanceof JsonArray array) {
             for (var element : array) {
                 JsonObject object = element.getAsJsonObject();
@@ -21,10 +20,9 @@ public final class ItemsAPI {
                 JsonObject customData = components.getAsJsonObject("minecraft:custom_data");
                 JsonElement id = customData.get("id");
                 if (id == null) throw new IllegalStateException("Item is missing id, item " + object);
-                api.items.put(id.getAsString().toUpperCase(Locale.ROOT), object);
+                this.items.put(id.getAsString().toUpperCase(Locale.ROOT), object);
             }
         }
-        return api;
     }
 
     public Map<String, JsonObject> items() {

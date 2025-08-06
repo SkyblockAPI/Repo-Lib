@@ -13,8 +13,7 @@ public final class RecipesAPI {
 
     private final Map<Recipe.Type<?>, List<Recipe<?>>> recipes = new HashMap<>();
 
-    static RecipesAPI load(JsonElement json) {
-        RecipesAPI api = new RecipesAPI();
+    void load(JsonElement json) {
         Map<Recipe.Type<?>, List<Recipe<?>>> recipes = new HashMap<>();
         if (json instanceof JsonArray array) {
             for (var element : array) {
@@ -23,8 +22,7 @@ public final class RecipesAPI {
                 recipes.computeIfAbsent(recipe.type(), k -> new ArrayList<>()).add(recipe);
             }
         }
-        recipes.forEach((type, list) -> api.recipes.put(type, List.copyOf(list)));
-        return api;
+        recipes.forEach((type, list) -> this.recipes.put(type, List.copyOf(list)));
     }
 
     @SuppressWarnings("unchecked")

@@ -12,8 +12,7 @@ public final class AttributesAPI {
 
     private final Map<String, Attribute> attributes = new HashMap<>();
 
-    static AttributesAPI load(JsonElement json) {
-        AttributesAPI api = new AttributesAPI();
+    void load(JsonElement json) {
         if (json instanceof JsonArray array) {
             array.forEach((element) -> {
                 if (!(element instanceof JsonObject object)) {
@@ -23,10 +22,9 @@ public final class AttributesAPI {
                 if (id == null) {
                     throw new IllegalStateException("Attribute is missing id, item " + object);
                 }
-                api.attributes.put(id.getAsString().toUpperCase(Locale.ROOT), Attribute.fromJson(object));
+                this.attributes.put(id.getAsString().toUpperCase(Locale.ROOT), Attribute.fromJson(object));
             });
         }
-        return api;
     }
 
     public Map<String, Attribute> attributes() {

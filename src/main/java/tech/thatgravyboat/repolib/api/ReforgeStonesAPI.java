@@ -11,16 +11,14 @@ import java.util.stream.Collectors;
 public final class ReforgeStonesAPI {
     private final Map<String, ReforgeData> reforgeStones = new HashMap<>();
 
-    static ReforgeStonesAPI load(JsonElement json) {
-        ReforgeStonesAPI api = new ReforgeStonesAPI();
+    void load(JsonElement json) {
         if (json instanceof JsonObject object) {
             for (var entry : object.entrySet()) {
                 String id = entry.getKey().toUpperCase(Locale.ROOT);
                 ReforgeData data = ReforgeData.fromJson(entry.getValue().getAsJsonObject());
-                api.reforgeStones.put(id, data);
+                this.reforgeStones.put(id, data);
             }
         }
-        return api;
     }
 
     public Map<String, ReforgeData> reforgeStones() {

@@ -13,13 +13,12 @@ public final class MobsAPI {
 
     private final Map<String, Mob> mobs = new HashMap<>();
 
-    static MobsAPI load(JsonElement json) {
-        MobsAPI api = new MobsAPI();
+    void load(JsonElement json) {
         if (json instanceof JsonObject object) {
             for (var entry : object.entrySet()) {
                 String id = entry.getKey();
                 JsonObject mobObject = entry.getValue().getAsJsonObject();
-                api.mobs.put(id.toUpperCase(Locale.ROOT), new Mob(
+                this.mobs.put(id.toUpperCase(Locale.ROOT), new Mob(
                         mobObject.has("island") ? mobObject.get("island").getAsString() : null,
                         mobObject.has("position") ? Position.fromJson(mobObject.getAsJsonObject("position")) : null,
                         mobObject.has("texture") ? mobObject.get("texture").getAsString() : null,
@@ -27,7 +26,6 @@ public final class MobsAPI {
                 ));
             }
         }
-        return api;
     }
 
     public Map<String, Mob> mobs() {

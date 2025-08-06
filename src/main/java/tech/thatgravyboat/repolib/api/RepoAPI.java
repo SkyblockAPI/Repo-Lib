@@ -25,14 +25,14 @@ public final class RepoAPI {
 
     private static RepoVersion version;
 
-    private static PetsAPI pets;
-    private static ItemsAPI items;
-    private static RecipesAPI recipes;
-    private static MobsAPI mobs;
-    private static ReforgeStonesAPI refogeStones;
-    private static RunesAPI runes;
-    private static EnchantsAPI enchants;
-    private static AttributesAPI attributes;
+    private static final PetsAPI pets = new PetsAPI();
+    private static final ItemsAPI items = new ItemsAPI();
+    private static final RecipesAPI recipes = new RecipesAPI();
+    private static final MobsAPI mobs = new MobsAPI();
+    private static final ReforgeStonesAPI refogeStones = new ReforgeStonesAPI();
+    private static final RunesAPI runes = new RunesAPI();
+    private static final EnchantsAPI enchants = new EnchantsAPI();
+    private static final AttributesAPI attributes = new AttributesAPI();
 
     //region Setup
 
@@ -113,16 +113,16 @@ public final class RepoAPI {
         JsonElement localShas = Utils.getJsonFromFile(impl.getShasFile());
         JsonObject constants = tryLoad(shas, localShas, "constants", "constants.min.json").getAsJsonObject();
 
-        RepoAPI.pets = PetsAPI.load(tryVersionedLoad(shas, localShas, "pets", "pets.min.json"), constants);
-        RepoAPI.items = ItemsAPI.load(tryVersionedLoad(shas, localShas, "items", "items.min.json"));
-        RepoAPI.recipes = RecipesAPI.load(tryVersionedLoad(shas, localShas, "recipes", "recipes.min.json"));
-        RepoAPI.mobs = MobsAPI.load(tryVersionedLoad(shas, localShas, "mobs", "mobs.min.json"));
-        RepoAPI.runes = RunesAPI.load(tryVersionedLoad(shas, localShas, "runes", "runes.min.json").getAsJsonObject());
-        RepoAPI.enchants = EnchantsAPI.load(tryVersionedLoad(shas, localShas, "enchantments", "enchantments.min.json"));
-        RepoAPI.attributes = AttributesAPI.load(tryVersionedLoad(shas, localShas, "attributes", "attributes.min.json"));
+        RepoAPI.pets.load(tryVersionedLoad(shas, localShas, "pets", "pets.min.json"), constants);
+        RepoAPI.items.load(tryVersionedLoad(shas, localShas, "items", "items.min.json"));
+        RepoAPI.recipes.load(tryVersionedLoad(shas, localShas, "recipes", "recipes.min.json"));
+        RepoAPI.mobs.load(tryVersionedLoad(shas, localShas, "mobs", "mobs.min.json"));
+        RepoAPI.runes.load(tryVersionedLoad(shas, localShas, "runes", "runes.min.json").getAsJsonObject());
+        RepoAPI.enchants.load(tryVersionedLoad(shas, localShas, "enchantments", "enchantments.min.json"));
+        RepoAPI.attributes.load(tryVersionedLoad(shas, localShas, "attributes", "attributes.min.json"));
 
         // Constants
-        RepoAPI.refogeStones = ReforgeStonesAPI.load(tryLoad(shas, localShas, "reforge_stones", "constants/reforge_stones.min.json"));
+        RepoAPI.refogeStones.load(tryLoad(shas, localShas, "reforge_stones", "constants/reforge_stones.min.json"));
 
         if (shas != null) {
             Files.writeString(impl.getShasFile(), shas.toString());
@@ -136,42 +136,34 @@ public final class RepoAPI {
     }
 
     public static PetsAPI pets() {
-        if (!RepoAPI.isInitialized()) throw new IllegalStateException("RepoAPI has not been initialized yet");
         return RepoAPI.pets;
     }
 
     public static ItemsAPI items() {
-        if (!RepoAPI.isInitialized()) throw new IllegalStateException("RepoAPI has not been initialized yet");
         return RepoAPI.items;
     }
 
     public static RecipesAPI recipes() {
-        if (!RepoAPI.isInitialized()) throw new IllegalStateException("RepoAPI has not been initialized yet");
         return RepoAPI.recipes;
     }
 
     public static MobsAPI mobs() {
-        if (!RepoAPI.isInitialized()) throw new IllegalStateException("RepoAPI has not been initialized yet");
         return RepoAPI.mobs;
     }
 
     public static ReforgeStonesAPI reforgeStones() {
-        if (!RepoAPI.isInitialized()) throw new IllegalStateException("RepoAPI has not been initialized yet");
         return RepoAPI.refogeStones;
     }
 
     public static RunesAPI runes() {
-        if (!RepoAPI.isInitialized()) throw new IllegalStateException("RepoAPI has not been initialized yet");
         return RepoAPI.runes;
     }
 
     public static AttributesAPI attributes() {
-        if (!RepoAPI.isInitialized()) throw new IllegalStateException("RepoAPI has not been initialized yet");
         return RepoAPI.attributes;
     }
 
     public static EnchantsAPI enchantments() {
-        if (!RepoAPI.isInitialized()) throw new IllegalStateException("RepoAPI has not been initialized yet");
         return RepoAPI.enchants;
     }
 
