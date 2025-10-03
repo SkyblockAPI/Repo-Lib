@@ -8,10 +8,7 @@ import tech.thatgravyboat.repolib.api.types.DoubleDoublePair;
 import tech.thatgravyboat.repolib.api.types.Pair;
 
 import java.text.DecimalFormat;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.function.DoubleUnaryOperator;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -90,7 +87,8 @@ public final class PetsAPI {
         public record Tier(
                 String texture,
                 List<String> lore,
-                Map<String, DoubleDoublePair> variables
+                Map<String, DoubleDoublePair> variables,
+                int variablesOffset
         ) {
 
             private static final Pattern VARIABLE_PATTERN = Pattern.compile("\\{(?<key>[a-zA-Z0-9_]+)}");
@@ -98,7 +96,7 @@ public final class PetsAPI {
             public double getStat(String key, int level, @Nullable String heldItem) {
                 var operators = RepoAPI.pets().getPetItemStats(heldItem);
                 var variable = this.variables.get(key);
-                var stat = variable.first() + (level / 100.0) * (variable.second() - variable.first());
+                var stat = variable.first() + (Math.clamp(level - variablesOffset, 0, 100) / 100.0) * (variable.second() - variable.first());
                 var value = Math.floor(stat * 10.0) / 10.0; // round to 1 decimal place
                 return operators.getOrDefault(key, x -> x).applyAsDouble(value);
             }
@@ -134,7 +132,8 @@ public final class PetsAPI {
                                         entry.getKey(),
                                         new DoubleDoublePair(entry.getValue().getAsJsonArray().get(0).getAsDouble(), entry.getValue().getAsJsonArray().get(1).getAsDouble())
                                 ))
-                                .collect(Collectors.toMap(Pair::first, Pair::second))
+                                .collect(Collectors.toMap(Pair::first, Pair::second)),
+                        Optional.ofNullable(json.get("variablesOffset")).map(JsonElement::getAsInt).orElse(0)
                 );
             }
         }
