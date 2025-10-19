@@ -12,6 +12,7 @@ public interface Recipe<T extends Recipe<T>> {
         public static final Type<CraftingRecipe> CRAFTING = new Type<>("crafting", CraftingRecipe.class);
         public static final Type<ForgeRecipe> FORGE = new Type<>("forge", ForgeRecipe.class);
         public static final Type<KatRecipe> KAT = new Type<>("kat", KatRecipe.class);
+        public static final Type<ShopRecipe> SHOP = new Type<>("shop", ShopRecipe.class);
     }
 
     static Recipe<?> parse(@NotNull JsonObject json) {
@@ -19,6 +20,7 @@ public interface Recipe<T extends Recipe<T>> {
             case "crafting" -> CraftingRecipe.fromJson(json);
             case "forge" -> ForgeRecipe.fromJson(json);
             case "kat" -> KatRecipe.fromJson(json);
+            case "shop" -> ShopRecipe.fromJson(json);
             default -> null;
         };
     }
