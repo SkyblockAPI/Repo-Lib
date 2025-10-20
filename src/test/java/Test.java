@@ -24,6 +24,12 @@ public class Test {
             gdrag.getFormattedLore(100).forEach(System.out::println);
             System.out.println("lvl 150");
             gdrag.getFormattedLore(150).forEach(System.out::println);
+
+            var attributes = RepoAPI.attributes().attributes().values();
+
+            for (var attribute : attributes) {
+                System.out.printf("%s -> %s%n", attribute.attributeId(), attribute.shardId());
+            }
         });
 
         new Scanner(System.in).nextLine();
