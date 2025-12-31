@@ -1,10 +1,13 @@
 import com.google.gson.JsonParser
 import java.net.URI
 import java.nio.file.StandardOpenOption
-import kotlin.io.path.*
+import kotlin.io.path.createDirectories
+import kotlin.io.path.notExists
+import kotlin.io.path.writeText
 
 plugins {
     java
+    kotlin("jvm") version "2.2.0"
     id("maven-publish")
 }
 

@@ -78,4 +78,9 @@ public class Utils {
         if (value == null) return null;
         return mapper.apply(value);
     }
+
+    @SuppressWarnings("unchecked")
+    public static <From, To> To unsafe(From from) {
+        return (To) from;
+    }
 }
