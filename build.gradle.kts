@@ -7,7 +7,7 @@ import kotlin.io.path.writeText
 
 plugins {
     java
-    kotlin("jvm") version "2.2.0"
+    kotlin("jvm")
     id("maven-publish")
 }
 
@@ -33,11 +33,6 @@ dependencies {
     "fabricImplementation"("net.fabricmc:fabric-loader:0.15.0") { isTransitive = false}
 
     "neoforgeImplementation"("net.neoforged.fancymodloader:loader:3.0.13") { isTransitive = false}
-}
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
 }
 
 tasks.jar {
@@ -99,7 +94,7 @@ sourceSets.main.configure {
 }
 
 tasks.build.configure {
-    this.dependsOn(downloadRepo);
+    this.dependsOn(downloadRepo)
     this.mustRunAfter(downloadRepo)
 }
 
