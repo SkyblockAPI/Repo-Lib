@@ -8,11 +8,11 @@ import java.util.Map;
 import java.util.function.Function;
 
 public class VariantSelector<T> {
-    private final List<IdProperty<?>> properties;
+    private final List<IdProperty> properties;
     private final VariantTree<T> tree = VariantTree.create(this, 0);
-    private final Map<IdProperty<?>, ?> defaults;
+    public final Map<IdProperty, String> defaults;
 
-    public VariantSelector(Map<IdProperty<?>, ?> defaults) {
+    public VariantSelector(Map<IdProperty, String> defaults) {
         this.defaults = defaults;
         this.properties = List.copyOf(defaults.keySet());
     }
@@ -25,8 +25,12 @@ public class VariantSelector<T> {
         return this.tree.collectMapped(mapper);
     }
 
+    public void register(Map<IdProperty, String> properties, T value) {
+        tree.register(properties, value);
+    }
+
     private sealed interface VariantTreeNode<T> permits LeafNode, VariantTree {
-        T select(Map<IdProperty<?>, ?> properties);
+        T select(Map<IdProperty, String> properties);
 
         default List<T> collect() {
             return collectMapped(Function.identity());
@@ -40,9 +44,9 @@ public class VariantSelector<T> {
         private final VariantSelector<T> owner;
         private final int depth;
         private final boolean isLastLayer;
-        private final IdProperty<?> layerProperty;
+        private final IdProperty layerProperty;
 
-        public VariantTree(VariantSelector<T> owner, IdProperty<?> layerProperty, int depth) {
+        public VariantTree(VariantSelector<T> owner, IdProperty layerProperty, int depth) {
             this.owner = owner;
             this.layerProperty = layerProperty;
             this.depth = depth;
@@ -57,7 +61,7 @@ public class VariantSelector<T> {
             );
         }
 
-        public void register(Map<IdProperty<?>, ?> properties, T value) {
+        public void register(Map<IdProperty, String> properties, T value) {
             var property = properties.get(this.layerProperty);
             if (this.isLastLayer) {
                 map.put(property, new LeafNode<>(value));
@@ -67,7 +71,7 @@ public class VariantSelector<T> {
         }
 
         @Override
-        public T select(Map<IdProperty<?>, ?> properties) {
+        public T select(Map<IdProperty, String> properties) {
             if (properties.containsKey(this.layerProperty)) {
                 return this.map.get(properties.get(this.layerProperty)).select(properties);
             } else {
@@ -83,7 +87,7 @@ public class VariantSelector<T> {
 
     private record LeafNode<T>(T value) implements VariantTreeNode<T> {
         @Override
-        public T select(Map<IdProperty<?>, ?> properties) {
+        public T select(Map<IdProperty, String> properties) {
             return value;
         }
 

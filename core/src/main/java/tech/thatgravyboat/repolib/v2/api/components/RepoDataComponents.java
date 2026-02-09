@@ -2,6 +2,7 @@ package tech.thatgravyboat.repolib.v2.api.components;
 
 import com.google.gson.JsonElement;
 import tech.thatgravyboat.repolib.v2.api.types.SkyBlockIdType;
+import tech.thatgravyboat.repolib.v2.internal.codec.RepoCodec;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -9,7 +10,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 public class RepoDataComponents {
@@ -39,49 +39,49 @@ public class RepoDataComponents {
 
 
     private static RepoDataComponent<Boolean> bool(String name) {
-        return register(name, FilterBuilder::all, JsonElement::getAsBoolean);
+        return register(name, FilterBuilder::all, RepoCodec.BOOLEAN);
     }
 
     private static RepoDataComponent<Boolean> bool(String name, SkyBlockIdType... types) {
-        return register(name, (builder) -> builder.allowAll(types), JsonElement::getAsBoolean);
+        return register(name, (builder) -> builder.allowAll(types), RepoCodec.BOOLEAN);
     }
 
     private static RepoDataComponent<String> string(String name) {
-        return register(name, FilterBuilder::all, JsonElement::getAsString);
+        return register(name, FilterBuilder::all, RepoCodec.STRING);
     }
 
     private static RepoDataComponent<String> string(String name, SkyBlockIdType... types) {
-        return register(name, (builder) -> builder.allowAll(types), JsonElement::getAsString);
+        return register(name, (builder) -> builder.allowAll(types), RepoCodec.STRING);
     }
 
     private static RepoDataComponent<JsonElement> json(String name) {
-        return register(name, FilterBuilder::all, Function.identity());
+        return register(name, FilterBuilder::all, RepoCodec.JSON);
     }
 
     private static RepoDataComponent<JsonElement> json(String name, SkyBlockIdType... types) {
-        return register(name, (builder) -> builder.allowAll(types), Function.identity());
+        return register(name, (builder) -> builder.allowAll(types), RepoCodec.JSON);
     }
 
     private static RepoDataComponent<Integer> i32(String name) {
-        return register(name, FilterBuilder::all, JsonElement::getAsInt);
+        return register(name, FilterBuilder::all, RepoCodec.INTEGER);
     }
 
     private static RepoDataComponent<Integer> i32(String name, SkyBlockIdType... types) {
-        return register(name, (builder) -> builder.allowAll(types), JsonElement::getAsInt);
+        return register(name, (builder) -> builder.allowAll(types), RepoCodec.INTEGER);
     }
 
-    private static <T> RepoDataComponent<T> register(
+    private static <Type> RepoDataComponent<Type> register(
             String name,
-            Function<JsonElement, T> converter,
+            RepoCodec<Type> converter,
             SkyBlockIdType... types
     ) {
         return register(name, (builder) -> builder.allowAll(types), converter);
     }
 
-    private static <T> RepoDataComponent<T> register(
+    private static <Type> RepoDataComponent<Type> register(
             String name,
             UnaryOperator<FilterBuilder> setup,
-            Function<JsonElement, T> converter
+            RepoCodec<Type> converter
     ) {
         var component = new SimpleRepoDataComponent<>(name, setup.apply(new FilterBuilder()).build(), converter);
         for (var allowedType : component.allowedTypes()) {

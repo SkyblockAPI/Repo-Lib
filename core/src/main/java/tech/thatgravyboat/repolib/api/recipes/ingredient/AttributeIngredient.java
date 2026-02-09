@@ -11,7 +11,7 @@ public record AttributeIngredient(
 
     static @NotNull AttributeIngredient fromJson(@NotNull JsonObject json) {
         return new AttributeIngredient(
-                json.get("id").getAsString(),
+                json.get("globalId").getAsString(),
                 json.get("count").getAsInt()
         );
     }

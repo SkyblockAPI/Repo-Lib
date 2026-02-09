@@ -8,9 +8,7 @@ import java.util.function.Function;
 public interface RepoDataComponent<Type> {
 
     Type get(RepoDataComponentGetter entry);
-    @Nullable Optional<Type> getOptional(RepoDataComponentGetter entry);
-    default <Mapped> RepoDataComponent<Mapped> map(Function<Type, Mapped> function) {
-
-    }
+    Optional<Type> getOptional(RepoDataComponentGetter entry);
+    boolean has(RepoDataComponentGetter entry);
 
 }

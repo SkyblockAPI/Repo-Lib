@@ -22,9 +22,9 @@ public final class AttributesAPI {
                 if (!(element instanceof JsonObject object)) {
                     return;
                 }
-                var id = object.get("id");
+                var id = object.get("globalId");
                 if (id == null) {
-                    throw new IllegalStateException("Attribute is missing id, item " + object);
+                    throw new IllegalStateException("Attribute is missing globalId, item " + object);
                 }
                 this.attributes.put(id.getAsString().toUpperCase(Locale.ROOT), Attribute.fromJson(object));
             });
@@ -53,7 +53,7 @@ public final class AttributesAPI {
     ) {
         public static Attribute fromJson(JsonObject jsonObject) {
             return new Attribute(
-                    jsonObject.get("id").getAsString(),
+                    jsonObject.get("globalId").getAsString(),
                     jsonObject.getAsJsonArray("lore").asList().stream().map(JsonElement::getAsString).toList(),
                     jsonObject.get("attribute_id").getAsString(),
                     jsonObject.get("shard_name").getAsString(),

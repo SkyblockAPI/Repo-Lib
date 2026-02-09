@@ -1,23 +1,19 @@
 package tech.thatgravyboat.repolib.v2.api.entry;
 
 import org.jetbrains.annotations.Nullable;
-import tech.thatgravyboat.repolib.v2.api.GlobalSkyBlockId;
-import tech.thatgravyboat.repolib.v2.api.components.RepoComponentMap;
-import tech.thatgravyboat.repolib.v2.api.components.RepoDataComponent;
+import tech.thatgravyboat.repolib.v2.api.id.GlobalSkyBlockId;
+import tech.thatgravyboat.repolib.v2.api.components.BaseRepoDataComponent;
+import tech.thatgravyboat.repolib.v2.api.components.PatchedRepoComponentMap;
 import tech.thatgravyboat.repolib.v2.api.components.RepoDataComponentGetter;
+import tech.thatgravyboat.repolib.v2.api.id.GlobalSkyblockIdRepresentable;
 
 public record RepoEntry(
         BaseRepoEntry base,
-        GlobalSkyBlockId id,
-        RepoComponentMap map
-) implements RepoDataComponentGetter {
+        GlobalSkyBlockId globalId,
+        PatchedRepoComponentMap map
+) implements RepoDataComponentGetter, GlobalSkyblockIdRepresentable {
     @Override
-    public @Nullable <Type> Type getUnsafe(RepoDataComponent<Type> component) {
-        return this.map.getUnsafe(component);
-    }
-
-    @Override
-    public boolean contains(RepoDataComponent<?> component) {
-        return this.map.contains(component);
+    public <Type> @Nullable Type getBase(BaseRepoDataComponent<Type> component) {
+        return this.map.getBase(component);
     }
 }

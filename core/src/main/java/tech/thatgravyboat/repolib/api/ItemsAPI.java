@@ -18,8 +18,8 @@ public final class ItemsAPI {
                 JsonObject object = element.getAsJsonObject();
                 JsonObject components = object.getAsJsonObject("components");
                 JsonObject customData = components.getAsJsonObject("minecraft:custom_data");
-                JsonElement id = customData.get("id");
-                if (id == null) throw new IllegalStateException("Item is missing id, item " + object);
+                JsonElement id = customData.get("globalId");
+                if (id == null) throw new IllegalStateException("Item is missing globalId, item " + object);
                 this.items.put(id.getAsString().toUpperCase(Locale.ROOT), object);
             }
         }

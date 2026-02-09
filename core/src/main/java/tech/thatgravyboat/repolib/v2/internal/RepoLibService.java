@@ -5,5 +5,6 @@ import java.util.concurrent.CompletableFuture;
 public interface RepoLibService {
 
     CompletableFuture<Void> load(RepoLibLoadingContext settings);
+    void save(RepoLibLoadingContext settings);
 
 }

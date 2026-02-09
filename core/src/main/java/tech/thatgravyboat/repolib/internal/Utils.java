@@ -16,6 +16,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Objects;
 import java.util.function.Function;
 
 @ApiStatus.Internal
@@ -80,7 +81,7 @@ public class Utils {
     }
 
     @SuppressWarnings("unchecked")
-    public static <From, To> To unsafe(From from) {
+    public static <To> To unsafe(Object from) {
         return (To) from;
     }
 }

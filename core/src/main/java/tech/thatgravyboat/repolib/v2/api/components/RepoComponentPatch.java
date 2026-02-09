@@ -9,35 +9,23 @@ import java.util.Set;
 
 public class RepoComponentPatch implements RepoDataComponentGetter {
 
-    private final Map<RepoDataComponent<?>, Optional<?>> patch = new HashMap<>();
+    private final Map<RepoDataComponent<?>, Object> patch = new HashMap<>();
 
-    public <Type> void add(RepoDataComponent<Type> type, @Nullable Type value) {
-        patch.put(type, Optional.ofNullable(value));
+    public <Type> void add(RepoDataComponent<Type> type, Type value) {
+        patch.put(type, value);
     }
 
-    public <Type> Type get(RepoDataComponentGetter prototype, RepoDataComponent<Type> type) {
-        var patched = type.getOptional(this);
-        return patched != null ? patched.orElse(null) : prototype.get(type);
+    public <Type> @Nullable Type get(RepoDataComponentGetter prototype, RepoDataComponent<Type> type) {
+        return type.getOptional(this).orElse(prototype.get(type));
     }
 
     @Override
-    public @Nullable <Type> Type getUnsafe(RepoDataComponent<Type> component) {
+    public @Nullable <Type> Type getBase(BaseRepoDataComponent<Type> component) {
         //noinspection unchecked
-        return patch.containsKey(component) ? (Type) patch.get(component).orElse(null) : null;
+        return (Type) patch.get(component);
     }
 
-    @Override
-    public @Nullable <Type> Optional<Type> getOptionalUnsafe(RepoDataComponent<Type> component) {
-        //noinspection unchecked
-        return (Optional<Type>) patch.get(component);
-    }
-
-    @Override
-    public boolean contains(RepoDataComponent<?> component) {
-        return patch.containsKey(component);
-    }
-
-    public Set<Map.Entry<RepoDataComponent<?>, Optional<?>>> entrySet() {
+    public Set<Map.Entry<RepoDataComponent<?>, Object>> entrySet() {
         return patch.entrySet();
     }
 

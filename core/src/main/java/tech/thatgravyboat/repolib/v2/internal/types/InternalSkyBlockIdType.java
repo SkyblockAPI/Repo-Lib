@@ -1,16 +1,22 @@
 package tech.thatgravyboat.repolib.v2.internal.types;
 
-import tech.thatgravyboat.repolib.v2.api.GlobalSkyBlockId;
-import tech.thatgravyboat.repolib.v2.api.components.LoadingRepoDataComponent;
+import tech.thatgravyboat.repolib.v2.api.id.BaseSkyBlockId;
+import tech.thatgravyboat.repolib.v2.api.id.GlobalSkyBlockId;
+import tech.thatgravyboat.repolib.v2.api.components.BaseRepoDataComponent;
 import tech.thatgravyboat.repolib.v2.api.properties.IdProperty;
 
-public interface InternalSkyBlockIdType {
+import java.util.Collection;
+import java.util.Set;
+
+public sealed  interface InternalSkyBlockIdType permits GenericSkyblockIdType {
 
     String name();
 
-    Iterable<IdProperty<?>> getProperties(GlobalSkyBlockId globalSkyBlockId);
+    Collection<IdProperty> getProperties(BaseSkyBlockId globalSkyBlockId);
 
-    Iterable<GlobalSkyBlockId> getVariants(GlobalSkyBlockId globalSkyBlockId);
+    Collection<GlobalSkyBlockId> getVariants(BaseSkyBlockId globalSkyBlockId);
 
-    <T> void addComponent(LoadingRepoDataComponent<T> component);
+    <T> void addComponent(BaseRepoDataComponent<T> component);
+
+    Set<BaseRepoDataComponent<?>> components();
 }

@@ -1,35 +1,32 @@
 package tech.thatgravyboat.repolib.v2.api.components;
 
 import org.jetbrains.annotations.Nullable;
+import tech.thatgravyboat.repolib.v2.internal.codec.RepoCodec;
 
 import java.util.HashSet;
 import java.util.Set;
 
-public class PatchedRepoComponentMap implements RepoComponentMap {
-    private final RepoComponentMap prototype;
-    private final RepoComponentPatch patch;
-
-    public PatchedRepoComponentMap(RepoComponentMap prototype, RepoComponentPatch patch) {
-        this.prototype = prototype;
-        this.patch = patch;
+public record PatchedRepoComponentMap(
+        RepoComponentMap prototype,
+        RepoComponentMap patch
+) implements RepoComponentMap {
+    public static RepoCodec<PatchedRepoComponentMap> codec(RepoComponentMap prototype, Set<BaseRepoDataComponent<?>> components) {
+        return RepoComponentMap.codec(components).map(
+                patch -> new PatchedRepoComponentMap(prototype, patch),
+                patched -> patched.patch
+        );
     }
 
     @Override
-    public Set<RepoDataComponent<?>> keySet() {
+    public Set<BaseRepoDataComponent<?>> keySet() {
         if (this.patch.isEmpty()) {
             return this.prototype.keySet();
         } else {
-            Set<RepoDataComponent<?>> components = new HashSet<>(this.prototype.keySet());
+            Set<BaseRepoDataComponent<?>> components = new HashSet<>(this.prototype.keySet());
 
             for (var entry : this.patch.entrySet()) {
                 var key = entry.getKey();
-                var value = entry.getValue();
-
-                if (value.isEmpty()) {
-                    components.remove(key);
-                } else {
-                    components.add(key);
-                }
+                components.add(key);
             }
 
             return components;
@@ -37,18 +34,8 @@ public class PatchedRepoComponentMap implements RepoComponentMap {
     }
 
     @Override
-    public @Nullable <Type> Type getUnsafe(RepoDataComponent<Type> component) {
-        var value = patch.get(component);
-        return value == null ? prototype.getUnsafe(component) : value;
-    }
-
-    @Override
-    public boolean contains(RepoDataComponent<?> component) {
-        var value = this.patch.getOptional(component);
-        if (value != null) {
-            return value.isPresent();
-        }
-
-        return this.prototype.contains(component);
+    public <Type> @Nullable Type getBase(BaseRepoDataComponent<Type> component) {
+        @Nullable var value = patch.get(component);
+        return value == null ? prototype.getBase(component) : value;
     }
 }

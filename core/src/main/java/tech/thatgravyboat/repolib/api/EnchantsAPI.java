@@ -42,7 +42,7 @@ public final class EnchantsAPI {
         public static Enchant fromJson(JsonObject object) {
             try {
                 return new Enchant(
-                        object.get("id").getAsString(),
+                        object.get("globalId").getAsString(),
                         object.get("name").getAsString(),
                         object.get("isUltimate").getAsBoolean(),
                         object.getAsJsonArray("levels")

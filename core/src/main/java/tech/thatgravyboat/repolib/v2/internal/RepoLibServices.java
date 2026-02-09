@@ -13,5 +13,11 @@ public class RepoLibServices {
         services.add(service);
     }
 
+    public static void save() {
+        for (var service : services) {
+            service.save();
+        }
+    }
+
 
 }

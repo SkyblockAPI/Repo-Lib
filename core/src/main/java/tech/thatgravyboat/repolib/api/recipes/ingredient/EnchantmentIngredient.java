@@ -11,7 +11,7 @@ public record EnchantmentIngredient(
 
     public static @NotNull EnchantmentIngredient fromJson(@NotNull JsonObject json) {
         return new EnchantmentIngredient(
-                json.get("id").getAsString(),
+                json.get("globalId").getAsString(),
                 json.get("level").getAsInt(),
                 json.get("count").getAsInt()
         );

@@ -27,7 +27,7 @@ val neoforge: SourceSet by sourceSets.creating {
 }
 
 dependencies {
-    implementation("org.jetbrains:annotations:24.1.0")
+    implementation("org.jetbrains:annotations:26.0.0")
     implementation("com.google.code.gson:gson:2.10")
 
     "fabricImplementation"("net.fabricmc:fabric-loader:0.15.0") { isTransitive = false}

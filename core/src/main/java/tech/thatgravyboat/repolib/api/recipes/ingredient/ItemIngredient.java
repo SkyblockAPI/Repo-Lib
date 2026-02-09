@@ -10,7 +10,7 @@ public record ItemIngredient(
 
     static @NotNull ItemIngredient fromJson(@NotNull JsonObject json) {
         return new ItemIngredient(
-                json.get("id").getAsString(),
+                json.get("globalId").getAsString(),
                 json.get("count").getAsInt()
         );
     }

@@ -1,17 +1,25 @@
 package tech.thatgravyboat.repolib.v2.internal.types;
 
-import tech.thatgravyboat.repolib.v2.api.GlobalSkyBlockId;
-import tech.thatgravyboat.repolib.v2.api.GlobalSkyBlockBase;
-import tech.thatgravyboat.repolib.v2.api.components.LoadingRepoDataComponent;
+import tech.thatgravyboat.repolib.v2.api.id.GlobalSkyBlockId;
+import tech.thatgravyboat.repolib.v2.api.id.BaseSkyBlockId;
+import tech.thatgravyboat.repolib.v2.api.components.BaseRepoDataComponent;
 import tech.thatgravyboat.repolib.v2.api.entry.BaseRepoEntry;
 import tech.thatgravyboat.repolib.v2.api.entry.RepoEntry;
 import tech.thatgravyboat.repolib.v2.api.properties.IdProperty;
+import tech.thatgravyboat.repolib.v2.api.types.SkyBlockIdType;
 import tech.thatgravyboat.repolib.v2.internal.RepoLibService;
 import tech.thatgravyboat.repolib.v2.internal.RepoLibLoadingContext;
+import tech.thatgravyboat.repolib.v2.internal.codec.RepoCodec;
+import tech.thatgravyboat.repolib.v2.internal.utils.JsonUtils;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -20,38 +28,67 @@ import java.util.concurrent.CompletableFuture;
 public final class GenericSkyblockIdType implements InternalSkyBlockIdType, RepoLibService {
 
     private final String name;
-    private final Set<LoadingRepoDataComponent<?>> allowedComponents = new HashSet<>();
-    private final Map<GlobalSkyBlockBase, BaseRepoEntry> entries = new HashMap<>();
-    private final Map<GlobalSkyBlockId, RepoEntry> entryMap = new HashMap<>();
+    public SkyBlockIdType publicType;
+    private final Set<BaseRepoDataComponent<?>> allowedComponents = new HashSet<>();
+    private final Map<BaseSkyBlockId, BaseRepoEntry> entries = new HashMap<>();
 
     public GenericSkyblockIdType(String name) {
         this.name = name;
     }
 
     @Override
-    public Iterable<IdProperty<?>> getProperties(GlobalSkyBlockId globalSkyBlockId) {
-        var entry = entryMap.get(globalSkyBlockId);
+    public Collection<IdProperty> getProperties(BaseSkyBlockId globalSkyBlockId) {
+        var entry = entries.get(globalSkyBlockId);
         if (entry == null) return Collections.emptyList();
-        return entry.base().properties();
+        return entry.properties();
     }
 
     @Override
-    public Iterable<GlobalSkyBlockId> getVariants(GlobalSkyBlockId globalSkyBlockId) {
-        var entry = entries.get(globalSkyBlockId.base());
+    public Collection<GlobalSkyBlockId> getVariants(BaseSkyBlockId globalSkyBlockId) {
+        var entry = entries.get(globalSkyBlockId);
         if (entry == null) return Collections.emptyList();
-        return entry.variants().collectMapped(RepoEntry::id);
+        return entry.variantSelector().collectMapped(RepoEntry::globalId);
     }
 
     @Override
-    public <T> void addComponent(LoadingRepoDataComponent<T> component) {
+    public <T> void addComponent(BaseRepoDataComponent<T> component) {
         this.allowedComponents.add(component);
     }
 
     @Override
-    public CompletableFuture<Void> load(RepoLibLoadingContext settings) {
-        var components = allowedComponents;
+    public Set<BaseRepoDataComponent<?>> components() {
+        return this.allowedComponents;
+    }
 
-        return null;
+    private RepoCodec<BaseRepoEntry> codec() {
+        return BaseRepoEntry.codec(publicType);
+    }
+
+    @Override
+    public CompletableFuture<Void> load(RepoLibLoadingContext settings) {
+        return CompletableFuture.supplyAsync(() -> {
+            var files = settings.getEntries(name);
+
+            for (var directory : files) {
+                try {
+                    var object = JsonUtils.parseObject(Files.readString(directory, StandardCharsets.UTF_8));
+                    var type = BaseRepoEntry.codec(this.publicType).decode(object).orElseThrow();
+
+                    entries.put(type.baseId(), type);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            return null;
+        }, settings.executor());
+    }
+
+    @Override
+    public void save(RepoLibLoadingContext settings) {
+        for (var entry : entries.entrySet()) {
+
+        }
     }
 
     @Override

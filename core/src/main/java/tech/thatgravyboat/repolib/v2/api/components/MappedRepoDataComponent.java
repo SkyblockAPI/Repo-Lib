@@ -5,18 +5,23 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Optional;
 import java.util.function.Function;
 
-public record MappedRepoDataComponent<Parent, Mapped>(RepoDataComponent<Parent> parent,
-                                                      Function<Parent, Mapped> converter)
-        implements RepoDataComponent<Mapped> {
+public record MappedRepoDataComponent<Parent, Mapped>(
+        RepoDataComponent<Parent> parent,
+        Function<Parent, Mapped> converter
+) implements RepoDataComponent<Mapped> {
+
     @Override
-    public Mapped get(RepoDataComponentGetter entry) {
-        return converter.apply(parent.get(entry));
+    public @Nullable Mapped get(RepoDataComponentGetter entry) {
+        return getOptional(entry).orElse(null);
     }
 
     @Override
-    public @Nullable Optional<Mapped> getOptional(RepoDataComponentGetter entry) {
-        var key = parent.getOptional(entry);
-        //noinspection OptionalAssignedToNull
-        return key == null ? null : key.map(converter);
+    public Optional<Mapped> getOptional(RepoDataComponentGetter entry) {
+        return parent.getOptional(entry).map(converter);
+    }
+
+    @Override
+    public boolean has(RepoDataComponentGetter entry) {
+        return parent.has(entry);
     }
 }
