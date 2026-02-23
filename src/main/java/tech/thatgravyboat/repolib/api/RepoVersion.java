@@ -3,7 +3,7 @@ package tech.thatgravyboat.repolib.api;
 import org.jetbrains.annotations.Nullable;
 
 public enum RepoVersion {
-    V1_21_4("1_21_4", "1.21.4"),
+    @Deprecated V1_21_4("1_21_4", "1.21.4"),
     V1_21_5("1_21_5", "1.21.5"),
     V1_21_6("1_21_5", "1.21.6"),
     V1_21_7("1_21_5", "1.21.7"),
@@ -19,6 +19,10 @@ public enum RepoVersion {
 
     public String version() {
         return version;
+    }
+
+    public boolean isSupported() {
+        return this != V1_21_4;
     }
 
     public static @Nullable RepoVersion fromName(String name) {

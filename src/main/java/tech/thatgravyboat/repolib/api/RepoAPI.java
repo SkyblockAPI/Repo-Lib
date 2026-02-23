@@ -39,6 +39,8 @@ public final class RepoAPI {
     private static void assertVersion(RepoVersion version) {
         if (RepoAPI.version != null && version != RepoAPI.version) {
             throw new IllegalStateException("RepoAPI has already been setup with a different version");
+        } else if (!version.isSupported()) {
+            throw new IllegalArgumentException("Version " + version.version() + " is no longer supported");
         }
     }
 
