@@ -4,6 +4,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -32,7 +33,8 @@ public class JsonHelper {
         return fallback;
     }
 
-    public static @NotNull String getString(@NotNull JsonObject json, @NotNull String key, @NotNull String fallback) {
+    @Contract("_,_,null->_;_,_,!null->!null")
+    public static String getString(@NotNull JsonObject json, @NotNull String key, String fallback) {
         if (json.get(key) instanceof JsonPrimitive primitive && primitive.isString()) {
             return primitive.getAsString();
         }

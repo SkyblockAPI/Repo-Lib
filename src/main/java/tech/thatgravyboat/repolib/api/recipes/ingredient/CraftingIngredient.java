@@ -19,6 +19,7 @@ public interface CraftingIngredient {
             case "enchantment" -> EnchantmentIngredient.fromJson(json);
             case "attribute" -> AttributeIngredient.fromJson(json);
             case "currency" -> CurrencyIngredient.fromJson(json);
+            case "potion" -> PotionIngredient.fromJson(json);
             default -> new UnknownIngredient(json, 1);
         };
     }

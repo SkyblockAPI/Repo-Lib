@@ -33,6 +33,7 @@ public final class RepoAPI {
     private static final RunesAPI runes = new RunesAPI();
     private static final EnchantsAPI enchants = new EnchantsAPI();
     private static final AttributesAPI attributes = new AttributesAPI();
+    private static final PotionsAPI potions = new PotionsAPI();
 
     //region Setup
 
@@ -122,6 +123,7 @@ public final class RepoAPI {
         RepoAPI.runes.load(tryVersionedLoad(shas, localShas, "runes", "runes.min.json").getAsJsonObject());
         RepoAPI.enchants.load(tryVersionedLoad(shas, localShas, "enchantments", "enchantments.min.json"));
         RepoAPI.attributes.load(tryVersionedLoad(shas, localShas, "attributes", "attributes.min.json"));
+        RepoAPI.potions.load(tryVersionedLoad(shas, localShas, "potions", "potions.min.json"));
 
         // Constants
         RepoAPI.refogeStones.load(tryLoad(shas, localShas, "reforge_stones", "constants/reforge_stones.min.json"));
@@ -167,6 +169,10 @@ public final class RepoAPI {
 
     public static EnchantsAPI enchantments() {
         return RepoAPI.enchants;
+    }
+
+    public static PotionsAPI potions() {
+        return RepoAPI.potions;
     }
 
 }
