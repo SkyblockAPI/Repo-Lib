@@ -35,14 +35,7 @@ public final class PotionsAPI {
         var potion = this.potions.get(id.toUpperCase(Locale.ROOT));
         if (potion != null) return potion;
 
-        return this.potions.entrySet().stream()
-                .filter(entry -> {
-                    if (entry.getValue().internalPotion() == null) return false;
-                    return entry.getValue().internalPotion().equalsIgnoreCase(id);
-                })
-                .findFirst()
-                .map(Map.Entry::getValue)
-                .orElse(null);
+        return this.potions.get("POTION_" + id.toUpperCase(Locale.ROOT));
     }
 
     public record Potion(
