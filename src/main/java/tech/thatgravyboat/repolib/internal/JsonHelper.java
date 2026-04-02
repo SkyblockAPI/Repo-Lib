@@ -40,4 +40,11 @@ public class JsonHelper {
         }
         return fallback;
     }
+
+    public static boolean getBoolean(@NotNull JsonObject json, @NotNull String key, boolean fallback) {
+        if (json.get(key) instanceof JsonPrimitive primitive && primitive.isBoolean()) {
+            return primitive.getAsBoolean();
+        }
+        return fallback;
+    }
 }
