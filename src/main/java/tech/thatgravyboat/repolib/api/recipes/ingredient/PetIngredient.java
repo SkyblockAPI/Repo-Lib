@@ -2,6 +2,7 @@ package tech.thatgravyboat.repolib.api.recipes.ingredient;
 
 import com.google.gson.JsonObject;
 import org.jetbrains.annotations.NotNull;
+import tech.thatgravyboat.repolib.internal.JsonHelper;
 
 public record PetIngredient(
         @NotNull String id,
@@ -13,7 +14,7 @@ public record PetIngredient(
         return new PetIngredient(
                 json.get("pet").getAsString(),
                 json.get("tier").getAsString(),
-                json.get("count").getAsInt()
+                JsonHelper.getInt(json, "count", 1)
         );
     }
 

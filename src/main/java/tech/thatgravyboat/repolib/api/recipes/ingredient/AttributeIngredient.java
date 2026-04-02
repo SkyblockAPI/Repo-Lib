@@ -2,6 +2,7 @@ package tech.thatgravyboat.repolib.api.recipes.ingredient;
 
 import com.google.gson.JsonObject;
 import org.jetbrains.annotations.NotNull;
+import tech.thatgravyboat.repolib.internal.JsonHelper;
 
 public record AttributeIngredient(
         String id,
@@ -12,7 +13,7 @@ public record AttributeIngredient(
     static @NotNull AttributeIngredient fromJson(@NotNull JsonObject json) {
         return new AttributeIngredient(
                 json.get("id").getAsString(),
-                json.get("count").getAsInt()
+                JsonHelper.getInt(json, "count", 1)
         );
     }
 

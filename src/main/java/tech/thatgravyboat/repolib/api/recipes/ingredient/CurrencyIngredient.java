@@ -2,6 +2,7 @@ package tech.thatgravyboat.repolib.api.recipes.ingredient;
 
 import com.google.gson.JsonObject;
 import org.jetbrains.annotations.NotNull;
+import tech.thatgravyboat.repolib.internal.JsonHelper;
 
 public record CurrencyIngredient(
         String currency,
@@ -12,7 +13,7 @@ public record CurrencyIngredient(
     static @NotNull CurrencyIngredient fromJson(@NotNull JsonObject json) {
         return new CurrencyIngredient(
                 json.get("currency").getAsString(),
-                json.get("count").getAsInt()
+                JsonHelper.getInt(json, "count", 1)
         );
     }
 
