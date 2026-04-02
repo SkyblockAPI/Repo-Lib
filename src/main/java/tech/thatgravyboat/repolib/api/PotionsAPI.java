@@ -75,7 +75,7 @@ public final class PotionsAPI {
         public static PotionLevel fromJson(JsonObject object) {
             return new PotionLevel(
                     JsonHelper.getInt(object, "level", 1),
-                    object.get("literal_level").getAsString(),
+                    JsonHelper.getString(object, "literal_level", "I"),
                     object.getAsJsonArray("lore").asList().stream().map(JsonElement::getAsString).toList()
             );
         }
