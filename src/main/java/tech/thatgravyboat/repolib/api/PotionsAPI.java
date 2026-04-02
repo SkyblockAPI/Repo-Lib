@@ -70,13 +70,15 @@ public final class PotionsAPI {
     public record PotionLevel(
             int level,
             @NotNull String literalLevel,
-            @NotNull List<String> lore
+            @NotNull List<String> lore,
+            boolean splash
     ) {
         public static PotionLevel fromJson(JsonObject object) {
             return new PotionLevel(
                     JsonHelper.getInt(object, "level", 1),
                     JsonHelper.getString(object, "literal_level", "I"),
-                    object.getAsJsonArray("lore").asList().stream().map(JsonElement::getAsString).toList()
+                    object.getAsJsonArray("lore").asList().stream().map(JsonElement::getAsString).toList(),
+                    JsonHelper.getBoolean(object, "splash", false)
             );
         }
     }
