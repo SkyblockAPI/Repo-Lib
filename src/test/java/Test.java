@@ -30,6 +30,9 @@ public class Test {
             for (var attribute : attributes) {
                 System.out.printf("%s -> %s%n", attribute.attributeId(), attribute.shardId());
             }
+
+            var potions = RepoAPI.potions().getPotion("speed");
+            System.out.println(potions);
         });
 
         new Scanner(System.in).nextLine();
