@@ -4,15 +4,12 @@ package tech.thatgravyboat.repolib.v2;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public sealed interface Expression {
 
     static Expression parseOrThrow(String source) {
-        return parseOrThrow(source, false);
-    }
-
-    static Expression parseOrThrow(String source, boolean multiline) {
         return new Parser(source).parse();
     }
 
@@ -32,11 +29,14 @@ public sealed interface Expression {
         }
     }
 
-    record Ident(String value) implements Expression {
+    record Struct(Map<String, Expression> fields) implements Expression {
 
         @Override
         public String toString() {
-            return this.value;
+            return fields.entrySet()
+                    .stream()
+                    .map(e -> e.getKey() + ": " + e.getValue())
+                    .collect(Collectors.joining(", ", "{", "}"));
         }
     }
 
@@ -54,14 +54,14 @@ public sealed interface Expression {
         }
     }
 
-    record Ternary(Expression cond,
-                   Expression thenExpr,
-                   Expression elseExpr
-    ) implements Expression {
+    record If(Expression cond, Expression thenExpr, @Nullable Expression elseExpr) implements Expression {
 
         @Override
         public String toString() {
-            return String.format("%s ? %s : %s", cond, thenExpr, elseExpr);
+            if (elseExpr == null) {
+                return String.format("if (%s) %s", cond, thenExpr);
+            }
+            return String.format("if (%s) %s else %s", cond, thenExpr, elseExpr);
         }
     }
 

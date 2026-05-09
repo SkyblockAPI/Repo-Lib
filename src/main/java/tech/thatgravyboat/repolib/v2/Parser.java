@@ -1,8 +1,6 @@
 package tech.thatgravyboat.repolib.v2;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public final class Parser {
     private final String source;
@@ -14,28 +12,40 @@ public final class Parser {
     }
 
     public Expression parse() {
-        return parseUntil(Lexer.Token.SEMICOLON);
+        List<Expression> expressions = new ArrayList<>();
+
+        while (this.lexer.peek() != null) {
+            expressions.add(parseUntil(Lexer.Token.SEMICOLON));
+            lexer.expect(Lexer.Token.SEMICOLON);
+        }
+
+        if (expressions.size() == 1) {
+            return expressions.getFirst();
+        } else {
+            return new Expression.Block(expressions);
+        }
     }
 
-    public Expression parseUntil(Lexer.Token end) {
+    public Expression parseUntil(Lexer.Token... end) {
+        Set<Lexer.Token> endSet = Set.of(end);
         Expression current = null;
 
         while (true) {
 
-            if (lexer.peek() == end) {
+            if (lexer.peek() == null || endSet.contains(lexer.peek())) {
                 return current;
             }
 
             switch (lexer.next()) {
-                case Lexer.Token.IDENT -> {
+                case IDENT -> {
                     var access = memberAccess();
 
-                    Lexer.Token op;
-                    switch (op = lexer.peek()) {
+                    switch (lexer.peek()) {
                         case Lexer.Token.EQUALS -> {
                             lexer.next();
 
                             var value = parseUntil(Lexer.Token.SEMICOLON);
+                            lexer.expect(Lexer.Token.SEMICOLON);
 
                             current = new Expression.Assign(access, value);
                         }
@@ -47,17 +57,17 @@ public final class Parser {
 
                             if (next != null && next != Lexer.Token.R_PARENTHESES) {
                                 do {
-                                    args.add(parseUntil(Lexer.Token.COMMA));
+                                    args.add(parseUntil(Lexer.Token.COMMA, Lexer.Token.R_PARENTHESES));
                                     next = lexer.peek();
                                 } while (next == Lexer.Token.COMMA && lexer.next() != null);
-
-                                lexer.expect(Lexer.Token.R_PARENTHESES);
-                                current = new Expression.Call(access, args);
                             }
+                            lexer.expect(Lexer.Token.R_PARENTHESES);
+                            current = new Expression.Call(access, args);
                         }
-                        case null, default -> throw new IllegalStateException("Unexpected value: " + op);
+                        case null, default -> throw new IllegalStateException("Unexpected value: " + lexer.peek());
                     }
                 }
+                case IF -> current = ifExpr();
                 case LITERAL_STR -> {
                     var span = lexer.span();
                     current = new Expression.Str(span.substring(1, span.length() - 1));
@@ -70,20 +80,82 @@ public final class Parser {
                     var span = lexer.span();
                     current = new Expression.Num(Boolean.parseBoolean(span) ? 1 : 0);
                 }
-                case null, default -> {}
+                case L_BRACE -> {
+                    var fields = new Expression.Struct(new HashMap<>());
+
+                    while (lexer.peek() != Lexer.Token.R_BRACE) {
+                        lexer.expect(Lexer.Token.LITERAL_STR);
+
+                        var field = lexer.span();
+                        field = field.substring(1, field.length() - 1);
+
+                        lexer.expect(Lexer.Token.COLON);
+                        fields.fields().put(field, parseUntil(Lexer.Token.COMMA, Lexer.Token.R_BRACE));
+
+                        if (lexer.peek() == Lexer.Token.COMMA) {
+                            lexer.next();
+                        }
+                    }
+                    lexer.expect(Lexer.Token.R_BRACE);
+
+                    current = fields;
+                }
+                case null, default -> throw new IllegalStateException("Unexpected value: " + lexer.span());
             }
         }
+    }
+
+    private Expression ifExpr() {
+        lexer.expect(Lexer.Token.L_PARENTHESES);
+        var cond = parseUntil(Lexer.Token.R_PARENTHESES);
+        lexer.expect(Lexer.Token.R_PARENTHESES);
+
+        Expression thenExpr = scopeOrSingleStatement();
+        Expression elseExpr = null;
+        if (lexer.peek() == Lexer.Token.ELSE) {
+            lexer.next();
+
+            if (lexer.peek() == Lexer.Token.IF) {
+                lexer.next();
+                elseExpr = ifExpr();
+            } else {
+                elseExpr = scopeOrSingleStatement();
+            }
+        }
+
+        return new Expression.If(cond, thenExpr, elseExpr);
+    }
+
+    private Expression scopeOrSingleStatement() {
+        if (lexer.peek() == Lexer.Token.L_BRACE) {
+            lexer.next();
+
+            var block = new Expression.Block(new ArrayList<>());
+
+            while (lexer.peek() != Lexer.Token.R_BRACE) {
+                block.exprs().add(parseUntil(Lexer.Token.SEMICOLON));
+                lexer.expect(Lexer.Token.SEMICOLON);
+            }
+            lexer.expect(Lexer.Token.R_BRACE);
+
+            return block;
+        }
+        return parseUntil(Lexer.Token.SEMICOLON);
     }
 
     private Expression.Access memberAccess() {
         var access = new Expression.Access(null, new Expression.Str(lexer.span()));
 
         Lexer.Token next;
-        loop: while ((next = lexer.next()) != null) {
+        loop: while ((next = lexer.peek()) != null) {
             switch (next) {
-                case Lexer.Token.IDENT -> access = new Expression.Access(access, new Expression.Str(lexer.span()));
-                case Lexer.Token.DOT -> {}
+                case Lexer.Token.IDENT -> {
+                    lexer.next();
+                    access = new Expression.Access(access, new Expression.Str(lexer.span()));
+                }
+                case Lexer.Token.DOT -> lexer.next();
                 case Lexer.Token.L_BRACKET -> {
+                    lexer.next();
                     var field = parseUntil(Lexer.Token.R_BRACKET);
                     lexer.expect(Lexer.Token.R_BRACKET);
                     access = new Expression.Access(access, field);
@@ -100,8 +172,5 @@ public final class Parser {
     public String source() {
         return source;
     }
-
-
-
 
 }

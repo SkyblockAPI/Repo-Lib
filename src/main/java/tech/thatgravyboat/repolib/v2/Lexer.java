@@ -24,11 +24,10 @@ final class Lexer {
     public @Nullable Token next() {
         start = cursor;
 
+        consumeWhitespace();
         if (atEnd()) {
             return null;
         }
-
-        consumeWhitespace();
 
         char c = advance();
         if (isAlpha(c)) {
@@ -64,6 +63,8 @@ final class Lexer {
             case ']' -> Token.R_BRACKET;
             case '(' -> Token.L_PARENTHESES;
             case ')' -> Token.R_PARENTHESES;
+            case '{' -> Token.L_BRACE;
+            case '}' -> Token.R_BRACE;
             case '=' -> Token.EQUALS;
             case ',' -> Token.COMMA;
             case '.' -> Token.DOT;
@@ -84,6 +85,8 @@ final class Lexer {
 
         return switch (span()) {
             case "true", "false" -> Token.LITERAL_BOOL;
+            case "if" -> Token.IF;
+            case "else" -> Token.ELSE;
             default -> Token.IDENT;
         };
     }
@@ -116,7 +119,7 @@ final class Lexer {
         }
     }
 
-    private boolean atEnd() {
+    public boolean atEnd() {
         return cursor >= source.length();
     }
 
@@ -163,6 +166,10 @@ final class Lexer {
         LITERAL_NUM,
         LITERAL_BOOL,
 
+        // Keywords
+        IF,
+        ELSE,
+
         EQUALS,
 
         L_PARENTHESES,
@@ -182,7 +189,8 @@ final class Lexer {
         L_BRACKET,
         R_BRACKET,
 
-        EOL,
+        L_BRACE,
+        R_BRACE
     }
 
 }

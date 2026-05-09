@@ -2,7 +2,7 @@ package tech.thatgravyboat.repolib.v2;
 
 public class Evaluator {
 
-    public Evaluator(Value.Struct defaults) {
+    public Evaluator(Value.KeyValue defaults) {
     }
 
 

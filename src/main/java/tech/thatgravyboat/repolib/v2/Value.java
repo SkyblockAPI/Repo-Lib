@@ -32,22 +32,33 @@ public sealed interface Value {
         }
     }
 
+    record Struct(Map<String, Value> fields) implements KeyValue.Mutable {
+        @Override
+        public Value get(String field) {
+            return fields.getOrDefault(field, new Nil());
+        }
+
+        @Override
+        public void set(String field, Value value) {
+            fields.put(field, value);
+        }
+
+        @Override
+        public String toString() {
+            return fields.toString();
+        }
+    }
 
     @FunctionalInterface
     non-sealed interface Function extends Value {
 
         Value apply(List<Value> args);
-
     }
 
-    non-sealed interface Struct extends Value {
-        static Struct holder(Map<String, Value> map) {
-            return new MolangEvaluator.HolderImpl(Map.copyOf(map));
-        }
-
+    non-sealed interface KeyValue extends Value {
         Value get(String field);
 
-        interface Mutable extends Struct {
+        interface Mutable extends KeyValue {
             void set(String field, Value value);
         }
     }
