@@ -65,7 +65,7 @@ public sealed interface Expression {
         }
     }
 
-    record Access(@Nullable Expression lhs, Expression field) implements Expression {
+    record Access(@Nullable Expression lhs, String field) implements Expression {
 
         @Override
         public String toString() {

@@ -45,7 +45,6 @@ public final class Parser {
                             lexer.next();
 
                             var value = parseUntil(Lexer.Token.SEMICOLON);
-                            lexer.expect(Lexer.Token.SEMICOLON);
 
                             current = new Expression.Assign(access, value);
                         }
@@ -144,21 +143,22 @@ public final class Parser {
     }
 
     private Expression.Access memberAccess() {
-        var access = new Expression.Access(null, new Expression.Str(lexer.span()));
+        var access = new Expression.Access(null, lexer.span());
 
         Lexer.Token next;
         loop: while ((next = lexer.peek()) != null) {
             switch (next) {
                 case Lexer.Token.IDENT -> {
                     lexer.next();
-                    access = new Expression.Access(access, new Expression.Str(lexer.span()));
+                    access = new Expression.Access(access, lexer.span());
                 }
                 case Lexer.Token.DOT -> lexer.next();
                 case Lexer.Token.L_BRACKET -> {
                     lexer.next();
-                    var field = parseUntil(Lexer.Token.R_BRACKET);
+                    lexer.expect(Lexer.Token.LITERAL_STR);
+                    var field = lexer.span();
                     lexer.expect(Lexer.Token.R_BRACKET);
-                    access = new Expression.Access(access, field);
+                    access = new Expression.Access(access, field.substring(1, field.length() - 1));
                 }
                 default -> {
                     break loop;
