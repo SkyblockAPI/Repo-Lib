@@ -2,10 +2,13 @@ package tech.thatgravyboat.repolib.v2;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public sealed interface Value {
+
+    static Value NIL = new Nil();
 
     record Nil() implements Value {
         @Override
@@ -21,6 +24,13 @@ public sealed interface Value {
         }
     }
 
+    record Bool(boolean value) implements Value {
+        @Override
+        public @NotNull String toString() {
+            return Boolean.toString(value);
+        }
+    }
+
     record Num(double value) implements Value {
         public Num(boolean value) {
             this(value ? 1.0 : 0.0);
@@ -33,9 +43,13 @@ public sealed interface Value {
     }
 
     record Struct(Map<String, Value> fields) implements KeyValue.Mutable {
+        public Struct() {
+            this(new HashMap<>());
+        }
+
         @Override
         public Value get(String field) {
-            return fields.getOrDefault(field, new Nil());
+            return fields.computeIfAbsent(field, (ignored) -> new Struct());
         }
 
         @Override

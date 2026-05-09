@@ -63,7 +63,9 @@ public final class Parser {
                             lexer.expect(Lexer.Token.R_PARENTHESES);
                             current = new Expression.Call(access, args);
                         }
-                        case null, default -> throw new IllegalStateException("Unexpected value: " + lexer.peek());
+                        case null, default -> {
+                            current = access;
+                        }
                     }
                 }
                 case IF -> current = ifExpr();
@@ -77,7 +79,7 @@ public final class Parser {
                 }
                 case LITERAL_BOOL -> {
                     var span = lexer.span();
-                    current = new Expression.Num(Boolean.parseBoolean(span) ? 1 : 0);
+                    current = new Expression.Bool(Boolean.parseBoolean(span));
                 }
                 case L_BRACE -> {
                     var fields = new Expression.Struct(new HashMap<>());

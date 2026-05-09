@@ -29,6 +29,14 @@ public sealed interface Expression {
         }
     }
 
+    record Bool(boolean value) implements Expression {
+
+        @Override
+        public String toString() {
+            return Boolean.toString(value);
+        }
+    }
+
     record Struct(Map<String, Expression> fields) implements Expression {
 
         @Override
@@ -81,7 +89,7 @@ public sealed interface Expression {
         }
     }
 
-    record Assign(Expression lhs, Expression value) implements Expression {
+    record Assign(Expression.Access lhs, Expression value) implements Expression {
 
         @Override
         public String toString() {
