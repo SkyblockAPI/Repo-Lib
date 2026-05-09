@@ -36,23 +36,23 @@ final class Lexer {
         if (isDigit(c)) {
             return number();
         }
-        if (c == '\'') {
-            return string();
+        if (c == '\'' || c == '"') {
+            return string(c);
         }
 
         return symbol(c);
     }
 
-    private Token string() {
-        while (peek0() != '\'') {
+    private Token string(char quote) {
+        while (peek0() != quote) {
             var isEscaped = peek0() == '\\';
             advance();
-            if (isEscaped && peek0() == '\'') {
+            if (isEscaped && peek0() == quote) {
                 advance();
             }
         }
 
-        match('\'');
+        match(quote);
 
         return Token.LITERAL_STR;
     }
