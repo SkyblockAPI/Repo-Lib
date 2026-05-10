@@ -44,7 +44,7 @@ public class Evaluator {
         errors.add(new ContentInfo(this.stack(), message));
     }
     public void debug(String message) {
-        errors.add(new ContentInfo(this.stack(), message));
+        debugs.add(new ContentInfo(this.stack(), message));
     }
 
     private Value eval(Expression expression) {
