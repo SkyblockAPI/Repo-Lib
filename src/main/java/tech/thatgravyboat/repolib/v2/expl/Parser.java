@@ -1,4 +1,4 @@
-package tech.thatgravyboat.repolib.v2;
+package tech.thatgravyboat.repolib.v2.expl;
 
 import java.util.*;
 
@@ -11,7 +11,7 @@ public final class Parser {
         this.lexer = new Lexer(source);
     }
 
-    public ParsedFile parse() {
+    public StackFile parseFile() {
         Expression meta;
         Expression script;
 
@@ -21,7 +21,22 @@ public final class Parser {
         lexer.expect(Lexer.Token.IDENT, "script");
         script = this.block();
 
-        return new ParsedFile(meta, script);
+        return new StackFile(meta, script);
+    }
+
+    public Expression parseExpression() {
+        List<Expression> expressions = new ArrayList<>();
+
+        while (this.lexer.peek() != null) {
+            expressions.add(parseUntil(Lexer.Token.SEMICOLON));
+            lexer.expect(Lexer.Token.SEMICOLON);
+        }
+
+        if (expressions.size() == 1) {
+            return expressions.getFirst();
+        } else {
+            return new Expression.Block(expressions);
+        }
     }
 
     public Expression parseUntil(Lexer.Token... end) {

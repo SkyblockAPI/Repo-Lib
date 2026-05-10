@@ -1,4 +1,4 @@
-package tech.thatgravyboat.repolib.v2;
+package tech.thatgravyboat.repolib.v2.expl;
 
 
 import org.jetbrains.annotations.NotNull;
@@ -10,8 +10,12 @@ import java.util.stream.Collectors;
 
 public sealed interface Expression {
 
-    static ParsedFile parseOrThrow(String source) {
-        return new Parser(source).parse();
+    static StackFile parseFileOrThrow(String source) {
+        return new Parser(source).parseFile();
+    }
+
+    static Expression parse(String source) {
+        return new Parser(source).parseExpression();
     }
 
     record Num(double value) implements Expression {
@@ -50,16 +54,16 @@ public sealed interface Expression {
     }
 
     record Unary(Op op, Expression rhs) implements Expression {
-        public enum Op {
-            NEGATE, NOT
-        }
-
         @Override
         public @NotNull String toString() {
             return switch (op) {
                 case NEGATE -> "-" + rhs;
                 case NOT -> "!" + rhs;
             };
+        }
+
+        public enum Op {
+            NEGATE, NOT
         }
     }
 
@@ -108,5 +112,10 @@ public sealed interface Expression {
             return "{" + exprs.stream().map(Expression::toString).collect(Collectors.joining("; ")) + "}";
         }
     }
+
+    non-sealed interface SelfEvaluatingExpression extends Expression {
+        Value evaluate(Evaluator evaluator);
+    }
+
 
 }

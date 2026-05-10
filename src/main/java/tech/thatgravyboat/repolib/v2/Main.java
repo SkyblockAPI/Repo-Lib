@@ -1,29 +1,31 @@
 package tech.thatgravyboat.repolib.v2;
 
+import java.io.IOException;
+import java.nio.file.Path;
+
 public class Main {
 
-    public static void main(String[] args) {
-        var expression = Expression.parseOrThrow("""
-        meta {
-//            rarity = "EPIC";
-            breaking_power = 8;
-            name = "Pickonimbus 2000";
-            category = "Pickaxe";
-            reforgable = true;
-            coin_value = 20;
-        
-            stats.damage = 30;
-            stats.mining_speed = 750;
+    public static void main(String[] args) throws IOException {
+        var repoLoader = new RepoLoader(Path.of("repo"));
+        var errors = repoLoader.load();
+        for (var error : errors) {
+            System.out.println("Failed to load file " + error.file() + " due to " + error.reason());
         }
-        
-        script {
-            stack.item = "minecraft:diamond_pickaxe";
-            if (meta.rarity) {
-                stack.rarity = meta.rarity;
-            };
-        }
-        """);
+        var file = repoLoader.getStackFile("pickobulus");
 
-        System.out.println(expression.evaluate(Value.KeyValue.ImmutableStruct.EMPTY));
+        var constants = new RepoConstants(repoLoader);
+        var evaluator = file.createEvaluator(constants);
+        var result = file.evaluateScript(evaluator);
+        for (var error : evaluator.errors) {
+            System.out.println("[e]: " + error);
+        }
+        for (var debug : evaluator.debugs) {
+            System.out.println("[d]: " + debug);
+        }
+
+        System.out.println(result);
+
+
     }
+
 }

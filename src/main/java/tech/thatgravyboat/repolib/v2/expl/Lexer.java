@@ -1,4 +1,4 @@
-package tech.thatgravyboat.repolib.v2;
+package tech.thatgravyboat.repolib.v2.expl;
 
 import org.jetbrains.annotations.Nullable;
 

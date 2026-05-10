@@ -1,14 +1,36 @@
-package tech.thatgravyboat.repolib.v2;
+package tech.thatgravyboat.repolib.v2.expl;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 public class Evaluator {
 
-    private final Value.KeyValue defaults;
-    private final List<ContentError> errors = new ArrayList<>();
+    public final Value.KeyValue defaults;
+    public final List<ContentInfo> debugs = new ArrayList<>();
+    public final LinkedList<String> fileStack = new LinkedList<>();
+    public final LinkedList<String> stack = new LinkedList<>();
+    public final List<ContentInfo> errors = new ArrayList<>();
+
+    public Value pushPop(String stack, Supplier<Value> supplier) {
+        this.stack.addLast(stack);
+        var result = supplier.get();
+        this.stack.removeLast();
+        return result;
+    }
+
+    private String stack() {
+        var stringBuilder = new StringBuilder();
+        for (var s : this.stack) {
+            stringBuilder.append(s);
+            stringBuilder.append(".");
+        }
+
+        return stringBuilder.substring(0, stringBuilder.length() - 1);
+    }
 
     public Evaluator(Value.KeyValue defaults) {
         this.defaults = defaults;
@@ -16,6 +38,13 @@ public class Evaluator {
 
     public void evaluate(Expression expression) {
         eval(expression);
+    }
+
+    public void error(String message) {
+        errors.add(new ContentInfo(this.stack(), message));
+    }
+    public void debug(String message) {
+        errors.add(new ContentInfo(this.stack(), message));
     }
 
     private Value eval(Expression expression) {
@@ -30,6 +59,7 @@ public class Evaluator {
             case Expression.Bool bool -> new Value.Bool(bool.value());
             case Expression.Struct struct -> evalStruct(struct);
             case Expression.Unary unary -> evalUnary(unary);
+            case Expression.SelfEvaluatingExpression self -> self.evaluate(this);
         };
     }
 
@@ -52,7 +82,7 @@ public class Evaluator {
             case Value.Num num -> num.value() == 1.0d;
             case Value.Str str -> !str.value().isEmpty();
             default -> {
-                errors.add(new ContentError("Unable to convert " + value + " into boolean."));
+                error("Unable to convert " + value + " into boolean.");
                 yield null;
             }
         };
@@ -64,9 +94,9 @@ public class Evaluator {
         if (condition == null) {
             return Value.NIL;
         } else if (condition) {
-            return eval(anIf.thenExpr());
+            return pushPop("if (" + anIf.cond() + ")", () -> eval(anIf.thenExpr()));
         } else if (anIf.elseExpr() != null) {
-            return eval(anIf.elseExpr());
+            return pushPop("if (" + anIf.cond() + ") { ... } else", () -> eval(anIf.elseExpr()));
         }
 
         return Value.NIL;
@@ -79,10 +109,11 @@ public class Evaluator {
             for (var arg : call.args()) {
                 args.add(eval(arg));
             }
-            return function.apply(args);
+
+            return pushPop(call.lhs().toString(), () -> function.apply(this, args));
         }
 
-        errors.add(new ContentError("Unable to call invoke on non function type " + left));
+        error("Unable to call invoke on non function type " + left);
         return Value.NIL;
     }
 
@@ -108,11 +139,11 @@ public class Evaluator {
             keyValue.set(access.field(), value);
             return value;
         } else if (field instanceof Value.KeyValue) {
-            errors.add(new ContentError("Unable to set property '" + access.field() + "' on immutable key/value " + access.lhs()));
+            error("Unable to set property '" + access.field() + "' on immutable key/value " + access.lhs());
             return Value.NIL;
         }
 
-        errors.add(new ContentError("Unable to set property '" + access.field() + "' on non key/value " + access.lhs()));
+        error("Unable to set property '" + access.field() + "' on non key/value " + access.lhs());
         return Value.NIL;
     }
 
@@ -128,7 +159,7 @@ public class Evaluator {
             return Objects.requireNonNullElse(keyValue.get(expression.field()), Value.NIL);
         }
 
-        errors.add(new ContentError("Unable to access property " + expression.field() + " of non key/value " + lhs));
+        error("Unable to access property " + expression.field() + " of non key/value " + lhs);
         return Value.NIL;
     }
 

@@ -1,0 +1,17 @@
+meta {
+    rarity = "EPIC";
+    breaking_power = 8;
+    name = "Pickonimbus 2000";
+    category = "Pickaxe";
+    reforgable = true;
+    coin_value = 20;
+
+    stats.damage = 30;
+    stats.mining_speed = 750;
+}
+
+script {
+    stack.item = "minecraft:diamond_pickaxe";
+
+    include("item/name");
+}

@@ -1,4 +1,4 @@
-package tech.thatgravyboat.repolib.v2;
+package tech.thatgravyboat.repolib.v2.expl;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 public sealed interface Value {
 
@@ -69,6 +71,19 @@ public sealed interface Value {
         }
 
         @Override
+        public KeyValue toFullyImmutable() {
+            var map = new HashMap<String, Value>();
+            for (var entry : fields.entrySet()) {
+                if (entry instanceof KeyValue.Mutable mutable) {
+                    map.put(entry.getKey(), mutable.toFullyImmutable());
+                } else {
+                    map.put(entry.getKey(), entry.getValue());
+                }
+            }
+            return new ImmutableStruct(Map.copyOf(map));
+        }
+
+        @Override
         public Mutable toMutable() {
             return new MutableStruct(new HashMap<>(fields));
         }
@@ -106,8 +121,26 @@ public sealed interface Value {
 
     @FunctionalInterface
     non-sealed interface Function extends Value {
+        static Function of(Function function) {
+            return function;
+        }
 
-        Value apply(List<Value> args);
+        static Function withoutArgs(java.util.function.Function<Evaluator, Value> value) {
+            return (evaluator, args) -> {
+                if (!args.isEmpty()) {
+                    evaluator.error("Called parameter less function with arguments " + args);
+                    return NIL;
+                }
+
+                return value.apply(evaluator);
+            };
+        }
+
+        static Function ofSimple(java.util.function.Function<List<Value>, Value> function) {
+            return (ignored, args) -> function.apply(args);
+        }
+
+        Value apply(Evaluator evaluator, List<Value> args);
     }
 
     non-sealed interface KeyValue extends Value, Iterable<Map.Entry<String, Value>> {
@@ -119,6 +152,7 @@ public sealed interface Value {
             void set(String field, Value value);
 
             KeyValue toImmutable();
+            KeyValue toFullyImmutable();
         }
     }
 
