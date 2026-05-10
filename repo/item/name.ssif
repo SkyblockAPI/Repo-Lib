@@ -1,2 +1,6 @@
 stack.name = {"text": meta.name};
 debug(2);
+
+if ("smth" in data) {
+    debug("mrow");
+};

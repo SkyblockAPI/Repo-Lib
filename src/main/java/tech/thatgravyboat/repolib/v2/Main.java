@@ -14,7 +14,12 @@ public class Main {
         var file = repoLoader.getStackFile("pickobulus");
 
         var constants = new RepoConstants(repoLoader);
-        var evaluator = file.createEvaluator(constants);
+        var evaluator = file.createEvaluator(
+                constants,
+                new Constants(builder -> {
+                    builder.constant("smth", "test");
+                })
+        );
         var result = file.evaluateScript(evaluator);
         for (var error : evaluator.errors) {
             System.out.println("[e]: " + error);

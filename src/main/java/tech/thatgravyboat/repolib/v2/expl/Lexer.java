@@ -95,6 +95,7 @@ final class Lexer {
             case "true", "false" -> Token.LITERAL_BOOL;
             case "if" -> Token.IF;
             case "else" -> Token.ELSE;
+            case "in" -> Token.IN;
             default -> Token.IDENT;
         };
     }
@@ -120,7 +121,7 @@ final class Lexer {
     private void consumeWhitespace() {
         boolean inComment = false;
         while (true) {
-            if (peek0() == '/' && source.length() > cursor + 1 && source.charAt(cursor + 1) == '/') {
+            if (peek0() == '#') {
                 inComment = true;
                 advance();
             } else if (inComment && peek0() == '\n') {
@@ -184,6 +185,7 @@ final class Lexer {
         // Keywords
         IF,
         ELSE,
+        IN,
 
         EQUALS,
 

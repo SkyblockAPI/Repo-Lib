@@ -1,5 +1,14 @@
 package tech.thatgravyboat.repolib.v2.expl;
 
+import tech.thatgravyboat.repolib.v2.expl.value.Bool;
+import tech.thatgravyboat.repolib.v2.expl.value.Function;
+import tech.thatgravyboat.repolib.v2.expl.value.KeyValue;
+import tech.thatgravyboat.repolib.v2.expl.value.MutableStruct;
+import tech.thatgravyboat.repolib.v2.expl.value.Nil;
+import tech.thatgravyboat.repolib.v2.expl.value.Num;
+import tech.thatgravyboat.repolib.v2.expl.value.Str;
+import tech.thatgravyboat.repolib.v2.expl.value.Value;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -9,7 +18,7 @@ import java.util.function.Supplier;
 
 public class Evaluator {
 
-    public final Value.KeyValue defaults;
+    public final KeyValue defaults;
     public final List<ContentInfo> debugs = new ArrayList<>();
     public final LinkedList<String> fileStack = new LinkedList<>();
     public final LinkedList<String> stack = new LinkedList<>();
@@ -32,7 +41,7 @@ public class Evaluator {
         return stringBuilder.substring(0, stringBuilder.length() - 1);
     }
 
-    public Evaluator(Value.KeyValue defaults) {
+    public Evaluator(KeyValue defaults) {
         this.defaults = defaults;
     }
 
@@ -54,13 +63,25 @@ public class Evaluator {
             case Expression.Block block -> evalBlock(block);
             case Expression.Call call -> evalCall(call);
             case Expression.If anIf -> evalIf(anIf);
-            case Expression.Num num -> new Value.Num(num.value());
-            case Expression.Str str -> new Value.Str(str.value());
-            case Expression.Bool bool -> new Value.Bool(bool.value());
+            case Expression.In in -> evalIn(in);
+            case Expression.Num num -> new Num(num.value());
+            case Expression.Str str -> new Str(str.value());
+            case Expression.Bool bool -> new Bool(bool.value());
             case Expression.Struct struct -> evalStruct(struct);
             case Expression.Unary unary -> evalUnary(unary);
             case Expression.SelfEvaluatingExpression self -> self.evaluate(this);
         };
+    }
+
+    private Value evalIn(Expression.In in) {
+        var holder = evalAccess(in.holder());
+        if (holder instanceof KeyValue keyValue) {
+            return new Bool(keyValue.contains(in.field()));
+        } else if (holder instanceof Str(String value)) {
+            return new Bool(value.contains(in.field()));
+        }
+        error("Can't check if '" + in.field() + "' is in non string or keyvalue type " + holder);
+        return Bool.NIL;
     }
 
     private Value evalUnary(Expression.Unary unary) { // TODO
@@ -72,15 +93,15 @@ public class Evaluator {
         for (var entry : struct.fields().entrySet()) {
             fields.put(entry.getKey(), eval(entry.getValue()));
         }
-        return new Value.MutableStruct(fields);
+        return new MutableStruct(fields);
     }
 
     private Boolean asBool(Value value) {
         return switch (value) {
-            case Value.Nil ignored -> false;
-            case Value.Bool bool -> bool.value();
-            case Value.Num num -> num.value() == 1.0d;
-            case Value.Str str -> !str.value().isEmpty();
+            case Nil ignored -> false;
+            case Bool bool -> bool.value();
+            case Num num -> num.value() == 1.0d;
+            case Str str -> !str.value().isEmpty();
             default -> {
                 error("Unable to convert " + value + " into boolean.");
                 yield null;
@@ -104,7 +125,7 @@ public class Evaluator {
 
     private Value evalCall(Expression.Call call) {
         var left = eval(call.lhs());
-        if (left instanceof Value.Function function) {
+        if (left instanceof Function function) {
             var args = new ArrayList<Value>();
             for (var arg : call.args()) {
                 args.add(eval(arg));
@@ -134,11 +155,11 @@ public class Evaluator {
             field = eval(access.lhs());
         }
 
-        if (field instanceof Value.KeyValue.Mutable keyValue) {
+        if (field instanceof KeyValue.Mutable keyValue) {
             var value = eval(assign.value());
             keyValue.set(access.field(), value);
             return value;
-        } else if (field instanceof Value.KeyValue) {
+        } else if (field instanceof KeyValue) {
             error("Unable to set property '" + access.field() + "' on immutable key/value " + access.lhs());
             return Value.NIL;
         }
@@ -154,7 +175,7 @@ public class Evaluator {
             return defaults.get(expression.field());
         }
         var left = eval(lhs);
-        if (left instanceof Value.KeyValue keyValue) {
+        if (left instanceof KeyValue keyValue) {
             keyValue.get(expression.field());
             return Objects.requireNonNullElse(keyValue.get(expression.field()), Value.NIL);
         }

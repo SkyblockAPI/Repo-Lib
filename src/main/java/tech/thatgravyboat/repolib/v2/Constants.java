@@ -1,0 +1,132 @@
+package tech.thatgravyboat.repolib.v2;
+
+import org.jetbrains.annotations.NotNull;
+import tech.thatgravyboat.repolib.v2.expl.Evaluator;
+import tech.thatgravyboat.repolib.v2.expl.value.Bool;
+import tech.thatgravyboat.repolib.v2.expl.value.Function;
+import tech.thatgravyboat.repolib.v2.expl.value.KeyValue;
+import tech.thatgravyboat.repolib.v2.expl.value.MutableStruct;
+import tech.thatgravyboat.repolib.v2.expl.value.Num;
+import tech.thatgravyboat.repolib.v2.expl.value.Str;
+import tech.thatgravyboat.repolib.v2.expl.value.Value;
+
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+
+public record Constants(Map<String, Value> map) implements KeyValue {
+    public Constants(Consumer<Builder> builder) {
+        this(Builder.create(builder));
+    }
+
+    @Override
+    public Value get(String field) {
+        return map.get(field);
+    }
+
+    @Override
+    public Mutable toMutable() {
+        return new MutableStruct(new HashMap<>(map));
+    }
+
+    @Override
+    public @NotNull Iterator<Map.Entry<String, Value>> iterator() {
+        return map.entrySet().iterator();
+    }
+
+    @Override
+    public boolean contains(String field) {
+        return map.containsKey(field);
+    }
+
+    public static class Builder {
+        private Map<String, Value> map = new HashMap<>();
+
+        public Builder() {
+        }
+
+        private static Map<String, Value> create(Consumer<Builder> builderConsumer) {
+            var builder = new Builder();
+            builderConsumer.accept(builder);
+            return builder.map;
+        }
+
+        public void constant(String name, String value) {
+            field(name, new Str(value));
+        }
+
+        public void constant(String name, boolean value) {
+            field(name, new Bool(value));
+        }
+
+        public void constant(String name, int value) {
+            field(name, new Num(value));
+        }
+
+        public void constant(String name, long value) {
+            field(name, new Num(value));
+        }
+
+        public void constant(String name, float value) {
+            field(name, new Num(value));
+        }
+
+        public void constant(String name, double value) {
+            field(name, new Num(value));
+        }
+
+        public void function(String name, Consumer<FunctionBuilder> function) {
+            field(name, FunctionBuilder.create(function));
+        }
+
+        private void field(String name, Value value) {
+            map.putIfAbsent(name, value);
+        }
+
+        public static class FunctionBuilder {
+            private int arity = -1;
+            private BiFunction<Evaluator, List<Value>, Value> executor;
+
+            private static Function create(Consumer<FunctionBuilder> builderConsumer) {
+                var builder = new FunctionBuilder();
+                builderConsumer.accept(builder);
+                int arity = builder.arity;
+                var executor = builder.executor;
+                return ((evaluator, args) -> {
+                    if (arity != -1 && args.size() != arity) {
+                        evaluator.error("Arity mismatched, expected " + arity + " arguments but got " + args.size());
+                        return NIL;
+                    }
+
+                    return executor.apply(evaluator, args);
+                });
+            }
+
+            public void vararg(boolean isVararg) {
+                this.arity = -1;
+            }
+
+            public void arity(int arity) {
+                if (arity < 0) {
+                    throw new IllegalArgumentException("Arity " + arity + "out of range [0;[");
+                }
+                this.arity = arity;
+            }
+
+            public void execute(BiFunction<Evaluator, List<Value>, Value> executor) {
+                this.executor = executor;
+            }
+
+            public void executArgless(java.util.function.Function<Evaluator, Value> executor) {
+                this.executor = ((evaluator, values) -> executor.apply(evaluator));
+            }
+
+            public void executSimple(java.util.function.Function<List<Value>, Value> executor) {
+                this.executor = ((evaluator, values) -> executor.apply(values));
+            }
+        }
+    }
+}

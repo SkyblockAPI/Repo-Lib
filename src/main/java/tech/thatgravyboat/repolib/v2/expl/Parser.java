@@ -1,6 +1,9 @@
 package tech.thatgravyboat.repolib.v2.expl;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Set;
 
 public final class Parser {
     private final String source;
@@ -84,6 +87,15 @@ public final class Parser {
                 case IF -> current = ifExpr();
                 case LITERAL_STR -> {
                     var span = lexer.span();
+
+                    if (lexer.peek() == Lexer.Token.IN) {
+                        lexer.next();
+                        lexer.next();
+                        var access = memberAccess();
+                        current = new Expression.In(access, span.substring(1, span.length() - 1));
+                        break;
+                    }
+
                     current = new Expression.Str(span.substring(1, span.length() - 1));
                 }
                 case LITERAL_NUM -> {
@@ -165,7 +177,8 @@ public final class Parser {
         var access = new Expression.Access(null, lexer.span());
 
         Lexer.Token next;
-        loop: while ((next = lexer.peek()) != null) {
+        loop:
+        while ((next = lexer.peek()) != null) {
             switch (next) {
                 case Lexer.Token.IDENT -> {
                     lexer.next();

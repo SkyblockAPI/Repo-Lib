@@ -3,6 +3,7 @@ package tech.thatgravyboat.repolib.v2.expl;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
 import java.util.List;
 import java.util.Map;
@@ -118,4 +119,6 @@ public sealed interface Expression {
     }
 
 
+    record In(Access holder, String field) implements Expression {
+    }
 }
