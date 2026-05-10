@@ -1,6 +1,7 @@
 package tech.thatgravyboat.repolib.v2;
 
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -9,7 +10,7 @@ import java.util.stream.Collectors;
 
 public sealed interface Expression {
 
-    static Expression parseOrThrow(String source) {
+    static ParsedFile parseOrThrow(String source) {
         return new Parser(source).parse();
     }
 
@@ -54,7 +55,7 @@ public sealed interface Expression {
         }
 
         @Override
-        public String toString() {
+        public @NotNull String toString() {
             return switch (op) {
                 case NEGATE -> "-" + rhs;
                 case NOT -> "!" + rhs;
@@ -65,7 +66,7 @@ public sealed interface Expression {
     record If(Expression cond, Expression thenExpr, @Nullable Expression elseExpr) implements Expression {
 
         @Override
-        public String toString() {
+        public @NotNull String toString() {
             if (elseExpr == null) {
                 return String.format("if (%s) %s", cond, thenExpr);
             }
@@ -76,7 +77,7 @@ public sealed interface Expression {
     record Access(@Nullable Expression lhs, String field) implements Expression {
 
         @Override
-        public String toString() {
+        public @NotNull String toString() {
             return lhs + "." + field;
         }
     }
@@ -84,7 +85,7 @@ public sealed interface Expression {
     record Call(Expression lhs, List<Expression> args) implements Expression {
 
         @Override
-        public String toString() {
+        public @NotNull String toString() {
             return lhs + "(" + args.stream().map(Expression::toString).collect(Collectors.joining(", ")) + ")";
         }
     }
@@ -92,7 +93,7 @@ public sealed interface Expression {
     record Assign(Expression.Access lhs, Expression value) implements Expression {
 
         @Override
-        public String toString() {
+        public @NotNull String toString() {
             return lhs + " = " + value;
         }
     }
@@ -100,7 +101,7 @@ public sealed interface Expression {
     record Block(List<Expression> exprs) implements Expression {
 
         @Override
-        public String toString() {
+        public @NotNull String toString() {
             if (exprs.isEmpty()) {
                 return "{}";
             }

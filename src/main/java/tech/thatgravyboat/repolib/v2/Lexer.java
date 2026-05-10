@@ -16,11 +16,19 @@ final class Lexer {
         cursor = start; // Reset to where it was before the call to next.
         return result;
     }
+
     public void expect(Token type) {
         var next = next();
         if (next != type)
             throw new IllegalStateException("Expected " + type + " but got " + next);
     }
+
+    public void expect(Token type, String span) {
+        expect(type);
+        if (!span().equals(span))
+            throw new IllegalStateException("Expected " + span + " but got " + span());
+    }
+
     public @Nullable Token next() {
         start = cursor;
 
@@ -110,11 +118,18 @@ final class Lexer {
     }
 
     private void consumeWhitespace() {
+        boolean inComment = false;
         while (true) {
-            if (Character.isWhitespace(peek0())) {
+            if (peek0() == '/' && source.length() > cursor + 1 && source.charAt(cursor + 1) == '/') {
+                inComment = true;
+                advance();
+            } else if (inComment && peek0() == '\n') {
+                inComment = false;
+                advance();
+            } else if (inComment || Character.isWhitespace(peek0())) {
                 advance();
             } else {
-                return;
+                break;
             }
         }
     }

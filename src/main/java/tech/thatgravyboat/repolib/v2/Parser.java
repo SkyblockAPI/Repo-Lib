@@ -11,19 +11,17 @@ public final class Parser {
         this.lexer = new Lexer(source);
     }
 
-    public Expression parse() {
-        List<Expression> expressions = new ArrayList<>();
+    public ParsedFile parse() {
+        Expression meta;
+        Expression script;
 
-        while (this.lexer.peek() != null) {
-            expressions.add(parseUntil(Lexer.Token.SEMICOLON));
-            lexer.expect(Lexer.Token.SEMICOLON);
-        }
+        lexer.expect(Lexer.Token.IDENT, "meta");
+        meta = this.block();
 
-        if (expressions.size() == 1) {
-            return expressions.getFirst();
-        } else {
-            return new Expression.Block(expressions);
-        }
+        lexer.expect(Lexer.Token.IDENT, "script");
+        script = this.block();
+
+        return new ParsedFile(meta, script);
     }
 
     public Expression parseUntil(Lexer.Token... end) {
@@ -129,19 +127,23 @@ public final class Parser {
 
     private Expression scopeOrSingleStatement() {
         if (lexer.peek() == Lexer.Token.L_BRACE) {
-            lexer.next();
-
-            var block = new Expression.Block(new ArrayList<>());
-
-            while (lexer.peek() != Lexer.Token.R_BRACE) {
-                block.exprs().add(parseUntil(Lexer.Token.SEMICOLON));
-                lexer.expect(Lexer.Token.SEMICOLON);
-            }
-            lexer.expect(Lexer.Token.R_BRACE);
-
-            return block;
+            return block();
         }
         return parseUntil(Lexer.Token.SEMICOLON);
+    }
+
+    private Expression.Block block() {
+        lexer.expect(Lexer.Token.L_BRACE);
+
+        var block = new Expression.Block(new ArrayList<>());
+
+        while (lexer.peek() != Lexer.Token.R_BRACE) {
+            block.exprs().add(parseUntil(Lexer.Token.SEMICOLON));
+            lexer.expect(Lexer.Token.SEMICOLON);
+        }
+        lexer.expect(Lexer.Token.R_BRACE);
+
+        return block;
     }
 
     private Expression.Access memberAccess() {

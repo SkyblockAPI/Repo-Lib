@@ -42,7 +42,7 @@ public class Evaluator {
         for (var entry : struct.fields().entrySet()) {
             fields.put(entry.getKey(), eval(entry.getValue()));
         }
-        return new Value.Struct(fields);
+        return new Value.MutableStruct(fields);
     }
 
     private Boolean asBool(Value value) {
