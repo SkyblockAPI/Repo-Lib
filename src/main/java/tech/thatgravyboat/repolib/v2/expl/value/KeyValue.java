@@ -9,8 +9,8 @@ non-sealed public interface KeyValue extends Value, Iterable<Map.Entry<String, V
 
     boolean contains(String field);
 
-    interface Forwarding extends tech.thatgravyboat.repolib.v2.expl.value.KeyValue {
-        tech.thatgravyboat.repolib.v2.expl.value.KeyValue delegate();
+    interface Forwarding extends KeyValue {
+        KeyValue delegate();
 
         @Override
         default Value get(String field) {
@@ -28,11 +28,32 @@ non-sealed public interface KeyValue extends Value, Iterable<Map.Entry<String, V
         }
     }
 
-    interface Mutable extends tech.thatgravyboat.repolib.v2.expl.value.KeyValue {
+    interface Mutable extends KeyValue {
+        interface Forwarding extends KeyValue.Forwarding, KeyValue.Mutable {
+
+            @Override
+            KeyValue.Mutable delegate();
+
+            @Override
+            default KeyValue toImmutable() {
+                return delegate().toImmutable();
+            }
+
+            @Override
+            default KeyValue toFullyImmutable() {
+                return delegate().toFullyImmutable();
+            }
+
+            @Override
+            default void set(String field, Value value) {
+                delegate().set(field, value);
+            }
+        }
+
         void set(String field, Value value);
 
-        tech.thatgravyboat.repolib.v2.expl.value.KeyValue toImmutable();
+        KeyValue toImmutable();
 
-        tech.thatgravyboat.repolib.v2.expl.value.KeyValue toFullyImmutable();
+        KeyValue toFullyImmutable();
     }
 }

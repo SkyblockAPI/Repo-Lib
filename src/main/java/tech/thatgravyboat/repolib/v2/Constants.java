@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.value.Bool;
 import tech.thatgravyboat.repolib.v2.expl.value.Function;
+import tech.thatgravyboat.repolib.v2.expl.value.ImmutableStruct;
 import tech.thatgravyboat.repolib.v2.expl.value.KeyValue;
 import tech.thatgravyboat.repolib.v2.expl.value.MutableStruct;
 import tech.thatgravyboat.repolib.v2.expl.value.Num;
@@ -19,7 +20,7 @@ import java.util.function.Consumer;
 
 public record Constants(Map<String, Value> map) implements KeyValue {
     public Constants(Consumer<Builder> builder) {
-        this(Builder.create(builder));
+        this(Builder.create(builder, ImmutableStruct::new));
     }
 
     @Override
@@ -28,7 +29,7 @@ public record Constants(Map<String, Value> map) implements KeyValue {
     }
 
     @Override
-    public Mutable toMutable() {
+    public MutableStruct toMutable() {
         return new MutableStruct(new HashMap<>(map));
     }
 
@@ -42,14 +43,20 @@ public record Constants(Map<String, Value> map) implements KeyValue {
         return map.containsKey(field);
     }
 
+    public static KeyValue.Mutable mutable(Consumer<Builder> builder) {
+        return new MutableStruct(Builder.create(builder, MutableStruct::new));
+    }
+
     public static class Builder {
-        private Map<String, Value> map = new HashMap<>();
+        private java.util.function.Function<Map<String, Value>, KeyValue> struct;
+        private final Map<String, Value> map = new HashMap<>();
 
         public Builder() {
         }
 
-        private static Map<String, Value> create(Consumer<Builder> builderConsumer) {
+        private static Map<String, Value> create(Consumer<Builder> builderConsumer, java.util.function.Function<Map<String, Value>, KeyValue> struct) {
             var builder = new Builder();
+            builder.struct = struct;
             builderConsumer.accept(builder);
             return builder.map;
         }
@@ -80,6 +87,18 @@ public record Constants(Map<String, Value> map) implements KeyValue {
 
         public void function(String name, Consumer<FunctionBuilder> function) {
             field(name, FunctionBuilder.create(function));
+        }
+
+        public void struct(String name, Consumer<Constants.Builder> builder) {
+            field(name, struct.apply(Builder.create(builder, struct)));
+        }
+
+        public void mutableStruct(String name, Consumer<Constants.Builder> builder) {
+            field(name, struct.apply(Builder.create(builder, MutableStruct::new)));
+        }
+
+        public void immutableStruct(String name, Consumer<Constants.Builder> builder) {
+            field(name, struct.apply(Builder.create(builder, ImmutableStruct::new)));
         }
 
         private void field(String name, Value value) {

@@ -1,6 +1,6 @@
 package tech.thatgravyboat.repolib.v2;
 
-import tech.thatgravyboat.repolib.v2.expl.Expression;
+import tech.thatgravyboat.repolib.v2.expl.expression.Expression;
 import tech.thatgravyboat.repolib.v2.expl.StackFile;
 
 import java.io.IOException;

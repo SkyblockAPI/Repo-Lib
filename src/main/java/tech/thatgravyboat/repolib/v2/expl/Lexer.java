@@ -123,12 +123,15 @@ final class Lexer {
         while (true) {
             if (peek0() == '#') {
                 inComment = true;
+                start++;
                 advance();
             } else if (inComment && peek0() == '\n') {
                 inComment = false;
+                start++;
                 advance();
             } else if (inComment || Character.isWhitespace(peek0())) {
                 advance();
+                start++;
             } else {
                 break;
             }

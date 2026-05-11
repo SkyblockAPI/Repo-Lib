@@ -11,13 +11,14 @@ public class Main {
         for (var error : errors) {
             System.out.println("Failed to load file " + error.file() + " due to " + error.reason());
         }
-        var file = repoLoader.getStackFile("pickobulus");
+        var file = repoLoader.getStackFile("items/basic_fishing_net");
 
         var constants = new RepoConstants(repoLoader);
         var evaluator = file.createEvaluator(
                 constants,
                 new Constants(builder -> {
-                    builder.constant("smth", "test");
+                    builder.constant("rarity_upgrades", 1);
+                    builder.constant("baseStatBoostPercentage", 50);
                 })
         );
         var result = file.evaluateScript(evaluator);

@@ -26,7 +26,10 @@ public final class RepoConstants implements KeyValue.Forwarding {
                         evaluator.error("Requested include " + value + " doesn't exist!");
                         return NIL;
                     }
-                    evaluator.evaluate(requested);
+                    evaluator.pushPop(value, () -> {
+                        evaluator.evaluate(requested);
+                        return NIL;
+                    });
                 } else {
                     evaluator.error("Expected first argument to be a arg, got " + arg.toString());
                 }

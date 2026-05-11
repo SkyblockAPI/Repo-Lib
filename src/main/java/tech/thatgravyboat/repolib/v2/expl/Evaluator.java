@@ -1,5 +1,15 @@
 package tech.thatgravyboat.repolib.v2.expl;
 
+import tech.thatgravyboat.repolib.v2.expl.expression.Access;
+import tech.thatgravyboat.repolib.v2.expl.expression.Assign;
+import tech.thatgravyboat.repolib.v2.expl.expression.Block;
+import tech.thatgravyboat.repolib.v2.expl.expression.Call;
+import tech.thatgravyboat.repolib.v2.expl.expression.Expression;
+import tech.thatgravyboat.repolib.v2.expl.expression.If;
+import tech.thatgravyboat.repolib.v2.expl.expression.In;
+import tech.thatgravyboat.repolib.v2.expl.expression.SelfEvaluatingExpression;
+import tech.thatgravyboat.repolib.v2.expl.expression.Struct;
+import tech.thatgravyboat.repolib.v2.expl.expression.Unary;
 import tech.thatgravyboat.repolib.v2.expl.value.Bool;
 import tech.thatgravyboat.repolib.v2.expl.value.Function;
 import tech.thatgravyboat.repolib.v2.expl.value.KeyValue;
@@ -34,11 +44,12 @@ public class Evaluator {
     private String stack() {
         var stringBuilder = new StringBuilder();
         for (var s : this.stack) {
+            stringBuilder.append('[');
             stringBuilder.append(s);
-            stringBuilder.append(".");
+            stringBuilder.append(']');
         }
 
-        return stringBuilder.substring(0, stringBuilder.length() - 1);
+        return stringBuilder.toString();
     }
 
     public Evaluator(KeyValue defaults) {
@@ -56,24 +67,38 @@ public class Evaluator {
         debugs.add(new ContentInfo(this.stack(), message));
     }
 
+    public String getStringOrNull(Value value) {
+        if (value instanceof Str(String literal)) {
+            return literal;
+        }
+        return null;
+    }
+    public double getNumber(Value value, double defaultValue) {
+        if (value instanceof Num(double literal)) {
+            return literal;
+        }
+        return defaultValue;
+    }
+
     private Value eval(Expression expression) {
         return switch (expression) {
-            case Expression.Access access -> evalAccess(access);
-            case Expression.Assign assign -> evalAssign(assign);
-            case Expression.Block block -> evalBlock(block);
-            case Expression.Call call -> evalCall(call);
-            case Expression.If anIf -> evalIf(anIf);
-            case Expression.In in -> evalIn(in);
-            case Expression.Num num -> new Num(num.value());
-            case Expression.Str str -> new Str(str.value());
-            case Expression.Bool bool -> new Bool(bool.value());
-            case Expression.Struct struct -> evalStruct(struct);
-            case Expression.Unary unary -> evalUnary(unary);
-            case Expression.SelfEvaluatingExpression self -> self.evaluate(this);
+            case Access access -> evalAccess(access);
+            case Assign assign -> evalAssign(assign);
+            case Block block -> evalBlock(block);
+            case Call call -> evalCall(call);
+            case If anIf -> evalIf(anIf);
+            case In in -> evalIn(in);
+            case tech.thatgravyboat.repolib.v2.expl.expression.Num num -> new Num(num.value());
+            case tech.thatgravyboat.repolib.v2.expl.expression.Str str -> new Str(str.value());
+            case tech.thatgravyboat.repolib.v2.expl.expression.Bool bool -> new Bool(bool.value());
+            case Struct struct -> evalStruct(struct);
+            case Unary unary -> evalUnary(unary);
+            case SelfEvaluatingExpression self -> self.evaluate(this);
+            case null -> Value.NIL;
         };
     }
 
-    private Value evalIn(Expression.In in) {
+    private Value evalIn(In in) {
         var holder = evalAccess(in.holder());
         if (holder instanceof KeyValue keyValue) {
             return new Bool(keyValue.contains(in.field()));
@@ -84,11 +109,11 @@ public class Evaluator {
         return Bool.NIL;
     }
 
-    private Value evalUnary(Expression.Unary unary) { // TODO
+    private Value evalUnary(Unary unary) { // TODO
         return Value.NIL;
     }
 
-    private Value evalStruct(Expression.Struct struct) {
+    private Value evalStruct(Struct struct) {
         var fields = new HashMap<String, Value>();
         for (var entry : struct.fields().entrySet()) {
             fields.put(entry.getKey(), eval(entry.getValue()));
@@ -109,7 +134,7 @@ public class Evaluator {
         };
     }
 
-    private Value evalIf(Expression.If anIf) {
+    private Value evalIf(If anIf) {
         var condition = asBool(eval(anIf.cond()));
 
         if (condition == null) {
@@ -123,7 +148,7 @@ public class Evaluator {
         return Value.NIL;
     }
 
-    private Value evalCall(Expression.Call call) {
+    private Value evalCall(Call call) {
         var left = eval(call.lhs());
         if (left instanceof Function function) {
             var args = new ArrayList<Value>();
@@ -134,11 +159,11 @@ public class Evaluator {
             return pushPop(call.lhs().toString(), () -> function.apply(this, args));
         }
 
-        error("Unable to call invoke on non function type " + left);
+        error("Unable to call invoke on non function type " + call.lhs());
         return Value.NIL;
     }
 
-    private Value evalBlock(Expression.Block block) {
+    private Value evalBlock(Block block) {
         Value last = Value.NIL;
         for (var expr : block.exprs()) {
             last = eval(expr);
@@ -146,7 +171,7 @@ public class Evaluator {
         return last;
     }
 
-    private Value evalAssign(Expression.Assign assign) {
+    private Value evalAssign(Assign assign) {
         var access = assign.lhs();
         final Value field;
         if (access.lhs() == null) {
@@ -169,7 +194,7 @@ public class Evaluator {
     }
 
 
-    private Value evalAccess(Expression.Access expression) {
+    private Value evalAccess(Access expression) {
         var lhs = expression.lhs();
         if (lhs == null) {
             return defaults.get(expression.field());
