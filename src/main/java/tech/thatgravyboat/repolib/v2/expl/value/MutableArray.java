@@ -1,7 +1,12 @@
 package tech.thatgravyboat.repolib.v2.expl.value;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Function;
 
 public record MutableArray(
         List<Value> entries,
@@ -10,17 +15,26 @@ public record MutableArray(
     public static MutableArray create(List<Value> entries, Struct prototype) {
         return new MutableArray(entries, Array.createPrototype(entries, true, prototype));
     }
+    public static MutableArray create(Function<List<Value>, Struct> prototype) {
+        List<Value> entries = new ArrayList<>();
+        return new MutableArray(entries, Array.createPrototype(entries, true, prototype.apply(entries)));
+    }
+    public static MutableArray create(Struct prototype) {
+        List<Value> entries = new ArrayList<>();
+        return new MutableArray(entries, Array.createPrototype(entries, true, prototype));
+    }
+
     public static MutableArray create(List<Value> entries) {
         return new MutableArray(entries, Array.createPrototype(entries, true, ImmutableStruct.EMPTY));
     }
 
+    public static MutableArray create() {
+        return create(new ArrayList<>());
+    }
+
     @Override
     public Value get(int index) {
-        if ((index < 0 && -index > entries.size()) || (index >= entries.size())) {
-            return Value.NIL;
-        }
-
-        return entries.get(Math.floorMod(index, entries.size()));
+        return Array.get(entries, index);
     }
 
     @Override
@@ -49,5 +63,10 @@ public record MutableArray(
     @Override
     public KeyValue.Mutable delegate() {
         return prototype;
+    }
+
+    @Override
+    public @NotNull Iterator<Value> iterator() {
+        return this.entries.iterator();
     }
 }

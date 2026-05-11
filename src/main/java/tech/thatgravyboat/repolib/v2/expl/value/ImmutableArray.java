@@ -3,6 +3,7 @@ package tech.thatgravyboat.repolib.v2.expl.value;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public record ImmutableArray(
@@ -15,7 +16,7 @@ public record ImmutableArray(
 
     @Override
     public Value get(int index) {
-        return entries.size() < index ? Value.NIL : entries.get(index);
+        return Array.get(entries, index);
     }
 
     @Override
@@ -31,5 +32,10 @@ public record ImmutableArray(
     @Override
     public @NotNull String toString() {
         return entries.toString();
+    }
+
+    @Override
+    public @NotNull Iterator<Value> iterator() {
+        return entries.iterator();
     }
 }

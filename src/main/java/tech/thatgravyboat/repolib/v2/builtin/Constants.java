@@ -1,4 +1,4 @@
-package tech.thatgravyboat.repolib.v2;
+package tech.thatgravyboat.repolib.v2.builtin;
 
 import org.jetbrains.annotations.NotNull;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
@@ -7,7 +7,6 @@ import tech.thatgravyboat.repolib.v2.expl.value.Function;
 import tech.thatgravyboat.repolib.v2.expl.value.ImmutableStruct;
 import tech.thatgravyboat.repolib.v2.expl.value.KeyValue;
 import tech.thatgravyboat.repolib.v2.expl.value.MutableStruct;
-import tech.thatgravyboat.repolib.v2.expl.value.Nil;
 import tech.thatgravyboat.repolib.v2.expl.value.Num;
 import tech.thatgravyboat.repolib.v2.expl.value.Str;
 import tech.thatgravyboat.repolib.v2.expl.value.Struct;
@@ -110,16 +109,18 @@ public record Constants(Map<String, Value> map) implements Struct {
         }
 
         public static class FunctionBuilder {
-            private int arity = -1;
+            private int arity = 0;
+            private boolean vararg = false;
             private BiFunction<Evaluator, List<Value>, Value> executor;
 
             public static Function create(Consumer<FunctionBuilder> builderConsumer) {
                 var builder = new FunctionBuilder();
                 builderConsumer.accept(builder);
                 int arity = builder.arity;
+                boolean vararg = builder.vararg;
                 var executor = builder.executor;
                 return ((evaluator, args) -> {
-                    if (arity != -1 && args.size() != arity) {
+                    if ((vararg && args.size() < arity) || (!vararg && args.size() != arity)) {
                         evaluator.error("Arity mismatched, expected " + arity + " arguments but got " + args.size());
                         return NIL;
                     }
@@ -129,7 +130,7 @@ public record Constants(Map<String, Value> map) implements Struct {
             }
 
             public void vararg(boolean isVararg) {
-                this.arity = -1;
+                this.vararg = isVararg;
             }
 
             public void arity(int arity) {

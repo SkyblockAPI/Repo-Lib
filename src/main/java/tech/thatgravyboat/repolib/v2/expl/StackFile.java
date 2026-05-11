@@ -1,14 +1,17 @@
 package tech.thatgravyboat.repolib.v2.expl;
 
-import tech.thatgravyboat.repolib.v2.Constants;
 import tech.thatgravyboat.repolib.v2.RarityFunctions;
+import tech.thatgravyboat.repolib.v2.builtin.Constants;
 import tech.thatgravyboat.repolib.v2.expl.expression.Expression;
 import tech.thatgravyboat.repolib.v2.expl.expression.SelfEvaluatingExpression;
 import tech.thatgravyboat.repolib.v2.expl.value.ImmutableStruct;
 import tech.thatgravyboat.repolib.v2.expl.value.KeyValue;
+import tech.thatgravyboat.repolib.v2.expl.value.MutableArray;
 import tech.thatgravyboat.repolib.v2.expl.value.MutableStruct;
 import tech.thatgravyboat.repolib.v2.expl.value.Struct;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class StackFile implements SelfEvaluatingExpression {
 
@@ -42,47 +45,48 @@ public final class StackFile implements SelfEvaluatingExpression {
             inputs.set(entry.getKey(), entry.getValue());
         }
 
-        inputs.set("stack", Constants.mutable((builder) -> {
-            builder.field("rarity", RarityFunctions.STACK_RARITY);
+        inputs.set(
+                "stack", Constants.mutable((builder) -> {
+                    builder.field("rarity", RarityFunctions.STACK_RARITY);
 
-            builder.immutableStruct("lore", (lore) -> {
-                lore.function("empty", (function) -> {
-                    function.vararg(true);
-                    function.execute(((evaluator, values) -> {
+                    builder.field(
+                            "lore", MutableArray.create(entries -> new Constants(lore -> {
+                                var section = new AtomicBoolean();
 
-                        return Value.NIL;
-                    }));
-                });
-                lore.function("beginSection", (function) -> {
-                    function.vararg(true);
-                    function.execute(((evaluator, values) -> {
+                                lore.function(
+                                        "empty", (function) -> {
+                                            function.vararg(true);
+                                            function.execute(((evaluator, values) -> {
+                                                entries.add(ImmutableStruct.EMPTY);
 
-                        return Value.NIL;
-                    }));
-                });
-                lore.function("endSection", (function) -> {
-                    function.vararg(true);
-                    function.execute(((evaluator, values) -> {
-
-                        return Value.NIL;
-                    }));
-                });
-                lore.function("clear", (function) -> {
-                    function.vararg(true);
-                    function.execute(((evaluator, values) -> {
-
-                        return Value.NIL;
-                    }));
-                });
-                lore.function("add", (function) -> {
-                    function.vararg(true);
-                    function.execute(((evaluator, values) -> {
-
-                        return Value.NIL;
-                    }));
-                });
-            });
-        }).toMutable());
+                                                return Value.NIL;
+                                            }));
+                                        });
+                                lore.function(
+                                        "beginSection", (function) -> function.runs(() -> {
+                                            if (section.get()) {
+                                                entries.add(ImmutableStruct.EMPTY);
+                                            }
+                                            section.set(false);
+                                        }));
+                                lore.function(
+                                        "endSection", (function) -> function.runs(() -> {
+                                            if (section.get()) {
+                                                entries.add(ImmutableStruct.EMPTY);
+                                            }
+                                            section.set(false);
+                                        }));
+                                lore.function("clear", (function) -> function.runs(entries::clear));
+                                lore.function(
+                                        "add", function -> {
+                                            function.arity(1);
+                                            function.executeSimpleVoid(args -> {
+                                                section.set(true);
+                                                entries.add(args.getFirst());
+                                            });
+                                        });
+                            })));
+                }).toMutable());
         inputs.set("data", data);
         inputs.set("meta", this.meta);
 

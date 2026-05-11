@@ -1,6 +1,6 @@
 package tech.thatgravyboat.repolib.v2.expl;
 
-import tech.thatgravyboat.repolib.v2.Constants;
+import tech.thatgravyboat.repolib.v2.builtin.Constants;
 import tech.thatgravyboat.repolib.v2.expl.value.Bool;
 import tech.thatgravyboat.repolib.v2.expl.value.MutableStruct;
 import tech.thatgravyboat.repolib.v2.expl.value.Num;

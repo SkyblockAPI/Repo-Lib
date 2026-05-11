@@ -1,5 +1,7 @@
 package tech.thatgravyboat.repolib.v2;
 
+import tech.thatgravyboat.repolib.v2.builtin.Constants;
+
 import java.io.IOException;
 import java.nio.file.Path;
 

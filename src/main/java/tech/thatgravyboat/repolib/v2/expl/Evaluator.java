@@ -53,6 +53,10 @@ public class Evaluator {
         eval(expression);
     }
 
+    public void panic(String message) {
+        throw new Panic(message);
+    }
+
     public void error(String message) {
         errors.add(new ContentInfo(this.stack(), message));
     }
