@@ -6,12 +6,24 @@ import java.util.LinkedList;
 import java.util.List;
 
 public non-sealed interface Array extends Value, KeyValue, Iterable<Value> {
+    public static String prettyPrint(Array array, String prefix) {
+        var values = getValues(array);
+        var stringBuilder = new StringBuilder();
+
+        stringBuilder.append("[").append("\n");
+        for (var value : values) {
+            stringBuilder.append(prefix).append(" ").append(Value.prettyPrint(value, prefix)).append(",\n");
+        }
+        stringBuilder.append(prefix).append("]");
+
+        return stringBuilder.toString();
+    }
 
     static List<Value> flatten(List<Value> values) {
         List<Value> list = new LinkedList<>();
         for (var value : values) {
             if (value instanceof Array array) {
-                list.addAll(flatten(array));
+                list.addAll(getValues(array));
             } else {
                 list.add(value);
             }
@@ -19,10 +31,14 @@ public non-sealed interface Array extends Value, KeyValue, Iterable<Value> {
         return list;
     }
 
-    static List<Value> flatten(Array array) {
+    static List<Value> getValues(Array array) {
         List<Value> list = new LinkedList<>();
         array.forEach(list::add);
-        return flatten(list);
+        return list;
+    }
+
+    static List<Value> flatten(Array array) {
+        return flatten(getValues(array));
     }
 
     static Value get(List<Value> entries, int index) {
@@ -53,6 +69,13 @@ public non-sealed interface Array extends Value, KeyValue, Iterable<Value> {
                             function.arity(1);
                             function.executeSimpleVoid(args -> entries.add(args.getFirst()));
                         });
+
+                builder.function("addAll", function -> {
+                    function.arity(1);
+                    function.executeVoid((evaluator, args) -> {
+                        entries.addAll(Array.flatten(args));
+                    });
+                });
 
                 builder.function(
                         "set", function -> {

@@ -3,17 +3,17 @@ package tech.thatgravyboat.repolib.v2;
 import java.util.Optional;
 
 public enum SkyblockRarity {
-    COMMON("WHITE"),
-    UNCOMMON("GREEN"),
-    RARE("BLUE"),
-    EPIC("DARK_PURPLE"),
-    LEGENDARY("GOLD"),
-    MYTHIC("LIGHT_PURPLE"),
-    DIVINE("AQUA"),
-    ULTIMATE("DARK_RED"),
-    SPECIAL("RED"),
-    VERY_SPECIAL("RED"),
-    ADMIN("RED"),
+    COMMON("white"),
+    UNCOMMON("green"),
+    RARE("blue"),
+    EPIC("dark_purple"),
+    LEGENDARY("gold"),
+    MYTHIC("light_purple"),
+    DIVINE("aqua"),
+    ULTIMATE("dark_red"),
+    SPECIAL("red"),
+    VERY_SPECIAL("red"),
+    ADMIN("red"),
     ;
 
     private final String color;

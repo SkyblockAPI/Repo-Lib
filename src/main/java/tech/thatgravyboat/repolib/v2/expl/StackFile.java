@@ -1,6 +1,6 @@
 package tech.thatgravyboat.repolib.v2.expl;
 
-import tech.thatgravyboat.repolib.v2.RarityFunctions;
+import tech.thatgravyboat.repolib.v2.builtin.BuiltinRarities;
 import tech.thatgravyboat.repolib.v2.builtin.Constants;
 import tech.thatgravyboat.repolib.v2.expl.expression.Expression;
 import tech.thatgravyboat.repolib.v2.expl.expression.SelfEvaluatingExpression;
@@ -47,8 +47,6 @@ public final class StackFile implements SelfEvaluatingExpression {
 
         inputs.set(
                 "stack", Constants.mutable((builder) -> {
-                    builder.field("rarity", RarityFunctions.STACK_RARITY);
-
                     builder.field(
                             "lore", MutableArray.create(entries -> new Constants(lore -> {
                                 var section = new AtomicBoolean();
@@ -93,10 +91,10 @@ public final class StackFile implements SelfEvaluatingExpression {
         return new Evaluator(inputs);
     }
 
-    public KeyValue evaluateScript(Evaluator evaluator) {
+    public Struct evaluateScript(Evaluator evaluator) {
         evaluator.evaluate(script);
 
-        return evaluator.defaults.get("stack") instanceof KeyValue value ? value : ImmutableStruct.EMPTY;
+        return evaluator.defaults.get("stack") instanceof Struct value ? value : ImmutableStruct.EMPTY;
     }
 
     public KeyValue evaluate(Struct overrides) {

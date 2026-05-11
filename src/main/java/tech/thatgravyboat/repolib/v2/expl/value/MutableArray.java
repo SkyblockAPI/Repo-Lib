@@ -69,4 +69,9 @@ public record MutableArray(
     public @NotNull Iterator<Value> iterator() {
         return this.entries.iterator();
     }
+
+    @Override
+    public @NotNull String toString() {
+        return entries.toString();
+    }
 }

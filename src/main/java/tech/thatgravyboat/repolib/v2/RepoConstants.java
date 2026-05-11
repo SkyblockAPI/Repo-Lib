@@ -2,6 +2,8 @@ package tech.thatgravyboat.repolib.v2;
 
 import tech.thatgravyboat.repolib.v2.builtin.BuiltinMath;
 import tech.thatgravyboat.repolib.v2.builtin.BuiltinObjects;
+import tech.thatgravyboat.repolib.v2.builtin.BuiltinRarities;
+import tech.thatgravyboat.repolib.v2.builtin.BuiltinString;
 import tech.thatgravyboat.repolib.v2.builtin.Constants;
 import tech.thatgravyboat.repolib.v2.expl.value.Str;
 import tech.thatgravyboat.repolib.v2.expl.value.Struct;
@@ -11,6 +13,8 @@ public final class RepoConstants implements Struct.Forwarding {
     private final Constants constants = new Constants((builder) -> {
         builder.field("Math", BuiltinMath.MATH);
         builder.field("Objects", BuiltinObjects.OBJECTS);
+        builder.field("Rarity", BuiltinRarities.RARITY);
+        builder.field("String", BuiltinString.STRING);
 
         builder.function("include", (function) -> {
             function.arity(1);

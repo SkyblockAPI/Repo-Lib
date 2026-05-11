@@ -83,6 +83,13 @@ public class Evaluator {
         return null;
     }
 
+    public String getStringOrThrow(Value value) {
+        if (value instanceof Str(String literal)) {
+            return literal;
+        }
+        throw new Panic("Failed to convert " + value + " into a string");
+    }
+
     public double getNumber(Value value, double defaultValue) {
         if (value instanceof Num(double literal)) {
             return literal;
