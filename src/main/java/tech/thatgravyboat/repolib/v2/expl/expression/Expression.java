@@ -5,7 +5,7 @@ import tech.thatgravyboat.repolib.v2.expl.Parser;
 import tech.thatgravyboat.repolib.v2.expl.StackFile;
 
 public sealed interface Expression
-        permits Access, Assign, Block, Bool, Call, If, In, Num, SelfEvaluatingExpression, Str, Struct, Unary {
+        permits Access, Assign, Block, Bool, Call, For, If, In, Num, SelfEvaluatingExpression, Str, Struct, Unary {
 
     static StackFile parseFileOrThrow(String source) {
         return new Parser(source).parseFile();

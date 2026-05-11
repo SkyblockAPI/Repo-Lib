@@ -1,16 +1,6 @@
 package tech.thatgravyboat.repolib.v2.expl;
 
-import tech.thatgravyboat.repolib.v2.expl.expression.Access;
-import tech.thatgravyboat.repolib.v2.expl.expression.Array;
-import tech.thatgravyboat.repolib.v2.expl.expression.Assign;
-import tech.thatgravyboat.repolib.v2.expl.expression.Block;
-import tech.thatgravyboat.repolib.v2.expl.expression.Call;
-import tech.thatgravyboat.repolib.v2.expl.expression.Expression;
-import tech.thatgravyboat.repolib.v2.expl.expression.If;
-import tech.thatgravyboat.repolib.v2.expl.expression.In;
-import tech.thatgravyboat.repolib.v2.expl.expression.SelfEvaluatingExpression;
-import tech.thatgravyboat.repolib.v2.expl.expression.Struct;
-import tech.thatgravyboat.repolib.v2.expl.expression.Unary;
+import tech.thatgravyboat.repolib.v2.expl.expression.*;
 import tech.thatgravyboat.repolib.v2.expl.value.Bool;
 import tech.thatgravyboat.repolib.v2.expl.value.Function;
 import tech.thatgravyboat.repolib.v2.expl.value.KeyValue;
@@ -28,6 +18,8 @@ import java.util.Objects;
 import java.util.function.Supplier;
 
 public class Evaluator {
+
+    private static final int MAX_ITERATIONS = Short.MAX_VALUE;
 
     public final KeyValue defaults;
     public final List<ContentInfo> debugs = new ArrayList<>();
@@ -64,6 +56,7 @@ public class Evaluator {
     public void error(String message) {
         errors.add(new ContentInfo(this.stack(), message));
     }
+
     public void debug(String message) {
         debugs.add(new ContentInfo(this.stack(), message));
     }
@@ -72,8 +65,7 @@ public class Evaluator {
         if (holder instanceof KeyValue kv) {
             return kv.get(field);
         }
-        error("Unable to access property " + field + " of non key/value " + holder);
-        return Value.NIL;
+        throw new Panic("Unable to access property " + field + " of non key/value " + holder);
     }
 
     public Value getField(String field) {
@@ -94,30 +86,35 @@ public class Evaluator {
         return defaultValue;
     }
 
-    public Double getNumberOrNull(Value value) {
+    public double getNumberOrThrow(Value value) {
         if (value instanceof Num(double literal)) {
             return literal;
         }
-        error("Failed to convert " + value + " into a number");
-        return null;
+        throw new Panic("Failed to convert " + value + " into a number");
     }
 
     public Value eval(Expression expression) {
-        return switch (expression) {
-            case Access access -> evalAccess(access);
-            case Assign assign -> evalAssign(assign);
-            case Block block -> evalBlock(block);
-            case Call call -> evalCall(call);
-            case If anIf -> evalIf(anIf);
-            case In in -> evalIn(in);
-            case tech.thatgravyboat.repolib.v2.expl.expression.Num num -> new Num(num.value());
-            case tech.thatgravyboat.repolib.v2.expl.expression.Str str -> new Str(str.value());
-            case tech.thatgravyboat.repolib.v2.expl.expression.Bool bool -> new Bool(bool.value());
-            case Struct struct -> evalStruct(struct);
-            case Unary unary -> evalUnary(unary);
-            case SelfEvaluatingExpression self -> self.evaluate(this);
-            case null -> Value.NIL;
-        };
+        try {
+            return switch (expression) {
+                case Access access -> evalAccess(access);
+                case Assign assign -> evalAssign(assign);
+                case Block block -> evalBlock(block);
+                case Call call -> evalCall(call);
+                case If anIf -> evalIf(anIf);
+                case In in -> evalIn(in);
+                case For aFor -> evalFor(aFor);
+                case tech.thatgravyboat.repolib.v2.expl.expression.Num num -> new Num(num.value());
+                case tech.thatgravyboat.repolib.v2.expl.expression.Str str -> new Str(str.value());
+                case tech.thatgravyboat.repolib.v2.expl.expression.Bool bool -> new Bool(bool.value());
+                case Struct struct -> evalStruct(struct);
+                case Unary unary -> evalUnary(unary);
+                case SelfEvaluatingExpression self -> self.evaluate(this);
+                case null -> Value.NIL;
+            };
+        } catch (Panic e) {
+            error(e.getMessage());
+            return Value.NIL;
+        }
     }
 
     private Value evalIn(In in) {
@@ -127,8 +124,7 @@ public class Evaluator {
         } else if (holder instanceof Str(String value)) {
             return new Bool(value.contains(in.field()));
         }
-        error("Can't check if '" + in.field() + "' is in non string or keyvalue type " + holder);
-        return Bool.NIL;
+        throw new Panic("Can't check if '" + in.field() + "' is in non string or keyvalue type " + holder);
     }
 
     private Value evalUnary(Unary unary) { // TODO
@@ -143,28 +139,54 @@ public class Evaluator {
         return new MutableStruct(fields);
     }
 
-    private Boolean asBool(Value value) {
+    private boolean asBool(Value value) {
         return switch (value) {
             case Nil ignored -> false;
             case Bool bool -> bool.value();
             case Num num -> num.value() == 1.0d;
             case Str str -> !str.value().isEmpty();
-            default -> {
-                error("Unable to convert " + value + " into boolean.");
-                yield null;
-            }
+            default -> throw new Panic("Unable to convert " + value + " into boolean.");
         };
     }
 
     private Value evalIf(If anIf) {
         var condition = asBool(eval(anIf.cond()));
 
-        if (condition == null) {
-            return Value.NIL;
-        } else if (condition) {
+        if (condition) {
             return pushPop("if (" + anIf.cond() + ")", () -> eval(anIf.thenExpr()));
         } else if (anIf.elseExpr() != null) {
             return pushPop("if (" + anIf.cond() + ") { ... } else", () -> eval(anIf.elseExpr()));
+        }
+
+        return Value.NIL;
+    }
+
+    private Value evalFor(For aFor) {
+        var init = aFor.init();
+        if (init != null) {
+            eval(init);
+        }
+
+        int iteration = 0;
+
+        while (true) {
+            if (iteration > MAX_ITERATIONS) {
+                throw new Panic("For loop has iterated more than %d times, aborting to prevent infinite loop.".formatted(MAX_ITERATIONS));
+            }
+
+            var cond = aFor.cond();
+            if (cond != null && !asBool(eval(cond))) {
+                break;
+            }
+
+            pushPop("for (...; " + aFor.cond() + "; ...)", () -> eval(aFor.body()));
+
+            var incr = aFor.incr();
+            if (incr != null) {
+                eval(incr);
+            }
+
+            iteration++;
         }
 
         return Value.NIL;
@@ -181,8 +203,7 @@ public class Evaluator {
             return pushPop(call.lhs().toString(), () -> function.apply(this, args));
         }
 
-        error("Unable to call invoke on non function type " + call.lhs());
-        return Value.NIL;
+        throw new Panic("Unable to call invoke on non function type " + call.lhs());
     }
 
     private Value evalBlock(Block block) {
@@ -207,12 +228,10 @@ public class Evaluator {
             keyValue.set(access.field(), value);
             return value;
         } else if (field instanceof KeyValue) {
-            error("Unable to set property '" + access.field() + "' on immutable key/value " + access.lhs());
-            return Value.NIL;
+            throw new Panic("Unable to set property '" + access.field() + "' on immutable key/value " + access.lhs());
         }
 
-        error("Unable to set property '" + access.field() + "' on non key/value " + access.lhs());
-        return Value.NIL;
+        throw new Panic("Unable to set property '" + access.field() + "' on non key/value " + access.lhs());
     }
 
 
@@ -227,8 +246,13 @@ public class Evaluator {
             return Objects.requireNonNullElse(keyValue.get(expression.field()), Value.NIL);
         }
 
-        error("Unable to access property " + expression.field() + " of non key/value " + lhs);
-        return Value.NIL;
+        throw new Panic("Unable to access property " + expression.field() + " of non key/value " + lhs);
     }
 
+    public static class Panic extends RuntimeException {
+
+        public Panic(String message) {
+            super(message);
+        }
+    }
 }

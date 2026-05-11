@@ -55,7 +55,7 @@ public record Constants(Map<String, Value> map) implements Struct {
         private java.util.function.Function<Map<String, Value>, KeyValue> struct;
         private final Map<String, Value> map = new HashMap<>();
 
-        public Builder() {
+        private Builder() {
         }
 
         private static Map<String, Value> create(Consumer<Builder> builderConsumer, java.util.function.Function<Map<String, Value>, KeyValue> struct) {

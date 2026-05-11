@@ -96,6 +96,7 @@ final class Lexer {
             case "if" -> Token.IF;
             case "else" -> Token.ELSE;
             case "in" -> Token.IN;
+            case "for" -> Token.FOR;
             default -> Token.IDENT;
         };
     }
@@ -123,15 +124,12 @@ final class Lexer {
         while (true) {
             if (peek0() == '#') {
                 inComment = true;
-                start++;
                 advance();
             } else if (inComment && peek0() == '\n') {
                 inComment = false;
-                start++;
                 advance();
             } else if (inComment || Character.isWhitespace(peek0())) {
                 advance();
-                start++;
             } else {
                 break;
             }
@@ -189,6 +187,7 @@ final class Lexer {
         IF,
         ELSE,
         IN,
+        FOR,
 
         EQUALS,
 

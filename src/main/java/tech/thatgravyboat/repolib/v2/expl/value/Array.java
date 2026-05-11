@@ -23,12 +23,8 @@ public non-sealed interface Array extends Value, KeyValue {
                             "set", function -> {
                                 function.arity(2);
                                 function.executeVoid((evaluator, args) -> {
-                                    var index = evaluator.getNumberOrNull(args.getFirst());
-                                    if (index == null) {
-                                        return;
-                                    }
-                                    var value = args.get(1);
-                                    entries.set(index.intValue(), value);
+                                    var index = evaluator.getNumberOrThrow(args.getFirst());
+                                    entries.set((int) index, args.get(1));
                                 });
                             });
 

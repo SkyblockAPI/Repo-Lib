@@ -1,17 +1,6 @@
 package tech.thatgravyboat.repolib.v2.expl;
 
-import tech.thatgravyboat.repolib.v2.expl.expression.Access;
-import tech.thatgravyboat.repolib.v2.expl.expression.Array;
-import tech.thatgravyboat.repolib.v2.expl.expression.Assign;
-import tech.thatgravyboat.repolib.v2.expl.expression.Block;
-import tech.thatgravyboat.repolib.v2.expl.expression.Bool;
-import tech.thatgravyboat.repolib.v2.expl.expression.Call;
-import tech.thatgravyboat.repolib.v2.expl.expression.Expression;
-import tech.thatgravyboat.repolib.v2.expl.expression.If;
-import tech.thatgravyboat.repolib.v2.expl.expression.In;
-import tech.thatgravyboat.repolib.v2.expl.expression.Num;
-import tech.thatgravyboat.repolib.v2.expl.expression.Str;
-import tech.thatgravyboat.repolib.v2.expl.expression.Struct;
+import tech.thatgravyboat.repolib.v2.expl.expression.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -73,7 +62,7 @@ public final class Parser {
                         case Lexer.Token.EQUALS -> {
                             lexer.next();
 
-                            var value = parseUntil(Lexer.Token.SEMICOLON);
+                            var value = parseUntil(end);
 
                             current = new Assign(access, value);
                         }
@@ -92,12 +81,11 @@ public final class Parser {
                             lexer.expect(Lexer.Token.R_PARENTHESES);
                             current = new Call(access, args);
                         }
-                        case null, default -> {
-                            current = access;
-                        }
+                        case null, default -> current = access;
                     }
                 }
                 case IF -> current = ifExpr();
+                case FOR -> current = forExpr();
                 case LITERAL_STR -> {
                     var span = lexer.span();
 
@@ -182,6 +170,23 @@ public final class Parser {
         }
 
         return new If(cond, thenExpr, elseExpr);
+    }
+
+    private Expression forExpr() {
+        lexer.expect(Lexer.Token.L_PARENTHESES);
+
+        Expression init = parseUntil(Lexer.Token.SEMICOLON);
+        lexer.expect(Lexer.Token.SEMICOLON);
+
+        Expression cond = parseUntil(Lexer.Token.SEMICOLON);
+        lexer.expect(Lexer.Token.SEMICOLON);
+
+        Expression incr = parseUntil(Lexer.Token.R_PARENTHESES);
+        lexer.expect(Lexer.Token.R_PARENTHESES);
+
+        var body = scopeOrSingleStatement();
+
+        return new For(init, cond, incr, body);
     }
 
     private Expression scopeOrSingleStatement() {
