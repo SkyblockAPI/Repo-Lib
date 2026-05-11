@@ -54,7 +54,6 @@ public final class RepoConstants implements Struct.Forwarding {
         this.loader = loader;
     }
 
-
     @Override
     public Struct delegate() {
         return constants;

@@ -5,11 +5,12 @@ import tech.thatgravyboat.repolib.v2.expl.value.KeyValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Str;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.List;
 import java.util.Locale;
 
 public class BuiltinString {
-
 
     public static final KeyValue STRING = new Constants(builder -> {
         builder.function("concat", function -> {
@@ -34,6 +35,31 @@ public class BuiltinString {
         builder.function("lowercase", function -> {
             function.arity(1);
             function.execute(BuiltinString::lowercase);
+        });
+
+        builder.function("formatted", function -> {
+            function.arity(1);
+            var format = new DecimalFormat("+#.####;-#.####", DecimalFormatSymbols.getInstance(Locale.ROOT));
+            function.execute((evaluator, values) -> {
+                var arg = values.getFirst();
+                return new Str(format.format(evaluator.getNumberOrThrow(arg)));
+            });
+        });
+        builder.function("percentage", function -> {
+            function.arity(1);
+            var format = new DecimalFormat("+#.####%;-#.####%", DecimalFormatSymbols.getInstance(Locale.ROOT));
+            function.execute((evaluator, values) -> {
+                var arg = values.getFirst();
+                return new Str(format.format(evaluator.getNumberOrThrow(arg)));
+            });
+        });
+        builder.function("uFormatted", function -> {
+            function.arity(1);
+            var format = new DecimalFormat("#.####;#.####", DecimalFormatSymbols.getInstance(Locale.ROOT));
+            function.execute((evaluator, values) -> {
+                var arg = values.getFirst();
+                return new Str(format.format(evaluator.getNumberOrThrow(arg)));
+            });
         });
     });
 

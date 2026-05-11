@@ -4,6 +4,7 @@ import tech.thatgravyboat.repolib.v2.builtin.BuiltinRarities;
 import tech.thatgravyboat.repolib.v2.builtin.Constants;
 import tech.thatgravyboat.repolib.v2.expl.expression.Expression;
 import tech.thatgravyboat.repolib.v2.expl.expression.SelfEvaluatingExpression;
+import tech.thatgravyboat.repolib.v2.expl.value.Array;
 import tech.thatgravyboat.repolib.v2.expl.value.ImmutableStruct;
 import tech.thatgravyboat.repolib.v2.expl.value.KeyValue;
 import tech.thatgravyboat.repolib.v2.expl.value.MutableArray;
@@ -32,6 +33,10 @@ public final class StackFile implements SelfEvaluatingExpression {
     public Value evaluate(Evaluator evaluator) {
         evaluateScript(evaluator);
         return Value.NIL;
+    }
+
+    public KeyValue meta() {
+        return meta;
     }
 
     public Evaluator createEvaluator(Struct overrides) {
@@ -83,6 +88,16 @@ public final class StackFile implements SelfEvaluatingExpression {
                                                 entries.add(args.getFirst());
                                             });
                                         });
+                                lore.function("addAll", function -> {
+                                    function.arity(1);
+                                    function.executeVoid((evaluator, args) -> {
+                                        var values = Array.flatten(args);
+                                        if (values.isEmpty()) return;
+                                        section.set(true);
+                                        entries.addAll(values);
+                                    });
+                                });
+
                             })));
                 }).toMutable());
         inputs.set("data", data);

@@ -34,7 +34,7 @@ public interface Struct extends KeyValue, Iterable<Map.Entry<String, Value>> {
         return builder.toString();
     }
 
-    public interface Forwarding extends KeyValue.Forwarding, Struct {
+    interface Forwarding extends KeyValue.Forwarding, Struct {
         @Override
         Struct delegate();
 
