@@ -1,6 +1,7 @@
 package tech.thatgravyboat.repolib.v2.expl;
 
 import tech.thatgravyboat.repolib.v2.expl.expression.Access;
+import tech.thatgravyboat.repolib.v2.expl.expression.Array;
 import tech.thatgravyboat.repolib.v2.expl.expression.Assign;
 import tech.thatgravyboat.repolib.v2.expl.expression.Block;
 import tech.thatgravyboat.repolib.v2.expl.expression.Call;
@@ -67,12 +68,25 @@ public class Evaluator {
         debugs.add(new ContentInfo(this.stack(), message));
     }
 
+    public Value getField(Value holder, String field) {
+        if (holder instanceof KeyValue kv) {
+            return kv.get(field);
+        }
+        error("Unable to access property " + field + " of non key/value " + holder);
+        return Value.NIL;
+    }
+
+    public Value getField(String field) {
+        return defaults.get(field);
+    }
+
     public String getStringOrNull(Value value) {
         if (value instanceof Str(String literal)) {
             return literal;
         }
         return null;
     }
+
     public double getNumber(Value value, double defaultValue) {
         if (value instanceof Num(double literal)) {
             return literal;
@@ -80,7 +94,15 @@ public class Evaluator {
         return defaultValue;
     }
 
-    private Value eval(Expression expression) {
+    public Double getNumberOrNull(Value value) {
+        if (value instanceof Num(double literal)) {
+            return literal;
+        }
+        error("Failed to convert " + value + " into a number");
+        return null;
+    }
+
+    public Value eval(Expression expression) {
         return switch (expression) {
             case Access access -> evalAccess(access);
             case Assign assign -> evalAssign(assign);

@@ -1,14 +1,9 @@
 package tech.thatgravyboat.repolib.v2;
 
-import org.jetbrains.annotations.NotNull;
-import tech.thatgravyboat.repolib.v2.expl.value.KeyValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Str;
-import tech.thatgravyboat.repolib.v2.expl.value.Value;
+import tech.thatgravyboat.repolib.v2.expl.value.Struct;
 
-import java.util.Iterator;
-import java.util.Map;
-
-public final class RepoConstants implements KeyValue.Forwarding {
+public final class RepoConstants implements Struct.Forwarding {
     private RepoLoader loader;
     private final Constants constants = new Constants((builder) -> {
 
@@ -50,13 +45,9 @@ public final class RepoConstants implements KeyValue.Forwarding {
         this.loader = loader;
     }
 
-    @Override
-    public @NotNull Iterator<Map.Entry<String, Value>> iterator() {
-        return constants.iterator();
-    }
 
     @Override
-    public KeyValue delegate() {
+    public Struct delegate() {
         return constants;
     }
 

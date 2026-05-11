@@ -1,13 +1,13 @@
 package tech.thatgravyboat.repolib.v2.expl;
 
 import tech.thatgravyboat.repolib.v2.Constants;
-import tech.thatgravyboat.repolib.v2.SkyblockRarity;
+import tech.thatgravyboat.repolib.v2.RarityFunctions;
 import tech.thatgravyboat.repolib.v2.expl.expression.Expression;
 import tech.thatgravyboat.repolib.v2.expl.expression.SelfEvaluatingExpression;
 import tech.thatgravyboat.repolib.v2.expl.value.ImmutableStruct;
 import tech.thatgravyboat.repolib.v2.expl.value.KeyValue;
 import tech.thatgravyboat.repolib.v2.expl.value.MutableStruct;
-import tech.thatgravyboat.repolib.v2.expl.value.Str;
+import tech.thatgravyboat.repolib.v2.expl.value.Struct;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
 public final class StackFile implements SelfEvaluatingExpression {
@@ -31,11 +31,11 @@ public final class StackFile implements SelfEvaluatingExpression {
         return Value.NIL;
     }
 
-    public Evaluator createEvaluator(KeyValue overrides) {
+    public Evaluator createEvaluator(Struct overrides) {
         return createEvaluator(overrides, ImmutableStruct.EMPTY);
     }
 
-    public Evaluator createEvaluator(KeyValue overrides, KeyValue data) {
+    public Evaluator createEvaluator(Struct overrides, Struct data) {
         var inputs = new MutableStruct();
 
         for (var entry : overrides) {
@@ -43,38 +43,7 @@ public final class StackFile implements SelfEvaluatingExpression {
         }
 
         inputs.set("stack", Constants.mutable((builder) -> {
-            builder.function("rarity", (function) -> {
-                function.arity(0);
-                function.executArgless(evaluator -> {
-                    var baseRarity = evaluator.getStringOrNull(meta.get("rarity"));
-                    if (baseRarity == null) {
-                        evaluator.error("Item doesn't have a base rarity!");
-                        return Value.NIL;
-                    }
-
-                    var rarity = SkyblockRarity.fromString(baseRarity);
-                    if (rarity.isEmpty()) {
-                        evaluator.error("Unable to convert " + baseRarity + " to rarity!");
-                        return Value.NIL;
-                    }
-
-                    var currentRarity = rarity.get();
-
-                    var rarityUpgrades = evaluator.getNumber(data.get("rarity_upgrades"), 0);
-                    if (rarityUpgrades > 0) {
-                        while (rarityUpgrades > 0) {
-                            currentRarity = currentRarity.next();
-                            rarityUpgrades--;
-                        }
-                    }
-
-                    if (evaluator.getNumber(data.get("baseStatBoostPercentage"), 0) >= 50) {
-                        currentRarity = currentRarity.next();
-                    }
-
-                    return new Str(currentRarity.name());
-                });
-            });
+            builder.field("rarity", RarityFunctions.STACK_RARITY);
 
             builder.immutableStruct("lore", (lore) -> {
                 lore.function("empty", (function) -> {
@@ -126,7 +95,7 @@ public final class StackFile implements SelfEvaluatingExpression {
         return evaluator.defaults.get("stack") instanceof KeyValue value ? value : ImmutableStruct.EMPTY;
     }
 
-    public KeyValue evaluate(KeyValue overrides) {
+    public KeyValue evaluate(Struct overrides) {
         return evaluateScript(createEvaluator(overrides));
     }
 }

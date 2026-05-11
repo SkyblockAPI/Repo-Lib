@@ -6,10 +6,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-public record ImmutableStruct(Map<String, Value> fields) implements KeyValue {
+public record ImmutableStruct(Map<String, Value> fields) implements Struct {
 
-    public static final tech.thatgravyboat.repolib.v2.expl.value.ImmutableStruct EMPTY = new tech.thatgravyboat.repolib.v2.expl.value.ImmutableStruct(
-            Map.of());
+    public static final ImmutableStruct EMPTY = new ImmutableStruct(Map.of());
 
     @Override
     public Value get(String field) {

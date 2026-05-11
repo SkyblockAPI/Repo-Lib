@@ -1,6 +1,7 @@
 package tech.thatgravyboat.repolib.v2.expl;
 
 import tech.thatgravyboat.repolib.v2.expl.expression.Access;
+import tech.thatgravyboat.repolib.v2.expl.expression.Array;
 import tech.thatgravyboat.repolib.v2.expl.expression.Assign;
 import tech.thatgravyboat.repolib.v2.expl.expression.Block;
 import tech.thatgravyboat.repolib.v2.expl.expression.Bool;
@@ -122,10 +123,15 @@ public final class Parser {
                     var fields = new Struct(new HashMap<>());
 
                     while (lexer.peek() != Lexer.Token.R_BRACE) {
-                        lexer.expect(Lexer.Token.LITERAL_STR);
-
-                        var field = lexer.span();
-                        field = field.substring(1, field.length() - 1);
+                        String field;
+                        if (lexer.peek() == Lexer.Token.IDENT) {
+                            lexer.next();
+                            field = lexer.span();
+                        } else {
+                            lexer.expect(Lexer.Token.LITERAL_STR);
+                            field =  lexer.span();
+                            field = field.substring(1, field.length() - 1);
+                        }
 
                         lexer.expect(Lexer.Token.COLON);
                         fields.fields().put(field, parseUntil(Lexer.Token.COMMA, Lexer.Token.R_BRACE));
@@ -137,6 +143,20 @@ public final class Parser {
                     lexer.expect(Lexer.Token.R_BRACE);
 
                     current = fields;
+                }
+                case L_BRACKET -> {
+                    Array array = new Array(new ArrayList<>());
+
+                    while (lexer.peek() != Lexer.Token.R_BRACKET) {
+                        array.list().add(parseUntil(Lexer.Token.COMMA, Lexer.Token.R_BRACKET));
+
+                        if (lexer.peek() == Lexer.Token.COMMA) {
+                            lexer.next();
+                        }
+                    }
+                    lexer.expect(Lexer.Token.R_BRACKET);
+
+                    current = array;
                 }
                 case null, default -> throw new IllegalStateException("Unexpected value: " + lexer.span());
             }

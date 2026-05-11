@@ -7,18 +7,22 @@ import tech.thatgravyboat.repolib.v2.expl.value.Function;
 import tech.thatgravyboat.repolib.v2.expl.value.ImmutableStruct;
 import tech.thatgravyboat.repolib.v2.expl.value.KeyValue;
 import tech.thatgravyboat.repolib.v2.expl.value.MutableStruct;
+import tech.thatgravyboat.repolib.v2.expl.value.Nil;
 import tech.thatgravyboat.repolib.v2.expl.value.Num;
 import tech.thatgravyboat.repolib.v2.expl.value.Str;
+import tech.thatgravyboat.repolib.v2.expl.value.Struct;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
-public record Constants(Map<String, Value> map) implements KeyValue {
+public record Constants(Map<String, Value> map) implements Struct {
     public Constants(Consumer<Builder> builder) {
         this(Builder.create(builder, ImmutableStruct::new));
     }
@@ -34,17 +38,17 @@ public record Constants(Map<String, Value> map) implements KeyValue {
     }
 
     @Override
-    public @NotNull Iterator<Map.Entry<String, Value>> iterator() {
-        return map.entrySet().iterator();
-    }
-
-    @Override
     public boolean contains(String field) {
         return map.containsKey(field);
     }
 
     public static KeyValue.Mutable mutable(Consumer<Builder> builder) {
         return new MutableStruct(Builder.create(builder, MutableStruct::new));
+    }
+
+    @Override
+    public @NotNull Iterator<Map.Entry<String, Value>> iterator() {
+        return map.entrySet().iterator();
     }
 
     public static class Builder {
@@ -101,7 +105,7 @@ public record Constants(Map<String, Value> map) implements KeyValue {
             field(name, struct.apply(Builder.create(builder, ImmutableStruct::new)));
         }
 
-        private void field(String name, Value value) {
+        public void field(String name, Value value) {
             map.putIfAbsent(name, value);
         }
 
@@ -109,7 +113,7 @@ public record Constants(Map<String, Value> map) implements KeyValue {
             private int arity = -1;
             private BiFunction<Evaluator, List<Value>, Value> executor;
 
-            private static Function create(Consumer<FunctionBuilder> builderConsumer) {
+            public static Function create(Consumer<FunctionBuilder> builderConsumer) {
                 var builder = new FunctionBuilder();
                 builderConsumer.accept(builder);
                 int arity = builder.arity;
@@ -139,12 +143,35 @@ public record Constants(Map<String, Value> map) implements KeyValue {
                 this.executor = executor;
             }
 
-            public void executArgless(java.util.function.Function<Evaluator, Value> executor) {
+            public void executeVoid(BiConsumer<Evaluator, List<Value>> executor) {
+                this.executor = (evaluator, values) -> {
+                    executor.accept(evaluator, values);
+                    return NIL;
+                };
+            }
+
+            public void executeArgless(java.util.function.Function<Evaluator, Value> executor) {
                 this.executor = ((evaluator, values) -> executor.apply(evaluator));
             }
 
-            public void executSimple(java.util.function.Function<List<Value>, Value> executor) {
+            public void executeArglessVoid(Consumer<Evaluator> executor) {
+                this.executeVoid((evaluator, args) -> executor.accept(evaluator));
+            }
+
+            public void executeSimple(java.util.function.Function<List<Value>, Value> executor) {
                 this.executor = ((evaluator, values) -> executor.apply(values));
+            }
+
+            public void executeSimpleVoid(Consumer<List<Value>> executor) {
+                this.executeVoid((evaluator, args) -> executor.accept(args));
+            }
+
+            public void supply(Supplier<Value> executor) {
+                this.executor = ((evaluator, values) -> executor.get());
+            }
+
+            public void runs(Runnable executor) {
+                this.executeVoid((evaluator, values) -> executor.run());
             }
         }
     }

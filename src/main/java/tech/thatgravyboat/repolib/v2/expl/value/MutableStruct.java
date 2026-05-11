@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-public record MutableStruct(Map<String, Value> fields) implements KeyValue.Mutable {
+public record MutableStruct(Map<String, Value> fields) implements Struct, KeyValue.Mutable {
     public MutableStruct() {
         this(new HashMap<>());
     }
