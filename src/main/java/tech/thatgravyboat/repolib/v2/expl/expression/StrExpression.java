@@ -1,9 +1,9 @@
 package tech.thatgravyboat.repolib.v2.expl.expression;
 
-public record Num(double value) implements Expression {
+public record StrExpression(String value) implements Expression {
 
     @Override
     public String toString() {
-        return String.valueOf(value);
+        return "\"" + value + "\"";
     }
 }

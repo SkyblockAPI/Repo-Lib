@@ -5,7 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public record Call(Expression lhs, List<Expression> args) implements Expression {
+public record CallExpression(Expression lhs, List<Expression> args) implements Expression {
 
     @Override
     public @NotNull String toString() {

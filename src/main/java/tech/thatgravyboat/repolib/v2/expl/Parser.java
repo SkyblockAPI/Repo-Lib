@@ -40,7 +40,7 @@ public final class Parser {
         if (expressions.size() == 1) {
             return expressions.getFirst();
         } else {
-            return new Block(expressions);
+            return new BlockExpression(expressions);
         }
     }
 
@@ -56,7 +56,7 @@ public final class Parser {
 
                         var value = parseUntil(end);
 
-                        yield new Assign(access, value);
+                        yield new AssignExpression(access, value);
                     }
                     case Lexer.Token.L_PARENTHESES -> {
                         lexer.next();
@@ -71,7 +71,7 @@ public final class Parser {
                             } while (next == Lexer.Token.COMMA && lexer.next() != null);
                         }
                         lexer.expect(Lexer.Token.R_PARENTHESES);
-                        yield new Call(access, args);
+                        yield new CallExpression(access, args);
                     }
                     case null, default -> access;
                 };
@@ -88,17 +88,17 @@ public final class Parser {
                     lexer.expect(Lexer.Token.IDENT); // The first span must be expected as memberAccess checks for the span right away.
                     var access = memberAccess();
                     var field = span.substring(1, span.length() - 1);
-                    var inExpr = new In(access, field);
+                    var inExpr = new InExpression(access, field);
 
                     yield negate ? new UnaryExpression(UnaryExpression.Op.NOT, inExpr) : inExpr;
                 }
 
-                yield new Str(span.substring(1, span.length() - 1));
+                yield new StrExpression(span.substring(1, span.length() - 1));
             }
-            case LITERAL_NUM -> new Num(Double.parseDouble(lexer.span()));
-            case LITERAL_BOOL -> new Bool(Boolean.parseBoolean(lexer.span()));
+            case LITERAL_NUM -> new NumExpression(Double.parseDouble(lexer.span()));
+            case LITERAL_BOOL -> new BoolExpression(Boolean.parseBoolean(lexer.span()));
             case L_BRACE -> {
-                var fields = new Struct(new HashMap<>());
+                var fields = new StructExpression(new HashMap<>());
 
                 while (lexer.peek() != Lexer.Token.R_BRACE) {
                     String field;
@@ -123,7 +123,7 @@ public final class Parser {
                 yield fields;
             }
             case L_BRACKET -> {
-                Array array = new Array(new ArrayList<>());
+                ArrayExpression array = new ArrayExpression(new ArrayList<>());
 
                 while (lexer.peek() != Lexer.Token.R_BRACKET) {
                     array.list().add(parseUntil(Lexer.Token.COMMA, Lexer.Token.R_BRACKET));
@@ -168,7 +168,7 @@ public final class Parser {
             }
         }
 
-        return new If(cond, thenExpr, elseExpr);
+        return new IfExpression(cond, thenExpr, elseExpr);
     }
 
     private Expression forExpr() {
@@ -185,7 +185,7 @@ public final class Parser {
 
         var body = scopeOrSingleStatement();
 
-        return new For(init, cond, incr, body);
+        return new ForExpression(init, cond, incr, body);
     }
 
     private Expression scopeOrSingleStatement() {
@@ -195,10 +195,10 @@ public final class Parser {
         return parseUntil(Lexer.Token.SEMICOLON);
     }
 
-    private Block block() {
+    private BlockExpression block() {
         lexer.expect(Lexer.Token.L_BRACE);
 
-        var block = new Block(new ArrayList<>());
+        var block = new BlockExpression(new ArrayList<>());
 
         while (lexer.peek() != Lexer.Token.R_BRACE) {
             block.exprs().add(parseUntil(Lexer.Token.SEMICOLON));
@@ -209,8 +209,8 @@ public final class Parser {
         return block;
     }
 
-    private Access memberAccess() {
-        var access = new Access(null, lexer.span());
+    private AccessExpression memberAccess() {
+        var access = new AccessExpression(null, lexer.span());
 
         Lexer.Token next;
         loop:
@@ -218,7 +218,7 @@ public final class Parser {
             switch (next) {
                 case Lexer.Token.IDENT -> {
                     lexer.next();
-                    access = new Access(access, lexer.span());
+                    access = new AccessExpression(access, lexer.span());
                 }
                 case Lexer.Token.DOT -> lexer.next();
                 case Lexer.Token.L_BRACKET -> {
@@ -226,7 +226,7 @@ public final class Parser {
                     lexer.expect(Lexer.Token.LITERAL_STR);
                     var field = lexer.span();
                     lexer.expect(Lexer.Token.R_BRACKET);
-                    access = new Access(access, field.substring(1, field.length() - 1));
+                    access = new AccessExpression(access, field.substring(1, field.length() - 1));
                 }
                 default -> {
                     break loop;

@@ -6,22 +6,22 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public record ImmutableArray(
+public record ImmutableArrayValue(
         List<Value> entries,
         KeyValue prototype
-) implements Array, KeyValue.Forwarding {
-    public ImmutableArray(List<Value> entries, Struct prototype) {
-        this(entries, Array.createPrototype(entries, false, prototype));
+) implements ArrayValue, KeyValue.Forwarding {
+    public ImmutableArrayValue(List<Value> entries, StructValue prototype) {
+        this(entries, ArrayValue.createPrototype(entries, false, prototype));
     }
 
     @Override
     public Value get(int index) {
-        return Array.get(entries, index);
+        return ArrayValue.get(entries, index);
     }
 
     @Override
     public KeyValue.Mutable toMutableArray() {
-        return new MutableArray(new ArrayList<>(entries), prototype.toMutable());
+        return new MutableArrayValue(new ArrayList<>(entries), prototype.toMutable());
     }
 
     @Override

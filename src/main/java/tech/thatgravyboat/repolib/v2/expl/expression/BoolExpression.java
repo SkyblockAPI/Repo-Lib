@@ -1,9 +1,9 @@
 package tech.thatgravyboat.repolib.v2.expl.expression;
 
-public record Str(String value) implements Expression {
+public record BoolExpression(boolean value) implements Expression {
 
     @Override
     public String toString() {
-        return "\"" + value + "\"";
+        return Boolean.toString(value);
     }
 }

@@ -1,11 +1,9 @@
 package tech.thatgravyboat.repolib.v2;
 
-import tech.thatgravyboat.repolib.v2.builtin.Constants;
 import tech.thatgravyboat.repolib.v2.expl.ContentInfo;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
-import tech.thatgravyboat.repolib.v2.expl.value.Struct;
+import tech.thatgravyboat.repolib.v2.expl.value.StructValue;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -17,14 +15,14 @@ public record RepoInstance(
         RepoListConstants listConstants
 ) {
 
-    public List<Struct> listStacks() {
+    public List<StructValue> listStacks() {
         var constants = this.constants.toMutable();
-        var stacks = new LinkedList<Struct>();
+        var stacks = new LinkedList<StructValue>();
         constants.set("id", FunctionBuilder.create(function -> {
             function.arity(1);
             function.executeVoid((evaluator, args) -> {
                 var data = args.getFirst();
-                if (data instanceof Struct struct) {
+                if (data instanceof StructValue struct) {
                     stacks.add(struct);
                     return;
                 }
@@ -37,7 +35,7 @@ public record RepoInstance(
         return stacks;
     }
 
-    public RepoStackResult createStack(Struct data) {
+    public RepoStackResult createStack(StructValue data) {
         var constants = this.constants.toMutable();
         constants.set("data", data);
         var evaluator = new Evaluator(constants);
@@ -50,7 +48,7 @@ public record RepoInstance(
         return createStack(file, data);
     }
 
-    public RepoStackResult createStack(String id, Struct data) {
+    public RepoStackResult createStack(String id, StructValue data) {
         var stackFile = loader.getStackFile(id);
         var evaluator = stackFile.createEvaluator(constants, data);
         var stack = stackFile.evaluateScript(evaluator);
@@ -58,7 +56,7 @@ public record RepoInstance(
     }
 
     public record RepoStackResult(
-            Struct stack,
+            StructValue stack,
             List<ContentInfo> debug,
             List<ContentInfo> error
     ) {}

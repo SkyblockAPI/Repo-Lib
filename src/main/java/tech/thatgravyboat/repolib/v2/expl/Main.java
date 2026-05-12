@@ -1,9 +1,9 @@
 package tech.thatgravyboat.repolib.v2.expl;
 
 import tech.thatgravyboat.repolib.v2.builtin.Constants;
-import tech.thatgravyboat.repolib.v2.expl.value.Bool;
-import tech.thatgravyboat.repolib.v2.expl.value.MutableStruct;
-import tech.thatgravyboat.repolib.v2.expl.value.Num;
+import tech.thatgravyboat.repolib.v2.expl.value.BoolValue;
+import tech.thatgravyboat.repolib.v2.expl.value.MutableStructValue;
+import tech.thatgravyboat.repolib.v2.expl.value.NumValue;
 
 public class Main {
 
@@ -14,7 +14,7 @@ public class Main {
                 function.execute((eval, values) -> {
                     var first = eval.getNumberOrThrow(values.get(0));
                     var second = eval.getNumberOrThrow(values.get(1));
-                    return new Num(first + second);
+                    return new NumValue(first + second);
                 });
             });
             builder.function("lessThan", function -> {
@@ -22,7 +22,7 @@ public class Main {
                 function.execute((eval, values) -> {
                     var first = eval.getNumberOrThrow(values.get(0));
                     var second = eval.getNumberOrThrow(values.get(1));
-                    return new Bool(first < second);
+                    return new BoolValue(first < second);
                 });
             });
             builder.function("equals", function -> {
@@ -30,13 +30,13 @@ public class Main {
                 function.execute((eval, values) -> {
                     var first = eval.getNumberOrThrow(values.get(0));
                     var second = eval.getNumberOrThrow(values.get(1));
-                    return new Bool(first == second);
+                    return new BoolValue(first == second);
                 });
             });
         });
         var root = new Constants(builder -> {
             builder.field("Math", math);
-            builder.field("temp", new MutableStruct());
+            builder.field("temp", new MutableStructValue());
             builder.function("print", function -> {
                 function.arity(1);
                 function.executeSimpleVoid(values -> System.out.println(values.getFirst()));

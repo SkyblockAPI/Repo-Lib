@@ -5,8 +5,8 @@ import tech.thatgravyboat.repolib.v2.builtin.Constants;
 import java.util.LinkedList;
 import java.util.List;
 
-public non-sealed interface Array extends Value, KeyValue, Iterable<Value> {
-    public static String prettyPrint(Array array, String prefix) {
+public non-sealed interface ArrayValue extends Value, KeyValue, Iterable<Value> {
+    public static String prettyPrint(ArrayValue array, String prefix) {
         var values = getValues(array);
         var stringBuilder = new StringBuilder();
 
@@ -22,7 +22,7 @@ public non-sealed interface Array extends Value, KeyValue, Iterable<Value> {
     static List<Value> flatten(List<Value> values) {
         List<Value> list = new LinkedList<>();
         for (var value : values) {
-            if (value instanceof Array array) {
+            if (value instanceof ArrayValue array) {
                 list.addAll(getValues(array));
             } else {
                 list.add(value);
@@ -31,13 +31,13 @@ public non-sealed interface Array extends Value, KeyValue, Iterable<Value> {
         return list;
     }
 
-    static List<Value> getValues(Array array) {
+    static List<Value> getValues(ArrayValue array) {
         List<Value> list = new LinkedList<>();
         array.forEach(list::add);
         return list;
     }
 
-    static List<Value> flatten(Array array) {
+    static List<Value> flatten(ArrayValue array) {
         return flatten(getValues(array));
     }
 
@@ -49,7 +49,7 @@ public non-sealed interface Array extends Value, KeyValue, Iterable<Value> {
         return entries.get(Math.floorMod(index, entries.size()));
     }
 
-    static KeyValue.Mutable createPrototype(List<Value> entries, boolean mutable, Struct prototype) {
+    static KeyValue.Mutable createPrototype(List<Value> entries, boolean mutable, StructValue prototype) {
         var prototypes = prototype.iterator();
 
         return new KeyValue.Mutable.Forwarding() {
@@ -58,7 +58,7 @@ public non-sealed interface Array extends Value, KeyValue, Iterable<Value> {
 
                 builder.function("get", function -> {
                     function.arity(1);
-                    function.execute((evaluator, args) -> Array.get(entries, (int)  evaluator.getNumberOrThrow(args.getFirst())));
+                    function.execute((evaluator, args) -> ArrayValue.get(entries, (int)  evaluator.getNumberOrThrow(args.getFirst())));
                 });
 
                 if (!mutable) {
@@ -73,7 +73,7 @@ public non-sealed interface Array extends Value, KeyValue, Iterable<Value> {
                 builder.function("addAll", function -> {
                     function.arity(1);
                     function.executeVoid((evaluator, args) -> {
-                        entries.addAll(Array.flatten(args));
+                        entries.addAll(ArrayValue.flatten(args));
                     });
                 });
 
@@ -101,7 +101,7 @@ public non-sealed interface Array extends Value, KeyValue, Iterable<Value> {
             @Override
             public Value get(String field) {
                 return switch (field) {
-                    case "length", "size" -> new Num(entries.size());
+                    case "length", "size" -> new NumValue(entries.size());
                     case null, default -> base.get(field);
                 };
             }
@@ -112,13 +112,13 @@ public non-sealed interface Array extends Value, KeyValue, Iterable<Value> {
 
     KeyValue.Mutable toMutableArray();
 
-    interface Mutable extends Array, KeyValue.Mutable {
+    interface Mutable extends ArrayValue, KeyValue.Mutable {
 
         void set(int index, Value value);
 
         void add(Value value);
 
-        Array toImmutableArray();
+        ArrayValue toImmutableArray();
 
     }
 

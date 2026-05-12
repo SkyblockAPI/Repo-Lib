@@ -2,14 +2,14 @@ package tech.thatgravyboat.repolib.v2.builtin;
 
 import org.jetbrains.annotations.NotNull;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
-import tech.thatgravyboat.repolib.v2.expl.value.Bool;
-import tech.thatgravyboat.repolib.v2.expl.value.Function;
-import tech.thatgravyboat.repolib.v2.expl.value.ImmutableStruct;
+import tech.thatgravyboat.repolib.v2.expl.value.BoolValue;
+import tech.thatgravyboat.repolib.v2.expl.value.FunctionValue;
+import tech.thatgravyboat.repolib.v2.expl.value.ImmutableStructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.KeyValue;
-import tech.thatgravyboat.repolib.v2.expl.value.MutableStruct;
-import tech.thatgravyboat.repolib.v2.expl.value.Num;
-import tech.thatgravyboat.repolib.v2.expl.value.Str;
-import tech.thatgravyboat.repolib.v2.expl.value.Struct;
+import tech.thatgravyboat.repolib.v2.expl.value.MutableStructValue;
+import tech.thatgravyboat.repolib.v2.expl.value.NumValue;
+import tech.thatgravyboat.repolib.v2.expl.value.StrValue;
+import tech.thatgravyboat.repolib.v2.expl.value.StructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
 import java.util.HashMap;
@@ -21,9 +21,9 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public record Constants(Map<String, Value> map) implements Struct {
+public record Constants(Map<String, Value> map) implements StructValue {
     public Constants(Consumer<Builder> builder) {
-        this(Builder.create(builder, ImmutableStruct::new));
+        this(Builder.create(builder, ImmutableStructValue::new));
     }
 
     @Override
@@ -32,8 +32,8 @@ public record Constants(Map<String, Value> map) implements Struct {
     }
 
     @Override
-    public MutableStruct toMutable() {
-        return new MutableStruct(new HashMap<>(map));
+    public MutableStructValue toMutable() {
+        return new MutableStructValue(new HashMap<>(map));
     }
 
     @Override
@@ -42,7 +42,7 @@ public record Constants(Map<String, Value> map) implements Struct {
     }
 
     public static KeyValue.Mutable mutable(Consumer<Builder> builder) {
-        return new MutableStruct(Builder.create(builder, MutableStruct::new));
+        return new MutableStructValue(Builder.create(builder, MutableStructValue::new));
     }
 
     @Override
@@ -65,27 +65,27 @@ public record Constants(Map<String, Value> map) implements Struct {
         }
 
         public void constant(String name, String value) {
-            field(name, new Str(value));
+            field(name, new StrValue(value));
         }
 
         public void constant(String name, boolean value) {
-            field(name, new Bool(value));
+            field(name, new BoolValue(value));
         }
 
         public void constant(String name, int value) {
-            field(name, new Num(value));
+            field(name, new NumValue(value));
         }
 
         public void constant(String name, long value) {
-            field(name, new Num(value));
+            field(name, new NumValue(value));
         }
 
         public void constant(String name, float value) {
-            field(name, new Num(value));
+            field(name, new NumValue(value));
         }
 
         public void constant(String name, double value) {
-            field(name, new Num(value));
+            field(name, new NumValue(value));
         }
 
         public void function(String name, Consumer<FunctionBuilder> function) {
@@ -97,11 +97,11 @@ public record Constants(Map<String, Value> map) implements Struct {
         }
 
         public void mutableStruct(String name, Consumer<Constants.Builder> builder) {
-            field(name, struct.apply(Builder.create(builder, MutableStruct::new)));
+            field(name, struct.apply(Builder.create(builder, MutableStructValue::new)));
         }
 
         public void immutableStruct(String name, Consumer<Constants.Builder> builder) {
-            field(name, struct.apply(Builder.create(builder, ImmutableStruct::new)));
+            field(name, struct.apply(Builder.create(builder, ImmutableStructValue::new)));
         }
 
         public void field(String name, Value value) {
@@ -113,7 +113,7 @@ public record Constants(Map<String, Value> map) implements Struct {
             private boolean vararg = false;
             private BiFunction<Evaluator, List<Value>, Value> executor;
 
-            public static Function create(Consumer<FunctionBuilder> builderConsumer) {
+            public static FunctionValue create(Consumer<FunctionBuilder> builderConsumer) {
                 var builder = new FunctionBuilder();
                 builderConsumer.accept(builder);
                 int arity = builder.arity;

@@ -1,15 +1,14 @@
 package tech.thatgravyboat.repolib.v2.expl;
 
-import tech.thatgravyboat.repolib.v2.builtin.BuiltinRarities;
 import tech.thatgravyboat.repolib.v2.builtin.Constants;
 import tech.thatgravyboat.repolib.v2.expl.expression.Expression;
 import tech.thatgravyboat.repolib.v2.expl.expression.SelfEvaluatingExpression;
-import tech.thatgravyboat.repolib.v2.expl.value.Array;
-import tech.thatgravyboat.repolib.v2.expl.value.ImmutableStruct;
+import tech.thatgravyboat.repolib.v2.expl.value.ArrayValue;
+import tech.thatgravyboat.repolib.v2.expl.value.ImmutableStructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.KeyValue;
-import tech.thatgravyboat.repolib.v2.expl.value.MutableArray;
-import tech.thatgravyboat.repolib.v2.expl.value.MutableStruct;
-import tech.thatgravyboat.repolib.v2.expl.value.Struct;
+import tech.thatgravyboat.repolib.v2.expl.value.MutableArrayValue;
+import tech.thatgravyboat.repolib.v2.expl.value.MutableStructValue;
+import tech.thatgravyboat.repolib.v2.expl.value.StructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -22,7 +21,7 @@ public final class StackFile implements SelfEvaluatingExpression {
     public StackFile(Expression meta, Expression script) {
         this.script = script;
 
-        var struct = new MutableStruct();
+        var struct = new MutableStructValue();
         //struct.set("this", struct); // Should allow for access of the top level by also using "this" in the script.
         var evaluator = new Evaluator(struct);
         evaluator.evaluate(meta);
@@ -39,12 +38,12 @@ public final class StackFile implements SelfEvaluatingExpression {
         return meta;
     }
 
-    public Evaluator createEvaluator(Struct overrides) {
-        return createEvaluator(overrides, ImmutableStruct.EMPTY);
+    public Evaluator createEvaluator(StructValue overrides) {
+        return createEvaluator(overrides, ImmutableStructValue.EMPTY);
     }
 
-    public Evaluator createEvaluator(Struct overrides, Struct data) {
-        var inputs = new MutableStruct();
+    public Evaluator createEvaluator(StructValue overrides, StructValue data) {
+        var inputs = new MutableStructValue();
 
         for (var entry : overrides) {
             inputs.set(entry.getKey(), entry.getValue());
@@ -53,14 +52,14 @@ public final class StackFile implements SelfEvaluatingExpression {
         inputs.set(
                 "stack", Constants.mutable((builder) -> {
                     builder.field(
-                            "lore", MutableArray.create(entries -> new Constants(lore -> {
+                            "lore", MutableArrayValue.create(entries -> new Constants(lore -> {
                                 var section = new AtomicBoolean();
 
                                 lore.function(
                                         "empty", (function) -> {
                                             function.vararg(true);
                                             function.execute(((evaluator, values) -> {
-                                                entries.add(ImmutableStruct.EMPTY);
+                                                entries.add(ImmutableStructValue.EMPTY);
 
                                                 return Value.NIL;
                                             }));
@@ -68,14 +67,14 @@ public final class StackFile implements SelfEvaluatingExpression {
                                 lore.function(
                                         "beginSection", (function) -> function.runs(() -> {
                                             if (section.get()) {
-                                                entries.add(ImmutableStruct.EMPTY);
+                                                entries.add(ImmutableStructValue.EMPTY);
                                             }
                                             section.set(false);
                                         }));
                                 lore.function(
                                         "endSection", (function) -> function.runs(() -> {
                                             if (section.get()) {
-                                                entries.add(ImmutableStruct.EMPTY);
+                                                entries.add(ImmutableStructValue.EMPTY);
                                             }
                                             section.set(false);
                                         }));
@@ -91,7 +90,7 @@ public final class StackFile implements SelfEvaluatingExpression {
                                 lore.function("addAll", function -> {
                                     function.arity(1);
                                     function.executeVoid((evaluator, args) -> {
-                                        var values = Array.flatten(args);
+                                        var values = ArrayValue.flatten(args);
                                         if (values.isEmpty()) return;
                                         section.set(true);
                                         entries.addAll(values);
@@ -106,13 +105,13 @@ public final class StackFile implements SelfEvaluatingExpression {
         return new Evaluator(inputs);
     }
 
-    public Struct evaluateScript(Evaluator evaluator) {
+    public StructValue evaluateScript(Evaluator evaluator) {
         evaluator.evaluate(script);
 
-        return evaluator.defaults.get("stack") instanceof Struct value ? value : ImmutableStruct.EMPTY;
+        return evaluator.defaults.get("stack") instanceof StructValue value ? value : ImmutableStructValue.EMPTY;
     }
 
-    public KeyValue evaluate(Struct overrides) {
+    public KeyValue evaluate(StructValue overrides) {
         return evaluateScript(createEvaluator(overrides));
     }
 }

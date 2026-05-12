@@ -6,9 +6,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-public record ImmutableStruct(Map<String, Value> fields) implements Struct {
+public record ImmutableStructValue(Map<String, Value> fields) implements StructValue {
 
-    public static final ImmutableStruct EMPTY = new ImmutableStruct(Map.of());
+    public static final ImmutableStructValue EMPTY = new ImmutableStructValue(Map.of());
 
     @Override
     public Value get(String field) {
@@ -21,8 +21,8 @@ public record ImmutableStruct(Map<String, Value> fields) implements Struct {
     }
 
     @Override
-    public MutableStruct toMutable() {
-        return new MutableStruct(new HashMap<>(fields));
+    public MutableStructValue toMutable() {
+        return new MutableStructValue(new HashMap<>(fields));
     }
 
     @Override

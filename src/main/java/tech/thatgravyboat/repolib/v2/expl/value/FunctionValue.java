@@ -7,9 +7,9 @@ import java.util.List;
 import java.util.function.Consumer;
 
 @FunctionalInterface
-non-sealed public interface Function extends Value {
+non-sealed public interface FunctionValue extends Value {
 
-    public static Function builder(Consumer<Constants.Builder.FunctionBuilder> builder) {
+    public static FunctionValue builder(Consumer<Constants.Builder.FunctionBuilder> builder) {
         return Constants.Builder.FunctionBuilder.create(builder);
     }
 

@@ -5,7 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public record Block(List<Expression> exprs) implements Expression {
+public record BlockExpression(List<Expression> exprs) implements Expression {
 
     @Override
     public @NotNull String toString() {

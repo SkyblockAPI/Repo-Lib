@@ -5,7 +5,8 @@ import tech.thatgravyboat.repolib.v2.expl.Parser;
 import tech.thatgravyboat.repolib.v2.expl.StackFile;
 
 public sealed interface Expression
-        permits Access, Assign, Block, Bool, Call, For, If, In, Num, SelfEvaluatingExpression, Str, Struct,
+        permits AccessExpression, AssignExpression, BlockExpression, BoolExpression, CallExpression, ForExpression,
+        IfExpression, InExpression, NumExpression, SelfEvaluatingExpression, StrExpression, StructExpression,
         StatementExpression, UnaryExpression {
 
     static StackFile parseFileOrThrow(String source) {

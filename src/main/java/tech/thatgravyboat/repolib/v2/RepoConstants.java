@@ -5,10 +5,10 @@ import tech.thatgravyboat.repolib.v2.builtin.BuiltinObjects;
 import tech.thatgravyboat.repolib.v2.builtin.BuiltinRarities;
 import tech.thatgravyboat.repolib.v2.builtin.BuiltinString;
 import tech.thatgravyboat.repolib.v2.builtin.Constants;
-import tech.thatgravyboat.repolib.v2.expl.value.Str;
-import tech.thatgravyboat.repolib.v2.expl.value.Struct;
+import tech.thatgravyboat.repolib.v2.expl.value.StrValue;
+import tech.thatgravyboat.repolib.v2.expl.value.StructValue;
 
-public final class RepoConstants implements Struct.Forwarding {
+public final class RepoConstants implements StructValue.Forwarding {
     private RepoLoader loader;
     private final Constants constants = new Constants((builder) -> {
         builder.field("Math", BuiltinMath.MATH);
@@ -24,7 +24,7 @@ public final class RepoConstants implements Struct.Forwarding {
                     return NIL;
                 }
                 var arg = args.getFirst();
-                if (arg instanceof Str(String value)) {
+                if (arg instanceof StrValue(String value)) {
                     var requested = loader.getExpression(value);
                     if (requested == null) {
                         evaluator.error("Requested include " + value + " doesn't exist!");
@@ -55,7 +55,7 @@ public final class RepoConstants implements Struct.Forwarding {
     }
 
     @Override
-    public Struct delegate() {
+    public StructValue delegate() {
         return constants;
     }
 

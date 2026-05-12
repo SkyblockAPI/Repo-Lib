@@ -1,19 +1,19 @@
 package tech.thatgravyboat.repolib.v2.builtin;
 
 import tech.thatgravyboat.repolib.v2.expl.value.KeyValue;
-import tech.thatgravyboat.repolib.v2.expl.value.MutableArray;
-import tech.thatgravyboat.repolib.v2.expl.value.MutableStruct;
-import tech.thatgravyboat.repolib.v2.expl.value.Num;
-import tech.thatgravyboat.repolib.v2.expl.value.Str;
-import tech.thatgravyboat.repolib.v2.expl.value.Struct;
+import tech.thatgravyboat.repolib.v2.expl.value.MutableArrayValue;
+import tech.thatgravyboat.repolib.v2.expl.value.MutableStructValue;
+import tech.thatgravyboat.repolib.v2.expl.value.NumValue;
+import tech.thatgravyboat.repolib.v2.expl.value.StrValue;
+import tech.thatgravyboat.repolib.v2.expl.value.StructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
 public class BuiltinObjects {
 
     public static String toString(Value value) {
         return switch (value) {
-            case Str str -> str.value();
-            case Num(double num) -> num == (int) num ? Integer.toString((int) num) : Double.toString(num);
+            case StrValue str -> str.value();
+            case NumValue(double num) -> num == (int) num ? Integer.toString((int) num) : Double.toString(num);
             default -> value.toString();
         };
     }
@@ -26,9 +26,9 @@ public class BuiltinObjects {
                 var firstArg = args.getFirst();
 
                 return switch (firstArg) {
-                    case Str str -> str;
-                    case Num num -> new Str(String.valueOf(num));
-                    default -> new Str(firstArg.toString());
+                    case StrValue str -> str;
+                    case NumValue num -> new StrValue(String.valueOf(num));
+                    default -> new StrValue(firstArg.toString());
                 };
             });
         });
@@ -37,13 +37,13 @@ public class BuiltinObjects {
             function.arity(1);
             function.execute((evaluator, values) -> {
                 var first = values.getFirst();
-                if (first instanceof Struct struct) {
-                    var array = MutableArray.create();
+                if (first instanceof StructValue struct) {
+                    var array = MutableArrayValue.create();
 
                     for (var entry : struct) {
-                        var entryStruct = new MutableStruct();
+                        var entryStruct = new MutableStructValue();
 
-                        entryStruct.set("key", new Str(entry.getKey()));
+                        entryStruct.set("key", new StrValue(entry.getKey()));
                         entryStruct.set("value", entry.getValue());
 
                         array.add(entryStruct);

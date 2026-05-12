@@ -1,7 +1,7 @@
 package tech.thatgravyboat.repolib.v2;
 
 import tech.thatgravyboat.repolib.v2.builtin.Constants;
-import tech.thatgravyboat.repolib.v2.expl.value.Struct;
+import tech.thatgravyboat.repolib.v2.expl.value.StructValue;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -32,7 +32,7 @@ public class Main {
             System.out.println("[d]: " + debug);
         }
 
-        System.out.println(Struct.prettyPrint(result));
+        System.out.println(StructValue.prettyPrint(result));
     }
 
 }

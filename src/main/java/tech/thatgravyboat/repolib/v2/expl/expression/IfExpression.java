@@ -3,7 +3,7 @@ package tech.thatgravyboat.repolib.v2.expl.expression;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public record If(Expression cond, Expression thenExpr, @Nullable Expression elseExpr) implements Expression {
+public record IfExpression(Expression cond, Expression thenExpr, @Nullable Expression elseExpr) implements Expression {
 
     @Override
     public @NotNull String toString() {

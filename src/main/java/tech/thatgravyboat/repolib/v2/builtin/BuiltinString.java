@@ -1,9 +1,9 @@
 package tech.thatgravyboat.repolib.v2.builtin;
 
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
-import tech.thatgravyboat.repolib.v2.expl.value.Bool;
+import tech.thatgravyboat.repolib.v2.expl.value.BoolValue;
 import tech.thatgravyboat.repolib.v2.expl.value.KeyValue;
-import tech.thatgravyboat.repolib.v2.expl.value.Str;
+import tech.thatgravyboat.repolib.v2.expl.value.StrValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
 import java.text.DecimalFormat;
@@ -24,7 +24,7 @@ public class BuiltinString {
                     string.append(BuiltinObjects.toString(arg));
                 }
 
-                return new Str(string.toString());
+                return new StrValue(string.toString());
             });
         });
 
@@ -34,7 +34,7 @@ public class BuiltinString {
                 var first = evaluator.getStringOrThrow(values.getFirst());
                 var second = evaluator.getStringOrThrow(values.get(1));
 
-                return new Bool(first.equalsIgnoreCase(second));
+                return new BoolValue(first.equalsIgnoreCase(second));
             });
         });
 
@@ -53,7 +53,7 @@ public class BuiltinString {
             var format = new DecimalFormat("+#.####;-#.####", DecimalFormatSymbols.getInstance(Locale.ROOT));
             function.execute((evaluator, values) -> {
                 var arg = values.getFirst();
-                return new Str(format.format(evaluator.getNumberOrThrow(arg)));
+                return new StrValue(format.format(evaluator.getNumberOrThrow(arg)));
             });
         });
         builder.function("percentage", function -> {
@@ -61,7 +61,7 @@ public class BuiltinString {
             var format = new DecimalFormat("+#.####%;-#.####%", DecimalFormatSymbols.getInstance(Locale.ROOT));
             function.execute((evaluator, values) -> {
                 var arg = values.getFirst();
-                return new Str(format.format(evaluator.getNumberOrThrow(arg)));
+                return new StrValue(format.format(evaluator.getNumberOrThrow(arg)));
             });
         });
         builder.function("uFormatted", function -> {
@@ -69,15 +69,15 @@ public class BuiltinString {
             var format = new DecimalFormat("#.####;#.####", DecimalFormatSymbols.getInstance(Locale.ROOT));
             function.execute((evaluator, values) -> {
                 var arg = values.getFirst();
-                return new Str(format.format(evaluator.getNumberOrThrow(arg)));
+                return new StrValue(format.format(evaluator.getNumberOrThrow(arg)));
             });
         });
     });
 
     private static Value uppercase(Evaluator evaluator, List<Value> args) {
-        return new Str(evaluator.getStringOrThrow(args.getFirst()).toUpperCase(Locale.ROOT));
+        return new StrValue(evaluator.getStringOrThrow(args.getFirst()).toUpperCase(Locale.ROOT));
     }
     private static Value lowercase(Evaluator evaluator, List<Value> args) {
-        return new Str(evaluator.getStringOrThrow(args.getFirst()).toUpperCase(Locale.ROOT));
+        return new StrValue(evaluator.getStringOrThrow(args.getFirst()).toUpperCase(Locale.ROOT));
     }
 }

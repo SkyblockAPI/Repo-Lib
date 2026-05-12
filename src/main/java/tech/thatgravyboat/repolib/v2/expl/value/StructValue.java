@@ -5,12 +5,12 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Iterator;
 import java.util.Map;
 
-public interface Struct extends KeyValue, Iterable<Map.Entry<String, Value>> {
+public interface StructValue extends KeyValue, Iterable<Map.Entry<String, Value>> {
 
-    static String prettyPrint(Struct result) {
+    static String prettyPrint(StructValue result) {
         return prettyPrint(result, "");
     }
-    static String prettyPrint(Struct result, String prefix) {
+    static String prettyPrint(StructValue result, String prefix) {
         var builder = new StringBuilder();
         builder.append("{");
 
@@ -34,9 +34,9 @@ public interface Struct extends KeyValue, Iterable<Map.Entry<String, Value>> {
         return builder.toString();
     }
 
-    interface Forwarding extends KeyValue.Forwarding, Struct {
+    interface Forwarding extends KeyValue.Forwarding, StructValue {
         @Override
-        Struct delegate();
+        StructValue delegate();
 
         @Override
         default @NotNull Iterator<Map.Entry<String, Value>> iterator() {

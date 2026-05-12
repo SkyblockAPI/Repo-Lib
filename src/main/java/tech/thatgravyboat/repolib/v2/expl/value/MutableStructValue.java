@@ -6,14 +6,14 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-public record MutableStruct(Map<String, Value> fields) implements Struct, KeyValue.Mutable {
-    public MutableStruct() {
+public record MutableStructValue(Map<String, Value> fields) implements StructValue, KeyValue.Mutable {
+    public MutableStructValue() {
         this(new HashMap<>());
     }
 
     @Override
     public Value get(String field) {
-        return fields.computeIfAbsent(field, (ignored) -> new tech.thatgravyboat.repolib.v2.expl.value.MutableStruct());
+        return fields.computeIfAbsent(field, (ignored) -> new MutableStructValue());
     }
 
     @Override
@@ -33,7 +33,7 @@ public record MutableStruct(Map<String, Value> fields) implements Struct, KeyVal
 
     @Override
     public KeyValue toImmutable() {
-        return new ImmutableStruct(Map.copyOf(fields));
+        return new ImmutableStructValue(Map.copyOf(fields));
     }
 
     @Override
@@ -46,12 +46,12 @@ public record MutableStruct(Map<String, Value> fields) implements Struct, KeyVal
                 map.put(entry.getKey(), entry.getValue());
             }
         }
-        return new ImmutableStruct(Map.copyOf(map));
+        return new ImmutableStructValue(Map.copyOf(map));
     }
 
     @Override
     public Mutable toMutable() {
-        return new tech.thatgravyboat.repolib.v2.expl.value.MutableStruct(new HashMap<>(fields));
+        return new MutableStructValue(new HashMap<>(fields));
     }
 
     @Override

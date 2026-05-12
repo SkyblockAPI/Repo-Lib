@@ -1,10 +1,10 @@
 package tech.thatgravyboat.repolib.v2;
 
 import tech.thatgravyboat.repolib.v2.builtin.Constants;
-import tech.thatgravyboat.repolib.v2.expl.value.MutableArray;
-import tech.thatgravyboat.repolib.v2.expl.value.Struct;
+import tech.thatgravyboat.repolib.v2.expl.value.MutableArrayValue;
+import tech.thatgravyboat.repolib.v2.expl.value.StructValue;
 
-public class RepoListConstants implements Struct.Forwarding {
+public class RepoListConstants implements StructValue.Forwarding {
     private final RepoLoader loader;
     private final Constants constants;
 
@@ -18,7 +18,7 @@ public class RepoListConstants implements Struct.Forwarding {
             builder.function("list", function -> {
                 function.arity(1);
                 function.execute((evaluator, values) -> {
-                    var array = MutableArray.create();
+                    var array = MutableArrayValue.create();
 
                     var prefix = evaluator.getStringOrThrow(values.getFirst());
                     for (var stackEntry : loader.stackFiles().entrySet()) {
@@ -34,7 +34,7 @@ public class RepoListConstants implements Struct.Forwarding {
     }
 
     @Override
-    public Struct delegate() {
+    public StructValue delegate() {
         return constants;
     }
 

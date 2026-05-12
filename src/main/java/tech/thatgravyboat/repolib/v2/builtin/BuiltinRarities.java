@@ -1,15 +1,15 @@
 package tech.thatgravyboat.repolib.v2.builtin;
 
 import tech.thatgravyboat.repolib.v2.SkyblockRarity;
-import tech.thatgravyboat.repolib.v2.expl.value.Bool;
-import tech.thatgravyboat.repolib.v2.expl.value.Function;
-import tech.thatgravyboat.repolib.v2.expl.value.Str;
+import tech.thatgravyboat.repolib.v2.expl.value.BoolValue;
+import tech.thatgravyboat.repolib.v2.expl.value.FunctionValue;
+import tech.thatgravyboat.repolib.v2.expl.value.StrValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
 public class BuiltinRarities {
 
 
-    public static Function STACK_RARITY = Function.builder((builder) -> {
+    public static FunctionValue STACK_RARITY = FunctionValue.builder((builder) -> {
         builder.arity(0);
         builder.executeArgless(evaluator -> {
             var meta = evaluator.getField("meta");
@@ -41,21 +41,21 @@ public class BuiltinRarities {
                 currentRarity = currentRarity.next();
             }
 
-            return new Str(currentRarity.name());
+            return new StrValue(currentRarity.name());
         });
     });
 
-    public static Function IS_RECOMBOBULATED = Function.builder((builder) -> {
+    public static FunctionValue IS_RECOMBOBULATED = FunctionValue.builder((builder) -> {
         builder.arity(0);
         builder.executeArgless(evaluator -> {
             var data = evaluator.getField("data");
 
             var rarityUpgrades = evaluator.getNumber(evaluator.getField(data, "rarity_upgrades"), 0);
             if (rarityUpgrades > 0) {
-                return Bool.TRUE;
+                return BoolValue.TRUE;
             }
 
-            return Bool.FALSE;
+            return BoolValue.FALSE;
         });
     });
 
@@ -78,7 +78,7 @@ public class BuiltinRarities {
                     return Value.NIL;
                 }
 
-                return new Str(color.get());
+                return new StrValue(color.get());
             });
         });
         builder.function("name", function -> {
@@ -98,7 +98,7 @@ public class BuiltinRarities {
                     return Value.NIL;
                 }
 
-                return new Str(rarityValue.get().name());
+                return new StrValue(rarityValue.get().name());
             });
         });
 
