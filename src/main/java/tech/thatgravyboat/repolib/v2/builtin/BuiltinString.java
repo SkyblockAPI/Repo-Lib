@@ -1,6 +1,7 @@
 package tech.thatgravyboat.repolib.v2.builtin;
 
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
+import tech.thatgravyboat.repolib.v2.expl.value.Bool;
 import tech.thatgravyboat.repolib.v2.expl.value.KeyValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Str;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
@@ -24,6 +25,16 @@ public class BuiltinString {
                 }
 
                 return new Str(string.toString());
+            });
+        });
+
+        builder.function("eqIc", function -> {
+            function.arity(2);
+            function.execute((evaluator, values) -> {
+                var first = evaluator.getStringOrThrow(values.getFirst());
+                var second = evaluator.getStringOrThrow(values.get(1));
+
+                return new Bool(first.equalsIgnoreCase(second));
             });
         });
 
