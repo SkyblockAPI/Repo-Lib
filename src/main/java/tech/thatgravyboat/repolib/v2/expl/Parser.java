@@ -84,17 +84,19 @@ public final class Parser {
                         case null, default -> current = access;
                     }
                 }
-                case RETURN -> current = new TokenExpression(Lexer.Token.RETURN);
                 case IF -> current = ifExpr();
                 case FOR -> current = forExpr();
                 case LITERAL_STR -> {
                     var span = lexer.span();
+                    var negate = lexer.peek() == Lexer.Token.UNARY_NOT;
 
-                    if (lexer.peek() == Lexer.Token.IN) {
-                        lexer.next();
-                        lexer.next();
+                    if (negate || lexer.peek() == Lexer.Token.IN) {
+                        if (negate) lexer.expect(Lexer.Token.UNARY_NOT);
+                        lexer.expect(Lexer.Token.IN);
+                        lexer.expect(Lexer.Token.IDENT); // The first span must be expected as memberAccess checks for the span right away.
                         var access = memberAccess();
                         current = new In(access, span.substring(1, span.length() - 1));
+                        if (negate) current = new UnaryExpression(UnaryExpression.Op.NOT, current);
                         break;
                     }
 
@@ -147,6 +149,11 @@ public final class Parser {
 
                     current = array;
                 }
+                case RETURN -> current = new StatementExpression(StatementExpression.Op.RETURN);
+                case BREAK -> current = new StatementExpression(StatementExpression.Op.BREAK);
+                case CONTINUE -> current = new StatementExpression(StatementExpression.Op.CONTINUE);
+                case UNARY_MINUS -> current = new UnaryExpression(UnaryExpression.Op.NEGATE, parseUntil(end));
+                case UNARY_NOT -> current = new UnaryExpression(UnaryExpression.Op.NOT, parseUntil(end));
                 case null, default -> throw new IllegalStateException("Unexpected value: " + lexer.span());
             }
         }

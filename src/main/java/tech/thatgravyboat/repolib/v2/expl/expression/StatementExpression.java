@@ -1,13 +1,16 @@
 package tech.thatgravyboat.repolib.v2.expl.expression;
 
 import org.jetbrains.annotations.NotNull;
-import tech.thatgravyboat.repolib.v2.expl.Lexer;
 
 import java.util.Locale;
 
-public record TokenExpression(Lexer.Token token) implements Expression {
+public record StatementExpression(Op op) implements Expression {
     @Override
     public @NotNull String toString() {
-        return token.name().toLowerCase(Locale.ROOT);
+        return op.name().toLowerCase(Locale.ROOT);
+    }
+
+    public enum Op {
+        RETURN, BREAK, CONTINUE
     }
 }

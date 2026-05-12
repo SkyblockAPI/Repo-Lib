@@ -6,7 +6,7 @@ import tech.thatgravyboat.repolib.v2.expl.StackFile;
 
 public sealed interface Expression
         permits Access, Assign, Block, Bool, Call, For, If, In, Num, SelfEvaluatingExpression, Str, Struct,
-        TokenExpression, Unary {
+        StatementExpression, UnaryExpression {
 
     static StackFile parseFileOrThrow(String source) {
         return new Parser(source).parseFile();

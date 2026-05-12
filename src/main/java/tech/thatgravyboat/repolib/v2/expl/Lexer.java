@@ -95,6 +95,8 @@ public final class Lexer {
             case "in" -> Token.IN;
             case "for" -> Token.FOR;
             case "return" -> Token.RETURN;
+            case "break" -> Token.BREAK;
+            case "continue" -> Token.CONTINUE;
             default -> Token.IDENT;
         };
     }
@@ -189,6 +191,8 @@ public final class Lexer {
         IN,
         FOR,
         RETURN,
+        BREAK,
+        CONTINUE,
 
         EQUALS,
 

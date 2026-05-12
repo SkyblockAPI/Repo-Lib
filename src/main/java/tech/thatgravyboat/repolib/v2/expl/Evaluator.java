@@ -28,10 +28,12 @@ public class Evaluator {
     public final List<ContentInfo> errors = new ArrayList<>();
 
     public Value pushPop(String stack, Supplier<Value> supplier) {
-        this.stack.addLast(stack);
-        var result = supplier.get();
-        this.stack.removeLast();
-        return result;
+        try {
+            this.stack.addLast(stack);
+            return supplier.get();
+        } finally {
+            this.stack.removeLast();
+        }
     }
 
     private String stack() {
@@ -52,7 +54,13 @@ public class Evaluator {
     public void evaluate(Expression expression) {
         try {
             eval0(expression);
-        } catch (Return ignored) {}
+        } catch (ExecutionExceptions.Return ignored) {
+            // execution escaped. Do nothing.
+        } catch (ExecutionExceptions.Break e) {
+            error("Break statement not within loop.");
+        } catch (ExecutionExceptions.Continue e) {
+            error("Continue statement not within loop.");
+        }
     }
 
     public void panic(String message) {
@@ -120,20 +128,22 @@ public class Evaluator {
                 case tech.thatgravyboat.repolib.v2.expl.expression.Str str -> new Str(str.value());
                 case tech.thatgravyboat.repolib.v2.expl.expression.Bool bool -> new Bool(bool.value());
                 case Struct struct -> evalStruct(struct);
-                case Unary unary -> evalUnary(unary);
-                case TokenExpression token -> {
-                    switch (token.token()) {
-                        case Lexer.Token.RETURN -> throw Return.INSTANCE;
-                        default -> throw new Panic("Unhandled token " + token);
+                case UnaryExpression unary -> evalUnary(unary);
+                case StatementExpression token -> {
+                    switch (token.op()) {
+                        case RETURN -> throw ExecutionExceptions.RETURN;
+                        case BREAK -> throw ExecutionExceptions.BREAK;
+                        case CONTINUE -> throw ExecutionExceptions.CONTINUE;
                     }
+                    throw new Panic("Unexpected statement expression " + token);
                 }
                 case SelfEvaluatingExpression self -> self.evaluate(this);
                 case null -> Value.NIL;
             };
         } catch (Panic e) {
             error(e.getMessage());
-            return Value.NIL;
         }
+        return Value.NIL;
     }
 
     private Value evalIn(In in) {
@@ -146,8 +156,11 @@ public class Evaluator {
         throw new Panic("Can't check if '" + in.field() + "' is in non string or keyvalue type " + holder);
     }
 
-    private Value evalUnary(Unary unary) { // TODO
-        return Value.NIL;
+    private Value evalUnary(UnaryExpression unary) {
+        return switch (unary.op()) {
+            case NOT -> new Bool(!asBool(eval0(unary.rhs())));
+            case NEGATE -> new Num(-getNumberOrThrow(eval0(unary.rhs())));
+        };
     }
 
     private Value evalStruct(Struct struct) {
@@ -198,7 +211,13 @@ public class Evaluator {
                 break;
             }
 
-            pushPop("for (...; " + aFor.cond() + "; ...)", () -> eval0(aFor.body()));
+            try {
+                pushPop("for (...; " + aFor.cond() + "; ...)", () -> eval0(aFor.body()));
+            } catch (ExecutionExceptions.Break e) {
+                break;
+            } catch (ExecutionExceptions.Continue e) {
+                // do nothing, just continue to the next iteration.
+            }
 
             var incr = aFor.incr();
             if (incr != null) {
@@ -273,9 +292,5 @@ public class Evaluator {
         public Panic(String message) {
             super(message);
         }
-    }
-
-    public static class Return extends RuntimeException {
-        public static final Return INSTANCE = new Return();
     }
 }

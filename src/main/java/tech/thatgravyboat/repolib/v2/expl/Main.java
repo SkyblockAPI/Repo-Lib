@@ -25,6 +25,14 @@ public class Main {
                     return new Bool(first < second);
                 });
             });
+            builder.function("equals", function -> {
+                function.arity(2);
+                function.execute((eval, values) -> {
+                    var first = eval.getNumberOrThrow(values.get(0));
+                    var second = eval.getNumberOrThrow(values.get(1));
+                    return new Bool(first == second);
+                });
+            });
         });
         var root = new Constants(builder -> {
             builder.field("Math", math);
@@ -39,7 +47,12 @@ public class Main {
         var expression = new Parser("""
         # This is a comment
         for (temp.i = 0; Math.lessThan(temp.i, 10); temp.i = Math.add(temp.i, 1)) {
-            print(temp.i);
+             if (Math.equals(temp.i, 5)) {
+                 continue;
+             } else if (Math.equals(temp.i, 8)) {
+                 break;
+             };
+             print(temp.i);
         };
         """).parseExpression();
 
