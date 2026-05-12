@@ -24,8 +24,12 @@ public final class Parser {
         lexer.expect(Lexer.Token.IDENT, "meta");
         meta = this.block();
 
-        lexer.expect(Lexer.Token.IDENT, "script");
-        script = this.block();
+        if (lexer.peek() == Lexer.Token.IDENT) {
+            lexer.expect(Lexer.Token.IDENT, "script");
+            script = this.block();
+        } else {
+            script = Expression.parse("include(\"item\");");
+        }
 
         return new StackFile(loader, meta, script);
     }
