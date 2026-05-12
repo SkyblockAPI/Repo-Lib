@@ -2,7 +2,7 @@ package tech.thatgravyboat.repolib.v2.expl;
 
 import org.jetbrains.annotations.Nullable;
 
-final class Lexer {
+public final class Lexer {
     private final String source;
     private int start = 0;
     private int cursor = 0;
@@ -97,6 +97,7 @@ final class Lexer {
             case "else" -> Token.ELSE;
             case "in" -> Token.IN;
             case "for" -> Token.FOR;
+            case "return" -> Token.RETURN;
             default -> Token.IDENT;
         };
     }
@@ -188,6 +189,7 @@ final class Lexer {
         ELSE,
         IN,
         FOR,
+        RETURN,
 
         EQUALS,
 

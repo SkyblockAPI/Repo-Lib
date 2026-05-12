@@ -19,7 +19,7 @@ public record Array(List<Expression> list) implements SelfEvaluatingExpression {
         var array = MutableArray.create(new ArrayList<>());
 
         for (var expression : list) {
-            array.add(evaluator.eval(expression));
+            array.add(evaluator.eval0(expression));
         }
 
         return array;

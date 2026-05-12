@@ -50,7 +50,9 @@ public class Evaluator {
     }
 
     public void evaluate(Expression expression) {
-        eval(expression);
+        try {
+            eval0(expression);
+        } catch (Return ignored) {}
     }
 
     public void panic(String message) {
@@ -104,7 +106,7 @@ public class Evaluator {
         throw new Panic("Failed to convert " + value + " into a number");
     }
 
-    public Value eval(Expression expression) {
+    public Value eval0(Expression expression) {
         try {
             return switch (expression) {
                 case Access access -> evalAccess(access);
@@ -119,6 +121,12 @@ public class Evaluator {
                 case tech.thatgravyboat.repolib.v2.expl.expression.Bool bool -> new Bool(bool.value());
                 case Struct struct -> evalStruct(struct);
                 case Unary unary -> evalUnary(unary);
+                case TokenExpression token -> {
+                    switch (token.token()) {
+                        case Lexer.Token.RETURN -> throw Return.INSTANCE;
+                        default -> throw new Panic("Unhandled token " + token);
+                    }
+                }
                 case SelfEvaluatingExpression self -> self.evaluate(this);
                 case null -> Value.NIL;
             };
@@ -145,7 +153,7 @@ public class Evaluator {
     private Value evalStruct(Struct struct) {
         var fields = new HashMap<String, Value>();
         for (var entry : struct.fields().entrySet()) {
-            fields.put(entry.getKey(), eval(entry.getValue()));
+            fields.put(entry.getKey(), eval0(entry.getValue()));
         }
         return new MutableStruct(fields);
     }
@@ -161,12 +169,12 @@ public class Evaluator {
     }
 
     private Value evalIf(If anIf) {
-        var condition = asBool(eval(anIf.cond()));
+        var condition = asBool(eval0(anIf.cond()));
 
         if (condition) {
-            return pushPop("if (" + anIf.cond() + ")", () -> eval(anIf.thenExpr()));
+            return pushPop("if (" + anIf.cond() + ")", () -> eval0(anIf.thenExpr()));
         } else if (anIf.elseExpr() != null) {
-            return pushPop("if (" + anIf.cond() + ") { ... } else", () -> eval(anIf.elseExpr()));
+            return pushPop("if (" + anIf.cond() + ") { ... } else", () -> eval0(anIf.elseExpr()));
         }
 
         return Value.NIL;
@@ -175,7 +183,7 @@ public class Evaluator {
     private Value evalFor(For aFor) {
         var init = aFor.init();
         if (init != null) {
-            eval(init);
+            eval0(init);
         }
 
         int iteration = 0;
@@ -186,15 +194,15 @@ public class Evaluator {
             }
 
             var cond = aFor.cond();
-            if (cond != null && !asBool(eval(cond))) {
+            if (cond != null && !asBool(eval0(cond))) {
                 break;
             }
 
-            pushPop("for (...; " + aFor.cond() + "; ...)", () -> eval(aFor.body()));
+            pushPop("for (...; " + aFor.cond() + "; ...)", () -> eval0(aFor.body()));
 
             var incr = aFor.incr();
             if (incr != null) {
-                eval(incr);
+                eval0(incr);
             }
 
             iteration++;
@@ -204,11 +212,11 @@ public class Evaluator {
     }
 
     private Value evalCall(Call call) {
-        var left = eval(call.lhs());
+        var left = eval0(call.lhs());
         if (left instanceof Function function) {
             var args = new ArrayList<Value>();
             for (var arg : call.args()) {
-                args.add(eval(arg));
+                args.add(eval0(arg));
             }
 
             return pushPop(call.lhs().toString(), () -> function.apply(this, args));
@@ -220,7 +228,7 @@ public class Evaluator {
     private Value evalBlock(Block block) {
         Value last = Value.NIL;
         for (var expr : block.exprs()) {
-            last = eval(expr);
+            last = eval0(expr);
         }
         return last;
     }
@@ -231,11 +239,11 @@ public class Evaluator {
         if (access.lhs() == null) {
             field = defaults;
         } else {
-            field = eval(access.lhs());
+            field = eval0(access.lhs());
         }
 
         if (field instanceof KeyValue.Mutable keyValue) {
-            var value = eval(assign.value());
+            var value = eval0(assign.value());
             keyValue.set(access.field(), value);
             return value;
         } else if (field instanceof KeyValue) {
@@ -251,7 +259,7 @@ public class Evaluator {
         if (lhs == null) {
             return defaults.get(expression.field());
         }
-        var left = eval(lhs);
+        var left = eval0(lhs);
         if (left instanceof KeyValue keyValue) {
             keyValue.get(expression.field());
             return Objects.requireNonNullElse(keyValue.get(expression.field()), Value.NIL);
@@ -265,5 +273,9 @@ public class Evaluator {
         public Panic(String message) {
             super(message);
         }
+    }
+
+    public static class Return extends RuntimeException {
+        public static final Return INSTANCE = new Return();
     }
 }

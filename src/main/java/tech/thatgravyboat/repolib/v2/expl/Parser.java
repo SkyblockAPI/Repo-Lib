@@ -84,6 +84,7 @@ public final class Parser {
                         case null, default -> current = access;
                     }
                 }
+                case RETURN -> current = new TokenExpression(Lexer.Token.RETURN);
                 case IF -> current = ifExpr();
                 case FOR -> current = forExpr();
                 case LITERAL_STR -> {

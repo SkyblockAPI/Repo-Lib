@@ -33,7 +33,7 @@ public record RepoInstance(
 
         }));
         var evaluator = new Evaluator(listConstants);
-        evaluator.eval(loader.rootList());
+        evaluator.evaluate(loader.rootList());
         return stacks;
     }
 
@@ -41,7 +41,7 @@ public record RepoInstance(
         var constants = this.constants.toMutable();
         constants.set("data", data);
         var evaluator = new Evaluator(constants);
-        evaluator.eval(loader.rootFile());
+        evaluator.evaluate(loader.rootFile());
         var file = evaluator.getStringOrNull(evaluator.getField("file"));
         if (file == null) {
             return null;
