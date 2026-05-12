@@ -42,7 +42,7 @@ public class RepoLoader {
                 try {
                     var content = Files.readString(path, StandardCharsets.UTF_8);
                     if (relativeFileName.endsWith(".srls")) {
-                        var expression = Expression.parseFileOrThrow(content);
+                        var expression = Expression.parseFileOrThrow(this, content);
                         stackFiles.put(relativeName, expression);
                     } else if (relativeFileName.equals("root.srlm")) {
                         rootFile = Expression.parse(content);
@@ -58,6 +58,10 @@ public class RepoLoader {
                     errors.add(new LoadingErrors(path, exception));
                 }
             });
+        }
+
+        for (var entry : this.stackFiles.values()) {
+            entry.init();
         }
 
         if (rootList == null) {

@@ -1,5 +1,6 @@
 package tech.thatgravyboat.repolib.v2.expl;
 
+import tech.thatgravyboat.repolib.v2.RepoLoader;
 import tech.thatgravyboat.repolib.v2.expl.expression.*;
 
 import java.util.ArrayList;
@@ -16,7 +17,7 @@ public final class Parser {
         this.lexer = new Lexer(source);
     }
 
-    public StackFile parseFile() {
+    public StackFile parseFile(RepoLoader loader) {
         Expression meta;
         Expression script;
 
@@ -26,7 +27,7 @@ public final class Parser {
         lexer.expect(Lexer.Token.IDENT, "script");
         script = this.block();
 
-        return new StackFile(meta, script);
+        return new StackFile(loader, meta, script);
     }
 
     public Expression parseExpression() {
