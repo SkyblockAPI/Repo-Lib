@@ -2,6 +2,8 @@ package tech.thatgravyboat.repolib.v2.expl;
 
 import org.jetbrains.annotations.Nullable;
 
+import java.util.function.Predicate;
+
 public final class Lexer {
     private final String source;
     private int start = 0;
@@ -30,21 +32,19 @@ public final class Lexer {
     }
 
     public @Nullable Token next() {
-        start = cursor;
-
         consumeWhitespace();
+
+        start = cursor;
         if (atEnd()) {
             return null;
         }
 
         char c = advance();
         if (isAlpha(c)) {
-            return identOrBool();
-        }
-        if (isDigit(c)) {
+            return identOrKeyword();
+        } else if (isDigit(c)) {
             return number();
-        }
-        if (c == '\'' || c == '"') {
+        } else if (c == '\'' || c == '"') {
             return string(c);
         }
 
@@ -85,11 +85,8 @@ public final class Lexer {
         };
     }
 
-    private Token identOrBool() {
-        consumeWhitespace();
-        while (isAlpha(peek0()) || isDigit(peek0())) {
-            advance();
-        }
+    private Token identOrKeyword() {
+        advanceWhile(it -> isAlpha(it) || isDigit(it));
 
         return switch (span()) {
             case "true", "false" -> Token.LITERAL_BOOL;
@@ -103,14 +100,10 @@ public final class Lexer {
     }
 
     private Token number() {
-        // Pre-decimal
-        while (isDigit(peek0()))
-            advance();
+        advanceWhile(this::isDigit);
 
-        // Decimal, if present
         if (match('.')) {
-            while (isDigit(peek0()))
-                advance();
+            advanceWhile(this::isDigit);
         }
 
         return Token.LITERAL_NUM;
@@ -146,6 +139,12 @@ public final class Lexer {
             return '\u0000';
         }
         return source.charAt(cursor);
+    }
+
+    private void advanceWhile(Predicate<Character> condition) {
+        while (condition.test(peek0())) {
+            advance();
+        }
     }
 
     private char advance() {

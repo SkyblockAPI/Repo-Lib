@@ -37,6 +37,7 @@ public class Main {
 
         var evaluator = new Evaluator(root);
         var expression = new Parser("""
+        # This is a comment
         for (temp.i = 0; Math.lessThan(temp.i, 10); temp.i = Math.add(temp.i, 1)) {
             print(temp.i);
         };
