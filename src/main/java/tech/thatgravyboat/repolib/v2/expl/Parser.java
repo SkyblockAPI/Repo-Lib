@@ -45,118 +45,109 @@ public final class Parser {
     }
 
     public Expression parseUntil(Lexer.Token... end) {
-        Set<Lexer.Token> endSet = Set.of(end);
-        Expression current = null;
+        var endings = Set.of(end);
+        var expression = switch (lexer.next()) {
+            case IDENT -> {
+                var access = memberAccess();
 
-        while (true) {
+                yield switch (lexer.peek()) {
+                    case Lexer.Token.EQUALS -> {
+                        lexer.next();
 
-            if (lexer.peek() == null || endSet.contains(lexer.peek())) {
-                return current;
+                        var value = parseUntil(end);
+
+                        yield new Assign(access, value);
+                    }
+                    case Lexer.Token.L_PARENTHESES -> {
+                        lexer.next();
+
+                        List<Expression> args = new ArrayList<>();
+                        var next = lexer.peek();
+
+                        if (next != null && next != Lexer.Token.R_PARENTHESES) {
+                            do {
+                                args.add(parseUntil(Lexer.Token.COMMA, Lexer.Token.R_PARENTHESES));
+                                next = lexer.peek();
+                            } while (next == Lexer.Token.COMMA && lexer.next() != null);
+                        }
+                        lexer.expect(Lexer.Token.R_PARENTHESES);
+                        yield new Call(access, args);
+                    }
+                    case null, default -> access;
+                };
             }
+            case IF -> ifExpr();
+            case FOR -> forExpr();
+            case LITERAL_STR -> {
+                var span = lexer.span();
+                var negate = lexer.peek() == Lexer.Token.UNARY_NOT;
 
-            switch (lexer.next()) {
-                case IDENT -> {
+                if (negate || lexer.peek() == Lexer.Token.IN) {
+                    if (negate) lexer.expect(Lexer.Token.UNARY_NOT);
+                    lexer.expect(Lexer.Token.IN);
+                    lexer.expect(Lexer.Token.IDENT); // The first span must be expected as memberAccess checks for the span right away.
                     var access = memberAccess();
+                    var field = span.substring(1, span.length() - 1);
+                    var inExpr = new In(access, field);
 
-                    switch (lexer.peek()) {
-                        case Lexer.Token.EQUALS -> {
-                            lexer.next();
-
-                            var value = parseUntil(end);
-
-                            current = new Assign(access, value);
-                        }
-                        case Lexer.Token.L_PARENTHESES -> {
-                            lexer.next();
-
-                            List<Expression> args = new ArrayList<>();
-                            var next = lexer.peek();
-
-                            if (next != null && next != Lexer.Token.R_PARENTHESES) {
-                                do {
-                                    args.add(parseUntil(Lexer.Token.COMMA, Lexer.Token.R_PARENTHESES));
-                                    next = lexer.peek();
-                                } while (next == Lexer.Token.COMMA && lexer.next() != null);
-                            }
-                            lexer.expect(Lexer.Token.R_PARENTHESES);
-                            current = new Call(access, args);
-                        }
-                        case null, default -> current = access;
-                    }
+                    yield negate ? new UnaryExpression(UnaryExpression.Op.NOT, inExpr) : inExpr;
                 }
-                case IF -> current = ifExpr();
-                case FOR -> current = forExpr();
-                case LITERAL_STR -> {
-                    var span = lexer.span();
-                    var negate = lexer.peek() == Lexer.Token.UNARY_NOT;
 
-                    if (negate || lexer.peek() == Lexer.Token.IN) {
-                        if (negate) lexer.expect(Lexer.Token.UNARY_NOT);
-                        lexer.expect(Lexer.Token.IN);
-                        lexer.expect(Lexer.Token.IDENT); // The first span must be expected as memberAccess checks for the span right away.
-                        var access = memberAccess();
-                        current = new In(access, span.substring(1, span.length() - 1));
-                        if (negate) current = new UnaryExpression(UnaryExpression.Op.NOT, current);
-                        break;
-                    }
-
-                    current = new Str(span.substring(1, span.length() - 1));
-                }
-                case LITERAL_NUM -> {
-                    var span = lexer.span();
-                    current = new Num(Double.parseDouble(span));
-                }
-                case LITERAL_BOOL -> {
-                    var span = lexer.span();
-                    current = new Bool(Boolean.parseBoolean(span));
-                }
-                case L_BRACE -> {
-                    var fields = new Struct(new HashMap<>());
-
-                    while (lexer.peek() != Lexer.Token.R_BRACE) {
-                        String field;
-                        if (lexer.peek() == Lexer.Token.IDENT) {
-                            lexer.next();
-                            field = lexer.span();
-                        } else {
-                            lexer.expect(Lexer.Token.LITERAL_STR);
-                            field =  lexer.span();
-                            field = field.substring(1, field.length() - 1);
-                        }
-
-                        lexer.expect(Lexer.Token.COLON);
-                        fields.fields().put(field, parseUntil(Lexer.Token.COMMA, Lexer.Token.R_BRACE));
-
-                        if (lexer.peek() == Lexer.Token.COMMA) {
-                            lexer.next();
-                        }
-                    }
-                    lexer.expect(Lexer.Token.R_BRACE);
-
-                    current = fields;
-                }
-                case L_BRACKET -> {
-                    Array array = new Array(new ArrayList<>());
-
-                    while (lexer.peek() != Lexer.Token.R_BRACKET) {
-                        array.list().add(parseUntil(Lexer.Token.COMMA, Lexer.Token.R_BRACKET));
-
-                        if (lexer.peek() == Lexer.Token.COMMA) {
-                            lexer.next();
-                        }
-                    }
-                    lexer.expect(Lexer.Token.R_BRACKET);
-
-                    current = array;
-                }
-                case RETURN -> current = new StatementExpression(StatementExpression.Op.RETURN);
-                case BREAK -> current = new StatementExpression(StatementExpression.Op.BREAK);
-                case CONTINUE -> current = new StatementExpression(StatementExpression.Op.CONTINUE);
-                case UNARY_MINUS -> current = new UnaryExpression(UnaryExpression.Op.NEGATE, parseUntil(end));
-                case UNARY_NOT -> current = new UnaryExpression(UnaryExpression.Op.NOT, parseUntil(end));
-                case null, default -> throw new IllegalStateException("Unexpected value: " + lexer.span());
+                yield new Str(span.substring(1, span.length() - 1));
             }
+            case LITERAL_NUM -> new Num(Double.parseDouble(lexer.span()));
+            case LITERAL_BOOL -> new Bool(Boolean.parseBoolean(lexer.span()));
+            case L_BRACE -> {
+                var fields = new Struct(new HashMap<>());
+
+                while (lexer.peek() != Lexer.Token.R_BRACE) {
+                    String field;
+                    if (lexer.peek() == Lexer.Token.IDENT) {
+                        lexer.next();
+                        field = lexer.span();
+                    } else {
+                        lexer.expect(Lexer.Token.LITERAL_STR);
+                        field =  lexer.span();
+                        field = field.substring(1, field.length() - 1);
+                    }
+
+                    lexer.expect(Lexer.Token.COLON);
+                    fields.fields().put(field, parseUntil(Lexer.Token.COMMA, Lexer.Token.R_BRACE));
+
+                    if (lexer.peek() == Lexer.Token.COMMA) {
+                        lexer.next();
+                    }
+                }
+                lexer.expect(Lexer.Token.R_BRACE);
+
+                yield fields;
+            }
+            case L_BRACKET -> {
+                Array array = new Array(new ArrayList<>());
+
+                while (lexer.peek() != Lexer.Token.R_BRACKET) {
+                    array.list().add(parseUntil(Lexer.Token.COMMA, Lexer.Token.R_BRACKET));
+
+                    if (lexer.peek() == Lexer.Token.COMMA) {
+                        lexer.next();
+                    }
+                }
+                lexer.expect(Lexer.Token.R_BRACKET);
+
+                yield array;
+            }
+            case RETURN -> new StatementExpression(StatementExpression.Op.RETURN);
+            case BREAK -> new StatementExpression(StatementExpression.Op.BREAK);
+            case CONTINUE -> new StatementExpression(StatementExpression.Op.CONTINUE);
+            case UNARY_MINUS -> new UnaryExpression(UnaryExpression.Op.NEGATE, parseUntil(end));
+            case UNARY_NOT -> new UnaryExpression(UnaryExpression.Op.NOT, parseUntil(end));
+            case null, default -> throw new IllegalStateException("Unexpected value: " + lexer.span());
+        };
+
+        if (endings.contains(lexer.peek())) {
+            return expression;
         }
+        throw new IllegalStateException("Expected one of " + endings + " but got " + lexer.peek());
     }
 
     private Expression ifExpr() {
