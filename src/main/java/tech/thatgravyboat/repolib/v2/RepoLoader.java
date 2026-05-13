@@ -1,24 +1,30 @@
 package tech.thatgravyboat.repolib.v2;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import tech.thatgravyboat.repolib.v2.expl.expression.Expression;
 import tech.thatgravyboat.repolib.v2.expl.StackFile;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileVisitResult;
+import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class RepoLoader {
+public class RepoLoader implements FileVisitor<Path> {
 
     private final Path path;
     private final Map<String, Expression> files = new HashMap<>();
     private Expression rootList = null;
     private Expression rootFile = null;
     private final Map<String, StackFile> stackFiles = new HashMap<>();
+    private final List<LoadingErrors> errors = new ArrayList<>();
 
     public RepoLoader(Path path) {
         this.path = path;
@@ -30,35 +36,8 @@ public class RepoLoader {
         rootList = null;
         rootFile = null;
 
-        var errors = new ArrayList<LoadingErrors>();
-        try (var stream = Files.walk(path)) {
-            stream.forEach(path -> {
-                var relativeFileName = this.path.relativize(path).toString();
-                if (Files.isDirectory(path)) {
-                    return;
-                }
-                var relativeName = unescape(relativeFileName.substring(0, relativeFileName.lastIndexOf('.')));
-
-                try {
-                    var content = Files.readString(path, StandardCharsets.UTF_8);
-                    if (relativeFileName.endsWith(".srls")) {
-                        var expression = Expression.parseFileOrThrow(this, content);
-                        stackFiles.put(relativeName, expression);
-                    } else if (relativeFileName.equals("root.srlm")) {
-                        rootFile = Expression.parse(content);
-                    } else if (relativeFileName.endsWith(".srlm")) {
-                        var expression = Expression.parse(content);
-                        files.put(relativeName, expression);
-                    } else if (relativeFileName.equals("root.srll")) {
-                        rootList = Expression.parse(content);
-                    } else {
-                        errors.add(new LoadingErrors(path, "Not a valid script file"));
-                    }
-                } catch (Exception exception) {
-                    errors.add(new LoadingErrors(path, exception));
-                }
-            });
-        }
+        errors.clear();
+        Files.walkFileTree(path, this);
 
         for (var entry : this.stackFiles.values()) {
             entry.init();
@@ -102,6 +81,7 @@ public class RepoLoader {
     private static String unescape(String encoded) {
         return encoded
                 .replace("&lt;", "<")
+                .replace("&do;", ".")
                 .replace("&gt;", ">")
                 .replace("&cl;", ":")
                 .replace("&dq;", "\"")
@@ -111,5 +91,53 @@ public class RepoLoader {
                 .replace("&qu;", "?")
                 .replace("&as;", "*")
                 .replace("&an;", "&");
+    }
+
+    @Override
+    public @NotNull FileVisitResult preVisitDirectory(
+            Path dir,
+            @NotNull BasicFileAttributes attrs
+    ) throws IOException {
+        if (Files.isHidden(dir) || dir.getFileName().toString().startsWith(".")) return FileVisitResult.SKIP_SUBTREE;
+        return FileVisitResult.CONTINUE;
+    }
+
+    @Override
+    public @NotNull FileVisitResult visitFile(Path file, @NotNull BasicFileAttributes attrs) {
+        if (file.getFileName().toString().startsWith(".")) return FileVisitResult.CONTINUE;
+
+        try {
+            var relativeFileName = RepoLoader.this.path.relativize(file).toString();
+            var relativeName = unescape(relativeFileName.substring(0, relativeFileName.lastIndexOf('.')));
+
+            var content = Files.readString(file, StandardCharsets.UTF_8);
+            if (relativeFileName.endsWith(".srls")) {
+                var expression = Expression.parseFileOrThrow(RepoLoader.this, content);
+                stackFiles.put(relativeName, expression);
+            } else if (relativeFileName.equals("root.srlm")) {
+                rootFile = Expression.parse(content);
+            } else if (relativeFileName.endsWith(".srlm")) {
+                var expression = Expression.parse(content);
+                files.put(relativeName, expression);
+            } else if (relativeFileName.equals("root.srll")) {
+                rootList = Expression.parse(content);
+            } else {
+                errors.add(new LoadingErrors(file, "Not a valid script file"));
+            }
+        } catch (Exception exception) {
+            errors.add(new LoadingErrors(file, exception));
+        }
+
+        return FileVisitResult.CONTINUE;
+    }
+
+    @Override
+    public @NotNull FileVisitResult visitFileFailed(Path file, @NotNull IOException exc) {
+        return FileVisitResult.CONTINUE;
+    }
+
+    @Override
+    public @NotNull FileVisitResult postVisitDirectory(Path dir, @Nullable IOException exc) {
+        return FileVisitResult.CONTINUE;
     }
 }
