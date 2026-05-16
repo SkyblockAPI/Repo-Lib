@@ -13,6 +13,7 @@ public record MutableStructValue(Map<String, Value> fields) implements StructVal
 
     @Override
     public Value get(String field) {
+        if (field.equals("this")) return this;
         return fields.computeIfAbsent(field, (ignored) -> new MutableStructValue());
     }
 

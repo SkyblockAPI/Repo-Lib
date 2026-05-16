@@ -114,6 +114,17 @@ public class Evaluator {
         throw new Panic("Failed to convert " + value + " into a number");
     }
 
+    public boolean getBooleanOrThrow(Value value) {
+        if (value instanceof BoolValue(boolean literal)) {
+            return literal;
+        }
+        throw new Panic("Failed to convert " + value + " into a boolean");
+    }
+
+    public boolean asBooleanConversion(Value value) {
+        return asBool(value);
+    }
+
     public Value eval0(Expression expression) {
         try {
             return switch (expression) {
@@ -175,7 +186,6 @@ public class Evaluator {
         return switch (value) {
             case NilValue ignored -> false;
             case BoolValue bool -> bool.value();
-            case NumValue num -> num.value() == 1.0d;
             case StrValue str -> !str.value().isEmpty();
             default -> throw new Panic("Unable to convert " + value + " into boolean.");
         };

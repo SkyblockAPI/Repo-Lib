@@ -28,6 +28,7 @@ public record Constants(Map<String, Value> map) implements StructValue {
 
     @Override
     public Value get(String field) {
+        if (field.equals("this")) return this;
         return map.get(field);
     }
 

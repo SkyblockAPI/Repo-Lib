@@ -12,6 +12,7 @@ public record ImmutableStructValue(Map<String, Value> fields) implements StructV
 
     @Override
     public Value get(String field) {
+        if (field.equals("this")) return this;
         return fields.getOrDefault(field, NIL);
     }
 

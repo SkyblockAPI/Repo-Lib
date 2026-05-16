@@ -1,5 +1,6 @@
 package tech.thatgravyboat.repolib.v2;
 
+import tech.thatgravyboat.repolib.v2.builtin.BuiltinBoolean;
 import tech.thatgravyboat.repolib.v2.builtin.BuiltinMath;
 import tech.thatgravyboat.repolib.v2.builtin.BuiltinObjects;
 import tech.thatgravyboat.repolib.v2.builtin.BuiltinRarities;
@@ -15,6 +16,7 @@ public final class RepoConstants implements StructValue.Forwarding {
         builder.field("Objects", BuiltinObjects.OBJECTS);
         builder.field("Rarity", BuiltinRarities.RARITY);
         builder.field("String", BuiltinString.STRING);
+        builder.field("Boolean", BuiltinBoolean.BOOLEAN);
 
         builder.function("include", (function) -> {
             function.arity(1);
