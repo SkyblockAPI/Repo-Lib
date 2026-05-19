@@ -72,19 +72,10 @@ public class BuiltinMath {
         builder.function("sub", function -> {
             function.vararg(true);
             function.execute((evaluator, values) -> {
-                double sum = 0;
+                var first = evaluator.getNumberOrThrow(values.getFirst());
+                var second = evaluator.getNumberOrThrow(values.get(1));
 
-                for (var value : values) {
-                    if (value instanceof ArrayValue array) {
-                        for (var arrayValue : array) {
-                            sum -= evaluator.getNumberOrThrow(arrayValue);
-                        }
-                    } else {
-                        sum -= evaluator.getNumberOrThrow(value);
-                    }
-                }
-
-                return new NumValue(sum);
+                return new NumValue(first - second);
             });
         });
 
