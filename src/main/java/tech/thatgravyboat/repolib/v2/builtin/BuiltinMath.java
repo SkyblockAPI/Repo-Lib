@@ -69,6 +69,25 @@ public class BuiltinMath {
             });
         });
 
+        builder.function("sub", function -> {
+            function.vararg(true);
+            function.execute((evaluator, values) -> {
+                double sum = 0;
+
+                for (var value : values) {
+                    if (value instanceof ArrayValue array) {
+                        for (var arrayValue : array) {
+                            sum -= evaluator.getNumberOrThrow(arrayValue);
+                        }
+                    } else {
+                        sum -= evaluator.getNumberOrThrow(value);
+                    }
+                }
+
+                return new NumValue(sum);
+            });
+        });
+
         builder.function("min", function -> {
             function.vararg(true);
             function.arity(1);
@@ -128,7 +147,7 @@ public class BuiltinMath {
                     evaluator.panic("Can't divide by 0!");
                     return Value.NIL;
                 }
-                return new NumValue(first * second);
+                return new NumValue(first / second);
             });
         });
 
