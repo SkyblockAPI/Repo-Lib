@@ -91,6 +91,7 @@ public final class Lexer {
         return switch (span()) {
             case "true", "false" -> Token.LITERAL_BOOL;
             case "if" -> Token.IF;
+            case "debug" -> Token.DEBUG;
             case "else" -> Token.ELSE;
             case "in" -> Token.IN;
             case "for" -> Token.FOR;
@@ -187,6 +188,7 @@ public final class Lexer {
 
         // Keywords
         IF,
+        DEBUG,
         ELSE,
         IN,
         FOR,

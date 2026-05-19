@@ -1,6 +1,7 @@
 package tech.thatgravyboat.repolib.v2.expl;
 
 import tech.thatgravyboat.repolib.v2.expl.expression.*;
+import tech.thatgravyboat.repolib.v2.expl.value.ArrayValue;
 import tech.thatgravyboat.repolib.v2.expl.value.BoolValue;
 import tech.thatgravyboat.repolib.v2.expl.value.FunctionValue;
 import tech.thatgravyboat.repolib.v2.expl.value.KeyValue;
@@ -10,6 +11,7 @@ import tech.thatgravyboat.repolib.v2.expl.value.NumValue;
 import tech.thatgravyboat.repolib.v2.expl.value.StrValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
+import java.sql.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -125,6 +127,20 @@ public class Evaluator {
         return asBool(value);
     }
 
+    public ArrayValue getArrayOrThrow(Value value) {
+        if (value instanceof ArrayValue array) {
+            return array;
+        }
+        throw new Panic("Failed to convert " + value + " into an array");
+    }
+
+    public KeyValue getKeyValueOrThrow(Value value) {
+        if (value instanceof KeyValue kv) {
+            return kv;
+        }
+        throw new Panic("Failed to convert " + value + " into a key value");
+    }
+
     public Value eval0(Expression expression) {
         try {
             return switch (expression) {
@@ -148,12 +164,17 @@ public class Evaluator {
                     }
                     throw new Panic("Unexpected statement expression " + token);
                 }
+                case DebugExpression ignored -> pauseForDebug();
                 case SelfEvaluatingExpression self -> self.evaluate(this);
                 case null -> Value.NIL;
             };
         } catch (Panic e) {
             error(e.getMessage());
         }
+        return Value.NIL;
+    }
+
+    private Value pauseForDebug() {
         return Value.NIL;
     }
 
@@ -273,7 +294,8 @@ public class Evaluator {
 
         if (field instanceof KeyValue.Mutable keyValue) {
             var value = eval0(assign.value());
-            keyValue.set(access.field(), value);
+            var fieldName = getStringOrThrow(eval0(access.field()));
+            keyValue.set(fieldName, value);
             return value;
         } else if (field instanceof KeyValue) {
             throw new Panic("Unable to set property '" + access.field() + "' on immutable key/value " + access.lhs());
@@ -285,13 +307,18 @@ public class Evaluator {
 
     private Value evalAccess(AccessExpression expression) {
         var lhs = expression.lhs();
+        var field = eval0(expression.field());
+
         if (lhs == null) {
-            return defaults.get(expression.field());
+            return defaults.get(getStringOrThrow(field));
         }
         var left = eval0(lhs);
+        if (left instanceof ArrayValue arrayValue && field instanceof NumValue(double value)) {
+            return arrayValue.get((int) value);
+        }
         if (left instanceof KeyValue keyValue) {
-            keyValue.get(expression.field());
-            return Objects.requireNonNullElse(keyValue.get(expression.field()), Value.NIL);
+            keyValue.get(getStringOrThrow(field));
+            return Objects.requireNonNullElse(keyValue.get(getStringOrThrow(field)), Value.NIL);
         }
 
         throw new Panic("Unable to access property " + expression.field() + " of non key/value " + lhs);

@@ -11,4 +11,12 @@ public record NumValue(double value) implements Value {
     public @NotNull String toString() {
         return String.valueOf(value);
     }
+
+    @Override
+    public int compareTo(@NotNull Value value) {
+        if (value instanceof NumValue(double literal)) {
+            return Double.compare(this.value, literal);
+        }
+        return 0;
+    }
 }

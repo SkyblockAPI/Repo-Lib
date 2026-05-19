@@ -7,7 +7,7 @@ import tech.thatgravyboat.repolib.v2.expl.value.StructValue;
 import java.util.LinkedList;
 import java.util.List;
 
-import static tech.thatgravyboat.repolib.v2.builtin.Constants.Builder.*;
+import static tech.thatgravyboat.repolib.v2.builtin.Constants.Builder.FunctionBuilder;
 
 public record RepoInstance(
         RepoLoader loader,
@@ -18,24 +18,29 @@ public record RepoInstance(
     public List<StructValue> listStacks() {
         var constants = this.constants.toMutable();
         var stacks = new LinkedList<StructValue>();
-        constants.set("id", FunctionBuilder.create(function -> {
-            function.arity(1);
-            function.executeVoid((evaluator, args) -> {
-                var data = args.getFirst();
-                if (data instanceof StructValue struct) {
-                    stacks.add(struct);
-                    return;
-                }
-                evaluator.error("'id' expected struct but got " + data);
-            });
+        constants.set(
+                "id", FunctionBuilder.create(function -> {
+                    function.arity(1);
+                    function.executeVoid((evaluator, args) -> {
+                        var data = args.getFirst();
+                        if (data instanceof StructValue struct) {
+                            stacks.add(struct);
+                            return;
+                        }
+                        evaluator.error("'id' expected struct but got " + data);
+                    });
 
-        }));
+                }));
         var evaluator = new Evaluator(listConstants);
         evaluator.evaluate(loader.rootList());
         return stacks;
     }
 
     public RepoStackResult createStack(StructValue data) {
+        return createStack(data, RepoConfig.DEFAULT);
+    }
+
+    public RepoStackResult createStack(StructValue data, RepoConfig repoConfig) {
         var constants = this.constants.toMutable();
         constants.set("data", data);
         var evaluator = new Evaluator(constants);
@@ -45,12 +50,16 @@ public record RepoInstance(
             return null;
         }
 
-        return createStack(file, data);
+        return createStack(file, data, repoConfig);
     }
 
     public RepoStackResult createStack(String id, StructValue data) {
+        return createStack(id, data, RepoConfig.DEFAULT);
+    }
+
+    public RepoStackResult createStack(String id, StructValue data, RepoConfig repoConfig) {
         var stackFile = loader.getStackFile(id);
-        var evaluator = stackFile.createEvaluator(constants, data);
+        var evaluator = stackFile.createEvaluator(constants, data, repoConfig);
         var stack = stackFile.evaluateScript(evaluator);
         return new RepoStackResult(stack, evaluator.debugs, evaluator.errors);
     }
@@ -59,6 +68,7 @@ public record RepoInstance(
             StructValue stack,
             List<ContentInfo> debug,
             List<ContentInfo> error
-    ) {}
+    ) {
+    }
 
 }

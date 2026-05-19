@@ -72,6 +72,31 @@ public class BuiltinString {
                 return new StrValue(format.format(evaluator.getNumberOrThrow(arg)));
             });
         });
+
+        builder.function("formattedI", function -> {
+            function.arity(1);
+            var format = new DecimalFormat("+#;-#", DecimalFormatSymbols.getInstance(Locale.ROOT));
+            function.execute((evaluator, values) -> {
+                var arg = values.getFirst();
+                return new StrValue(format.format(evaluator.getNumberOrThrow(arg)));
+            });
+        });
+        builder.function("percentageI", function -> {
+            function.arity(1);
+            var format = new DecimalFormat("+#%;-#%", DecimalFormatSymbols.getInstance(Locale.ROOT));
+            function.execute((evaluator, values) -> {
+                var arg = values.getFirst();
+                return new StrValue(format.format(evaluator.getNumberOrThrow(arg)));
+            });
+        });
+        builder.function("uFormattedI", function -> {
+            function.arity(1);
+            var format = new DecimalFormat("#;#", DecimalFormatSymbols.getInstance(Locale.ROOT));
+            function.execute((evaluator, values) -> {
+                var arg = values.getFirst();
+                return new StrValue(format.format(evaluator.getNumberOrThrow(arg)));
+            });
+        });
     });
 
     private static Value uppercase(Evaluator evaluator, List<Value> args) {

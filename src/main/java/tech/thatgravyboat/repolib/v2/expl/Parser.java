@@ -102,6 +102,7 @@ public final class Parser {
             }
             case LITERAL_NUM -> new NumExpression(Double.parseDouble(lexer.span()));
             case LITERAL_BOOL -> new BoolExpression(Boolean.parseBoolean(lexer.span()));
+            case DEBUG -> DebugExpression.INSTANCE;
             case L_BRACE -> {
                 var fields = new StructExpression(new HashMap<>());
 
@@ -149,7 +150,7 @@ public final class Parser {
             case null, default -> throw new IllegalStateException("Unexpected value: " + lexer.span());
         };
 
-        if (endings.contains(lexer.peek())) {
+        if (lexer.peek() != null && endings.contains(lexer.peek())) {
             return expression;
         }
         throw new IllegalStateException("Expected one of " + endings + " but got " + lexer.peek());
@@ -215,7 +216,7 @@ public final class Parser {
     }
 
     private AccessExpression memberAccess() {
-        var access = new AccessExpression(null, lexer.span());
+        var access = new AccessExpression(null, new StrExpression(lexer.span()));
 
         Lexer.Token next;
         loop:
@@ -223,15 +224,14 @@ public final class Parser {
             switch (next) {
                 case Lexer.Token.IDENT -> {
                     lexer.next();
-                    access = new AccessExpression(access, lexer.span());
+                    access = new AccessExpression(access, new StrExpression(lexer.span()));
                 }
                 case Lexer.Token.DOT -> lexer.next();
                 case Lexer.Token.L_BRACKET -> {
                     lexer.next();
-                    lexer.expect(Lexer.Token.LITERAL_STR);
-                    var field = lexer.span();
+                    var field = parseUntil(Lexer.Token.R_BRACKET);
                     lexer.expect(Lexer.Token.R_BRACKET);
-                    access = new AccessExpression(access, field.substring(1, field.length() - 1));
+                    access = new AccessExpression(access, field);
                 }
                 default -> {
                     break loop;

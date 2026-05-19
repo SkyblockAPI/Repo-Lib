@@ -13,6 +13,7 @@ public class Main {
         var errors = repoLoader.load();
         for (var error : errors) {
             System.out.println("Failed to load file " + error.file() + " due to " + error.reason());
+            error.reason().printStackTrace();
         }
         var file = repoLoader.getStackFile("items/basic_fishing_net");
 

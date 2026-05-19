@@ -1,8 +1,10 @@
 package tech.thatgravyboat.repolib.v2.expl.value;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Locale;
 
-public sealed interface Value permits ArrayValue, BoolValue, FunctionValue, KeyValue, NilValue, NumValue, StrValue {
+public sealed interface Value extends Comparable<Value> permits ArrayValue, BoolValue, FunctionValue, KeyValue, NilValue, NumValue, StrValue {
 
     static String prettyPrint(Value value, String prefix) {
         return switch (value) {
@@ -16,4 +18,8 @@ public sealed interface Value permits ArrayValue, BoolValue, FunctionValue, KeyV
 
     Value NIL = new NilValue();
 
+    @Override
+    default int compareTo(@NotNull Value o) {
+        return 0;
+    }
 }

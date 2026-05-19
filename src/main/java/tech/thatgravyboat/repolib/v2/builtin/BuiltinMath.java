@@ -132,6 +132,17 @@ public class BuiltinMath {
             });
         });
 
+        builder.function("clamp", function -> {
+            function.arity(3);
+            function.execute((evaluator, values) -> {
+                var first = evaluator.getNumberOrThrow(values.getFirst());
+                var second = evaluator.getNumberOrThrow(values.get(1));
+                var third = evaluator.getNumberOrThrow(values.get(2));
+
+                return new NumValue(Math.clamp(first, second, third));
+            });
+        });
+
         builder.constant("PI", Math.PI);
         builder.constant("E", Math.E);
 

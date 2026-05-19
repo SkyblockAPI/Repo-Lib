@@ -1,5 +1,6 @@
 package tech.thatgravyboat.repolib.v2.expl;
 
+import tech.thatgravyboat.repolib.v2.RepoConfig;
 import tech.thatgravyboat.repolib.v2.RepoLoader;
 import tech.thatgravyboat.repolib.v2.builtin.Constants;
 import tech.thatgravyboat.repolib.v2.expl.expression.Expression;
@@ -74,15 +75,21 @@ public final class StackFile implements SelfEvaluatingExpression {
     }
 
     public Evaluator createEvaluator(StructValue overrides) {
-        return createEvaluator(overrides, ImmutableStructValue.EMPTY);
+        return createEvaluator(overrides, ImmutableStructValue.EMPTY, RepoConfig.DEFAULT);
     }
 
     public Evaluator createEvaluator(StructValue overrides, StructValue data) {
+        return createEvaluator(overrides, data, RepoConfig.DEFAULT);
+    }
+
+    public Evaluator createEvaluator(StructValue overrides, StructValue data, RepoConfig config) {
         var inputs = new MutableStructValue();
 
         for (var entry : overrides) {
             inputs.set(entry.getKey(), entry.getValue());
         }
+
+        inputs.set("config", config);
 
         inputs.set(
                 "stack", Constants.mutable((builder) -> {
