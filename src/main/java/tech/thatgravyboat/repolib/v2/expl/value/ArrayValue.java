@@ -70,6 +70,12 @@ public non-sealed interface ArrayValue extends Value, KeyValue, Iterable<Value> 
                             function.executeSimpleVoid(args -> entries.add(args.getFirst()));
                         });
 
+                builder.function(
+                        "addFirst", function -> {
+                            function.arity(1);
+                            function.executeSimpleVoid(args -> entries.addFirst(args.getFirst()));
+                        });
+
                 builder.function("addAll", function -> {
                     function.arity(1);
                     function.executeVoid((evaluator, args) -> {
