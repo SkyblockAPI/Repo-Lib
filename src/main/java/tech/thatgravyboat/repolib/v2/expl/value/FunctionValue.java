@@ -14,4 +14,9 @@ non-sealed public interface FunctionValue extends Value {
     }
 
     Value apply(Evaluator evaluator, List<Value> args);
+
+    @Override
+    default String type() {
+        return "function";
+    }
 }

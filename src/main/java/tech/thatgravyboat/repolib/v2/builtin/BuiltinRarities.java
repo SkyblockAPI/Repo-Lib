@@ -15,14 +15,12 @@ public class BuiltinRarities {
             var meta = evaluator.getField("meta");
             var baseRarity = evaluator.getStringOrNull(evaluator.getField(meta, "rarity"));
             if (baseRarity == null) {
-                evaluator.panic("Item doesn't have a base rarity!");
-                return Value.NIL;
+                return evaluator.panic("Item doesn't have a base rarity!");
             }
 
             var rarity = SkyblockRarity.fromString(baseRarity);
             if (rarity.isEmpty()) {
-                evaluator.panic("Unable to convert " + baseRarity + " to rarity!");
-                return Value.NIL;
+                return evaluator.panic("Unable to convert " + baseRarity + " to rarity!");
             }
 
             var currentRarity = rarity.get();
@@ -67,15 +65,13 @@ public class BuiltinRarities {
                 var first = values.getFirst();
                 var rarity = evaluator.getStringOrNull(first);
                 if (rarity == null) {
-                    evaluator.panic("Provided rarity is not a string!");
-                    return Value.NIL;
+                    return evaluator.panic("Provided rarity is not a string!");
                 }
 
                 var color = SkyblockRarity.color(rarity);
 
                 if (color.isEmpty()) {
-                    evaluator.panic("Unknown rarity " + rarity + "!");
-                    return Value.NIL;
+                    return evaluator.panic("Unknown rarity " + rarity + "!");
                 }
 
                 return new StrValue(color.get());
@@ -87,15 +83,13 @@ public class BuiltinRarities {
                 var first = values.getFirst();
                 var rarity = evaluator.getStringOrNull(first);
                 if (rarity == null) {
-                    evaluator.panic("Provided rarity is not a string!");
-                    return Value.NIL;
+                    return evaluator.panic("Provided rarity is not a string!");
                 }
 
                 var rarityValue = SkyblockRarity.fromString(rarity);
 
                 if (rarityValue.isEmpty()) {
-                    evaluator.panic("Unknown rarity " + rarity + "!");
-                    return Value.NIL;
+                    return evaluator.panic("Unknown rarity " + rarity + "!");
                 }
 
                 return new StrValue(rarityValue.get().name());
@@ -105,6 +99,26 @@ public class BuiltinRarities {
         builder.field("stack", STACK_RARITY);
         builder.field("isRecombobulated", IS_RECOMBOBULATED);
 
+        builder.function("upgrade", function -> {
+            function.arity(2);
+            function.execute((evaluator, values) -> {
+                var first = values.getFirst();
+                var rarity = evaluator.getStringOrThrow(first);
+                var rarityValue = SkyblockRarity.fromString(rarity);
+
+                if (rarityValue.isEmpty()) {
+                    return evaluator.panic("Unknown rarity " + rarity + "!");
+                }
+
+                var rarityResult = rarityValue.get();
+                var upgrade = (int) evaluator.getNumberOrThrow(values.get(1));
+                for (int i = 0; i < upgrade; i++) {
+                    rarityResult = rarityResult.next();
+                }
+
+                return new StrValue(rarityResult.name());
+            });
+        });
     });
 
     private BuiltinRarities() {

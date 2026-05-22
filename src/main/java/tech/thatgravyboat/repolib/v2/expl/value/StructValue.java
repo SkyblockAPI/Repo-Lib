@@ -44,4 +44,8 @@ public interface StructValue extends KeyValue, Iterable<Map.Entry<String, Value>
         }
     }
 
+    @Override
+    default String type() {
+        return "struct";
+    }
 }

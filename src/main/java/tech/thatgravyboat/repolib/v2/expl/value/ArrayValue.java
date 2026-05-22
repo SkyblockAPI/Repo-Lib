@@ -19,6 +19,11 @@ public non-sealed interface ArrayValue extends Value, KeyValue, Iterable<Value> 
         return stringBuilder.toString();
     }
 
+    @Override
+    default String type() {
+        return "array";
+    }
+
     static List<Value> flatten(List<Value> values) {
         List<Value> list = new LinkedList<>();
         for (var value : values) {

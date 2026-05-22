@@ -1,12 +1,25 @@
 package tech.thatgravyboat.repolib.v2.builtin;
 
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
+import tech.thatgravyboat.repolib.v2.expl.value.ArrayValue;
 import tech.thatgravyboat.repolib.v2.expl.value.KeyValue;
+import tech.thatgravyboat.repolib.v2.expl.value.MutableArrayValue;
+import tech.thatgravyboat.repolib.v2.expl.value.MutableStructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.StrValue;
+import tech.thatgravyboat.repolib.v2.expl.value.StructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class BuiltinComponent {
 
+    private static final String[] thousandsPlace = new String[]{"", "M", "MM", "MMM"};
+    private static final String[] hundredsPlace = new String[]{"", "C", "CC", "CCC", "CD", "D", "DC", "DCC", "DCCC", "CM"};
+    private static final String[] tensPlace = new String[]{"", "X", "XX", "XXX", "XL", "L", "LX", "LXX", "LXXX", "XC"};
+    private static final String[] onesPlace = new String[]{"", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"};
     public static final Constants COMPONENT = new Constants(builder -> {
         builder.function(
                 "join", function -> {
@@ -33,11 +46,98 @@ public class BuiltinComponent {
                         return new StrValue(toRomanNumeral((int) first));
                     });
                 });
+
+        builder.function(
+                "splitToLength", function -> {
+                    function.arity(2);
+                    function.execute(BuiltinComponent::splitToLength);
+                });
+
+        builder.function(
+                "asComponent", function -> {
+                    function.arity(1);
+                    function.execute((evaluator, values) -> parseComponent(evaluator, values.getFirst()));
+                });
     });
-    private static final String[] thousandsPlace = new String[]{"", "M", "MM", "MMM"};
-    private static final String[] hundredsPlace = new String[]{"", "C", "CC", "CCC", "CD", "D", "DC", "DCC", "DCCC", "CM"};
-    private static final String[] tensPlace = new String[]{"", "X", "XX", "XXX", "XL", "L", "LX", "LXX", "LXXX", "XC"};
-    private static final String[] onesPlace = new String[]{"", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"};
+
+    private static StructValue parseComponent(Evaluator evaluator, Value value) {
+        return switch (value) {
+            case ArrayValue array -> new MutableStructValue(new HashMap<>(Map.of("extra", array)));
+            case StructValue kv -> kv;
+            case StrValue literal -> new MutableStructValue(new HashMap<>(Map.of("text", literal)));
+            default -> evaluator.panic("Invalid component type " + value.type());
+        };
+    }
+
+    private static Value splitToLength(Evaluator evaluator, List<Value> values) {
+        var text = parseComponent(evaluator, values.getFirst());
+        var maxLength = (int) evaluator.getNumberOrThrow(values.get(1));
+
+        var accumulator = new ArrayList<StructValue>();
+        extractSections(evaluator, text, accumulator, new MutableStructValue());
+
+        var result = MutableArrayValue.create();
+        var current = MutableArrayValue.create();
+        var currentLength = 0;
+
+        for (var entry : accumulator) {
+            var literal = evaluator.getStringOrThrow(entry.get("text"));
+
+            if (currentLength + literal.length() >= maxLength && !literal.isBlank()) {
+                result.add(new MutableStructValue(new HashMap<>(Map.of("extra", current))));
+                current = MutableArrayValue.create();
+                currentLength = 0;
+            }
+            currentLength += literal.length();
+            current.add(entry);
+        }
+
+        result.add(new MutableStructValue(new HashMap<>(Map.of("extra", current))));
+        return result;
+    }
+
+    private static <T extends StructValue & KeyValue.Mutable> void extractSections(
+            Evaluator evaluator,
+            StructValue text,
+            List<StructValue> accumulator,
+            T parent
+    ) {
+        text.forEach(entry -> {
+            if (entry.getKey().equals("text") || entry.getKey().equals("extra")) {
+                return;
+            }
+            parent.set(entry.getKey(), entry.getValue());
+        });
+
+        if (text.contains("text")) {
+            var literalText = evaluator.getStringOrThrow(text.get("text"));
+            var textLength = literalText.length();
+            var consumed = 0;
+            do {
+                var next = literalText.indexOf(' ', consumed);
+                final String span;
+                if (next == -1) {
+                    span = literalText.substring(consumed);
+                    consumed = textLength;
+                } else {
+                    span = literalText.substring(consumed, next + 1);
+                    consumed = next + 1;
+                }
+
+                var entry = new MutableStructValue(parent);
+                entry.set("text", new StrValue(span));
+                accumulator.add(entry);
+            } while (consumed < textLength);
+        }
+
+        if (text.contains("extra")) {
+            var extra = evaluator.getArrayOrThrow(text.get("extra"));
+            for (var value : extra) {
+                var extraParent = new MutableStructValue(parent);
+                extractSections(evaluator, parseComponent(evaluator, value), accumulator, extraParent);
+            }
+        }
+    }
 
     private static void asString(Evaluator evaluator, Value values, StringBuilder stringBuilder) {
         if (values instanceof KeyValue kv) {
@@ -58,11 +158,7 @@ public class BuiltinComponent {
         }
     }
 
-    /**
-     * @param subtractive This refers to if it should preform subtractions for numbers such as 4 if true it will be IV if false it will be IIII
-     */
     private static String toRomanNumeral(int number) {
         return thousandsPlace[number / 1000] + hundredsPlace[number % 1000 / 100] + tensPlace[number % 100 / 10] + onesPlace[number % 10];
     }
-
 }

@@ -60,4 +60,9 @@ non-sealed public interface KeyValue extends Value {
             }
         }
     }
+
+    @Override
+    default String type() {
+        return "object";
+    }
 }

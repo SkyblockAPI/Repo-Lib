@@ -19,4 +19,9 @@ public record NumValue(double value) implements Value {
         }
         return 0;
     }
+
+    @Override
+    public String type() {
+        return "number";
+    }
 }

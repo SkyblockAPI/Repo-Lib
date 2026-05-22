@@ -10,6 +10,21 @@ public record MutableStructValue(Map<String, Value> fields) implements StructVal
     public MutableStructValue() {
         this(new HashMap<>());
     }
+    public MutableStructValue(StructValue value) {
+        this(asMap(value));
+    }
+
+    private static HashMap<String, Value> asMap(StructValue value) {
+        return switch (value) {
+            case MutableStructValue(Map<String, Value> fields) -> new HashMap<>(fields);
+            case ImmutableStructValue(Map<String, Value> fields) -> new HashMap<>(fields);
+            default -> {
+                var map = new HashMap<String, Value>();
+                value.forEach(entry -> map.put(entry.getKey(), entry.getValue()));
+                yield map;
+            }
+        };
+    }
 
     @Override
     public Value get(String field) {

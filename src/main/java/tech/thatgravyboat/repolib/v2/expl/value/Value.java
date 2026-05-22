@@ -16,6 +16,8 @@ public sealed interface Value extends Comparable<Value> permits ArrayValue, Bool
         };
     }
 
+    String type();
+
     Value NIL = new NilValue();
 
     @Override

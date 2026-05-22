@@ -51,8 +51,7 @@ public class BuiltinObjects {
                     return array;
                 }
 
-                evaluator.panic("Can't call Objects.entries on non struct type.");
-                return Value.NIL;
+                return evaluator.panic("Can't call Objects.entries on non struct type.");
             });
         });
 

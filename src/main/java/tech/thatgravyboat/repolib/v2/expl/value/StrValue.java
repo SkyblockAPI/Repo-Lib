@@ -15,4 +15,9 @@ public record StrValue(String value) implements Value {
         }
         return 0;
     }
+
+    @Override
+    public String type() {
+        return "string";
+    }
 }

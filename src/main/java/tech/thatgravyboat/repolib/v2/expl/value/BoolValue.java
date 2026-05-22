@@ -23,4 +23,9 @@ public record BoolValue(boolean value) implements Value {
         }
         return 0;
     }
+
+    @Override
+    public String type() {
+        return "boolean";
+    }
 }

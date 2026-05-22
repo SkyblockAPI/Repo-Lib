@@ -1,5 +1,6 @@
 package tech.thatgravyboat.repolib.v2.expl;
 
+import org.jetbrains.annotations.Contract;
 import tech.thatgravyboat.repolib.v2.expl.expression.*;
 import tech.thatgravyboat.repolib.v2.expl.value.ArrayValue;
 import tech.thatgravyboat.repolib.v2.expl.value.BoolValue;
@@ -65,7 +66,8 @@ public class Evaluator {
         }
     }
 
-    public void panic(String message) {
+    @Contract("_->fail")
+    public <T> T panic(String message) {
         throw new Panic(message);
     }
 

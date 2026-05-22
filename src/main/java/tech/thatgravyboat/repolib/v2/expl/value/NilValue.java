@@ -7,4 +7,9 @@ public record NilValue() implements Value {
     public @NotNull String toString() {
         return "undefined";
     }
+
+    @Override
+    public String type() {
+        return "null";
+    }
 }
