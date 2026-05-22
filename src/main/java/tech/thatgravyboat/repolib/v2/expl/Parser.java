@@ -5,6 +5,7 @@ import tech.thatgravyboat.repolib.v2.expl.expression.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -147,6 +148,7 @@ public final class Parser {
             case CONTINUE -> new StatementExpression(StatementExpression.Op.CONTINUE);
             case UNARY_MINUS -> new UnaryExpression(UnaryExpression.Op.NEGATE, parseUntil(end));
             case UNARY_NOT -> new UnaryExpression(UnaryExpression.Op.NOT, parseUntil(end));
+            case MATCH -> matchExpr();
             case null, default -> throw new IllegalStateException("Unexpected value: " + lexer.span());
         };
 
@@ -154,6 +156,41 @@ public final class Parser {
             return expression;
         }
         throw new IllegalStateException("Expected one of " + endings + " but got " + lexer.peek());
+    }
+
+    private Expression matchExpr() {
+        lexer.expect(Lexer.Token.L_PARENTHESES);
+        var value = parseUntil(Lexer.Token.R_PARENTHESES);
+        lexer.expect(Lexer.Token.R_PARENTHESES);
+
+        var branches = new LinkedList<MatchExpression.MatchBranch>();
+
+        lexer.expect(Lexer.Token.L_BRACE);
+        while (lexer.peek() != Lexer.Token.R_BRACE) {
+            MatchExpression.MatchCondition condition;
+            switch (lexer.peek()) {
+                case GT -> condition = MatchExpression.MatchCondition.GT;
+                case LT -> condition = MatchExpression.MatchCondition.LT;
+                case LTE -> condition = MatchExpression.MatchCondition.LTE;
+                case GTE -> condition = MatchExpression.MatchCondition.GTE;
+                case ELSE -> condition = MatchExpression.MatchCondition.ELSE;
+                case null, default -> condition = MatchExpression.MatchCondition.EQUALS;
+            }
+
+            if (condition != MatchExpression.MatchCondition.EQUALS) {
+                lexer.next();
+            }
+
+            var check = condition == MatchExpression.MatchCondition.ELSE ? null : parseUntil(Lexer.Token.LAMBDA_ARROW);
+            lexer.expect(Lexer.Token.LAMBDA_ARROW);
+            var branch = scopeOrSingleStatement();
+
+            lexer.expect(Lexer.Token.SEMICOLON);
+            branches.add(new MatchExpression.MatchBranch(condition, check, branch));
+        }
+        lexer.expect(Lexer.Token.R_BRACE);
+
+        return new MatchExpression(value, branches);
     }
 
     private Expression ifExpr() {

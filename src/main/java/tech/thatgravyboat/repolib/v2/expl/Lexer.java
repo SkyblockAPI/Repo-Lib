@@ -21,14 +21,16 @@ public final class Lexer {
 
     public void expect(Token type) {
         var next = next();
-        if (next != type)
+        if (next != type) {
             throw new IllegalStateException("Expected " + type + " but got " + next);
+        }
     }
 
     public void expect(Token type, String span) {
         expect(type);
-        if (!span().equals(span))
+        if (!span().equals(span)) {
             throw new IllegalStateException("Expected " + span + " but got " + span());
+        }
     }
 
     public @Nullable Token next() {
@@ -76,7 +78,27 @@ public final class Lexer {
             case '=' -> Token.EQUALS;
             case ',' -> Token.COMMA;
             case '.' -> Token.DOT;
-            case '-' -> Token.UNARY_MINUS;
+            case '>' -> {
+                if (peek0() == '=') {
+                    advance();
+                    yield Token.GTE;
+                }
+                yield Token.GT;
+            }
+            case '<' -> {
+                if (peek0() == '=') {
+                    advance();
+                    yield Token.LTE;
+                }
+                yield Token.LT;
+            }
+            case '-' -> {
+                if (peek0() == '>') {
+                    advance();
+                    yield Token.LAMBDA_ARROW;
+                }
+                yield Token.UNARY_MINUS;
+            }
             case '!' -> Token.UNARY_NOT;
             case '?' -> Token.QUESTION;
             case ':' -> Token.COLON;
@@ -98,6 +120,7 @@ public final class Lexer {
             case "return" -> Token.RETURN;
             case "break" -> Token.BREAK;
             case "continue" -> Token.CONTINUE;
+            case "match" -> Token.MATCH;
             default -> Token.IDENT;
         };
     }
@@ -195,6 +218,7 @@ public final class Lexer {
         RETURN,
         BREAK,
         CONTINUE,
+        MATCH,
 
         EQUALS,
 
@@ -211,6 +235,12 @@ public final class Lexer {
 
         UNARY_NOT,
         UNARY_MINUS,
+        LAMBDA_ARROW,
+
+        GT,
+        GTE,
+        LT,
+        LTE,
 
         L_BRACKET,
         R_BRACKET,

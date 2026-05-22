@@ -45,14 +45,10 @@ public class Main {
 
         var evaluator = new Evaluator(root);
         var expression = new Parser("""
-        # This is a comment
-        for (temp.i = 0; Math.lessThan(temp.i, 10); temp.i = Math.add(temp.i, 1)) {
-             if (Math.equals(temp.i, 5)) {
-                 continue;
-             } else if (Math.equals(temp.i, 8)) {
-                 break;
-             };
-             print(temp.i);
+        match (2) {
+            > 2 -> print("false");
+            >= 2 -> print("true");
+            else -> print("fuck");
         };
         """).parseExpression();
 
