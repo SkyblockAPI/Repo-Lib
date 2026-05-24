@@ -77,8 +77,33 @@ public final class Lexer {
             case '}' -> Token.R_BRACE;
             case '=' -> Token.EQUALS;
             case ',' -> Token.COMMA;
-            case '.' -> Token.DOT;
+            case '+' -> {
+                if (match('=')) {
+                    yield Token.PLUS_ASSIGN;
+                }
+
+                yield Token.PLUS;
+            }
+            case '.' -> {
+                if (match('.')) {
+                    if (match('<')) {
+                        yield Token.INCLUSIVE_EXCLUSIVE_RANGE;
+                    }
+                    yield Token.INCLUSIVE_INCLUSIVE_RANGE;
+                }
+                yield Token.DOT;
+            }
             case '>' -> {
+                if (match('.')) {
+                    if (match('.')) {
+                        if (match('<')) {
+                            yield Token.EXCLUSIVE_EXCLUSIVE_RANGE;
+                        }
+                        yield Token.EXCLUSIVE_INCLUSIVE_RANGE;
+                    }
+                    yield unexpected(c);
+                }
+
                 if (peek0() == '=') {
                     advance();
                     yield Token.GTE;
@@ -93,11 +118,51 @@ public final class Lexer {
                 yield Token.LT;
             }
             case '-' -> {
-                if (peek0() == '>') {
-                    advance();
+                if (match('>')) {
                     yield Token.LAMBDA_ARROW;
                 }
-                yield Token.UNARY_MINUS;
+
+                if (match('=')) {
+                    yield Token.MINUS_ASSIGN;
+                }
+
+                yield Token.MINUS;
+            }
+            case '/' -> {
+
+                if (match('=')) {
+                    yield Token.DIV_ASSIGN;
+                }
+
+                yield Token.DIV;
+            }
+            case '*' -> {
+
+                if (match('=')) {
+                    yield Token.MUL_ASSIGN;
+                }
+
+                yield Token.MUL;
+            }
+            case '%' -> {
+
+                if (match('=')) {
+                    yield Token.MOD_ASSIGN;
+                }
+
+                yield Token.MOD;
+            }
+            case '|' -> {
+                if (!match('|')) {
+                    unexpected(c);
+                }
+                yield Token.OR;
+            }
+            case '&' -> {
+                if (!match('&')) {
+                    unexpected(c);
+                }
+                yield Token.AND;
             }
             case '!' -> Token.UNARY_NOT;
             case '?' -> Token.QUESTION;
@@ -129,7 +194,12 @@ public final class Lexer {
         advanceWhile(this::isDigit);
 
         if (match('.')) {
-            advanceWhile(this::isDigit);
+            if (isDigit(peek0())) {
+                advanceWhile(this::isDigit);
+            } else {
+                // don't consume the . in case there are no digits afterwards
+                cursor--;
+            }
         }
 
         return Token.LITERAL_NUM;
@@ -203,6 +273,10 @@ public final class Lexer {
         throw new IllegalStateException(String.format("unexpected token '%s' at %d.", c, cursor));
     }
 
+    public String near() {
+        return this.source.substring(Math.max(this.cursor - 20, 0), this.cursor);
+    }
+
     public enum Token {
         IDENT,
         LITERAL_STR,
@@ -228,6 +302,10 @@ public final class Lexer {
         COMMA,
         DOT,
 
+        INCLUSIVE_INCLUSIVE_RANGE,
+        INCLUSIVE_EXCLUSIVE_RANGE,
+        EXCLUSIVE_INCLUSIVE_RANGE,
+        EXCLUSIVE_EXCLUSIVE_RANGE,
 
         QUESTION,
         COLON,
@@ -246,7 +324,40 @@ public final class Lexer {
         R_BRACKET,
 
         L_BRACE,
-        R_BRACE
+        R_BRACE,
+
+        PLUS,
+        MINUS,
+        MUL,
+        DIV,
+        POW,
+        MOD,
+
+        PLUS_ASSIGN,
+        MINUS_ASSIGN,
+        MUL_ASSIGN,
+        DIV_ASSIGN,
+        POW_ASSIGN,
+        MOD_ASSIGN,
+
+        AND,
+        OR,
+        ;
+
+        public static Token[] BINARY = new Token[]{
+                PLUS,
+                MINUS,
+                MUL,
+                DIV,
+                POW,
+                MOD,
+                AND,
+                OR,
+                INCLUSIVE_INCLUSIVE_RANGE,
+                INCLUSIVE_EXCLUSIVE_RANGE,
+                EXCLUSIVE_INCLUSIVE_RANGE,
+                EXCLUSIVE_EXCLUSIVE_RANGE,
+        };
     }
 
 }

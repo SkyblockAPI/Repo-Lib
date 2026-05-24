@@ -50,7 +50,7 @@ public class BuiltinComponent {
         builder.function(
                 "splitToLength", function -> {
                     function.arity(2);
-                    function.execute(BuiltinComponent::splitToLength);
+                    function.execute((evaluator, values) -> splitToLength(evaluator, values.getFirst(), (int) evaluator.getNumberOrThrow(values.get(1))));
                 });
 
         builder.function(
@@ -69,9 +69,19 @@ public class BuiltinComponent {
         };
     }
 
-    private static Value splitToLength(Evaluator evaluator, List<Value> values) {
-        var text = parseComponent(evaluator, values.getFirst());
-        var maxLength = (int) evaluator.getNumberOrThrow(values.get(1));
+    private static ArrayValue splitToLength(Evaluator evaluator, Value value, int maxLength) {
+        if (value instanceof ArrayValue array) {
+            var result = MutableArrayValue.create();
+
+            for (var line : array) {
+                for (var lines : splitToLength(evaluator, line, maxLength)) {
+                    result.add(lines);
+                }
+            }
+
+            return result;
+        }
+        var text = parseComponent(evaluator, value);
 
         var accumulator = new ArrayList<StructValue>();
         extractSections(evaluator, text, accumulator, new MutableStructValue());

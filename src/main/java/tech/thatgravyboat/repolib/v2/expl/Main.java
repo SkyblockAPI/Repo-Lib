@@ -45,11 +45,8 @@ public class Main {
 
         var evaluator = new Evaluator(root);
         var expression = new Parser("""
-        match (2) {
-            > 2 -> print("false");
-            >= 2 -> print("true");
-            else -> print("fuck");
-        };
+        print("meow" + " mrow" + " mrrp");
+        print(2>..<(2+2));
         """).parseExpression();
 
         evaluator.evaluate(expression);
