@@ -10,14 +10,16 @@ import tech.thatgravyboat.repolib.v2.expl.value.ImmutableStructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.KeyValue;
 import tech.thatgravyboat.repolib.v2.expl.value.MutableArrayValue;
 import tech.thatgravyboat.repolib.v2.expl.value.MutableStructValue;
-import tech.thatgravyboat.repolib.v2.expl.value.StrValue;
 import tech.thatgravyboat.repolib.v2.expl.value.StructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 
 public final class StackFile implements SelfEvaluatingExpression {
 
+    private static final Expression SCRIPT = Expression.parse("include(\"item\");");
+    public static final Supplier<Expression> DEFAULT_SCRIPT = () -> SCRIPT;
     private final RepoLoader loader;
     private final Expression script;
     private final Expression metaScript;
@@ -35,29 +37,32 @@ public final class StackFile implements SelfEvaluatingExpression {
                 "include", Constants.Builder.FunctionBuilder.create(function -> {
                     function.arity(1);
                     function.execute((evaluator, args) -> {
-                        if (args.size() != 1) {
-                            evaluator.error("Expected 1 argument for include, got " + args.size());
-                            return Value.NIL;
+                        var value = evaluator.getStringOrThrow(args.getFirst());
+                        var requested = loader.getModule(value);
+                        if (requested == null) {
+                            return evaluator.panic("Requested include " + value + " doesn't exist!");
                         }
-                        var arg = args.getFirst();
-                        if (arg instanceof StrValue(String value)) {
-                            var requested = loader.getExpression(value);
-                            if (requested == null) {
-                                evaluator.error("Requested include " + value + " doesn't exist!");
-                                return Value.NIL;
-                            }
-                            evaluator.pushPop(
-                                    value, () -> {
-                                        evaluator.evaluate(requested);
-                                        return Value.NIL;
-                                    });
-                        } else {
-                            evaluator.error("Expected first argument to be a arg, got " + arg.toString());
-                        }
+                        evaluator.pushPop(
+                                value, () -> {
+                                    evaluator.evaluate(requested);
+                                    return Value.NIL;
+                                });
+
                         return Value.NIL;
                     });
                 }));
-        //struct.set("this", struct); // Should allow for access of the top level by also using "this" in the script.
+        struct.set(
+                "static", Constants.Builder.FunctionBuilder.create(function -> {
+                    function.arity(1);
+                    function.execute((evaluator, args) -> {
+                        var value = evaluator.getStringOrThrow(args.getFirst());
+                        var requested = loader.getModule(value);
+                        if (requested == null) {
+                            return evaluator.panic("Requested include " + value + " doesn't exist!");
+                        }
+                        return requested.getStaticData();
+                    });
+                }));
         var evaluator = new Evaluator(struct);
         evaluator.evaluate(this.metaScript);
         struct.fields().remove("include");

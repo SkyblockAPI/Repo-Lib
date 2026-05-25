@@ -45,8 +45,8 @@ public class Main {
 
         var evaluator = new Evaluator(root);
         var expression = new Parser("""
-        print("meow" + " mrow" + " mrrp");
-        print(2>..<(2+2));
+        temp.test = 1..5;
+        print(temp.test);
         """).parseExpression();
 
         evaluator.evaluate(expression);

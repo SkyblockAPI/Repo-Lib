@@ -2,6 +2,7 @@ package tech.thatgravyboat.repolib.v2;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import tech.thatgravyboat.repolib.v2.expl.ModuleFile;
 import tech.thatgravyboat.repolib.v2.expl.expression.Expression;
 import tech.thatgravyboat.repolib.v2.expl.StackFile;
 
@@ -20,7 +21,7 @@ import java.util.Map;
 public class RepoLoader implements FileVisitor<Path> {
 
     private final Path path;
-    private final Map<String, Expression> files = new HashMap<>();
+    private final Map<String, ModuleFile> files = new HashMap<>();
     private Expression rootList = null;
     private Expression rootFile = null;
     private final Map<String, StackFile> stackFiles = new HashMap<>();
@@ -53,7 +54,7 @@ public class RepoLoader implements FileVisitor<Path> {
         return errors;
     }
 
-    public Expression getExpression(String name) {
+    public ModuleFile getModule(String name) {
         return files.get(name);
     }
 
@@ -112,12 +113,12 @@ public class RepoLoader implements FileVisitor<Path> {
 
             var content = Files.readString(file, StandardCharsets.UTF_8);
             if (relativeFileName.endsWith(".srls")) {
-                var expression = Expression.parseFileOrThrow(RepoLoader.this, content);
+                var expression = Expression.parseFileOrThrow(this, content);
                 stackFiles.put(relativeName, expression);
             } else if (relativeFileName.equals("root.srlm")) {
                 rootFile = Expression.parse(content);
             } else if (relativeFileName.endsWith(".srlm")) {
-                var expression = Expression.parse(content);
+                var expression = Expression.parseModuleOrThrow(this, content);
                 files.put(relativeName, expression);
             } else if (relativeFileName.equals("root.srll")) {
                 rootList = Expression.parse(content);

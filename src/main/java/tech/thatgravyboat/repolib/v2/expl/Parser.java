@@ -27,7 +27,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public final class Parser {
     private final String source;
@@ -38,21 +41,64 @@ public final class Parser {
         this.lexer = new Lexer(source);
     }
 
-    public StackFile parseFile(RepoLoader loader) {
-        Expression meta;
-        Expression script;
+    static class Holder<Type> {
 
-        lexer.expect(Lexer.Token.IDENT, "meta");
-        meta = this.block();
+        final String name;
+        Optional<Type> expression = Optional.empty();
 
-        if (lexer.peek() == Lexer.Token.IDENT) {
-            lexer.expect(Lexer.Token.IDENT, "script");
-            script = this.block();
-        } else {
-            script = Expression.parse("include(\"item\");");
+        Holder(String name) {
+            this.name = name;
         }
 
-        return new StackFile(loader, meta, script);
+        void update(Supplier<Type> expressionSupplier) {
+            if (expression.isPresent()) {
+                throw new UnsupportedOperationException("Duplicate section " + name + "!");
+            }
+
+            expression = Optional.of(expressionSupplier.get());
+        }
+
+        Type get() {
+            return expression.get();
+        }
+
+        Type get(Supplier<Type> defaultExpression) {
+            return expression.orElseGet(defaultExpression);
+        }
+    }
+
+    public StackFile parseFile(RepoLoader loader) {
+        Holder<Expression> meta = new Holder<>("meta");
+        Holder<Expression> script = new Holder<>("script");
+
+        while (lexer.peek() == Lexer.Token.IDENT) {
+            lexer.next();
+            switch (lexer.span()) {
+                case "meta" -> meta.update(this::block);
+                case "script" -> script.update(this::block);
+            }
+        }
+
+        return new StackFile(loader, meta.get(), script.get(StackFile.DEFAULT_SCRIPT));
+    }
+
+    public ModuleFile parseModuleFile(RepoLoader loader) {
+        Holder<StructExpression> struct = new Holder<>("static");
+
+        if (lexer.peek() == Lexer.Token.IDENT && "static".equals(lexer.peekSpan())) {
+            lexer.next();
+            struct.update(() -> {
+                var expr = this.parseUntil(Lexer.Token.SEMICOLON);
+                if (expr instanceof StructExpression structExpression) {
+                    return structExpression;
+                }
+
+                throw new RuntimeException("Expected struct expression for static data");
+            });
+            lexer.expect(Lexer.Token.SEMICOLON);
+        }
+
+        return new ModuleFile(loader, struct.get(() -> null), parseExpression());
     }
 
     public Expression parseExpression() {
@@ -128,23 +174,33 @@ public final class Parser {
                 yield switch (lexer.peek()) {
                     case PLUS_ASSIGN -> {
                         lexer.next();
-                        yield new AssignExpression(access, new BinaryExpression(BinaryExpression.Op.PLUS, access, parseBinaryOrNormalUntil(end)));
+                        yield new AssignExpression(
+                                access,
+                                new BinaryExpression(BinaryExpression.Op.PLUS, access, parseBinaryOrNormalUntil(end)));
                     }
                     case MINUS_ASSIGN -> {
                         lexer.next();
-                        yield new AssignExpression(access, new BinaryExpression(BinaryExpression.Op.MINUS, access, parseBinaryOrNormalUntil(end)));
+                        yield new AssignExpression(
+                                access,
+                                new BinaryExpression(BinaryExpression.Op.MINUS, access, parseBinaryOrNormalUntil(end)));
                     }
                     case DIV_ASSIGN -> {
                         lexer.next();
-                        yield new AssignExpression(access, new BinaryExpression(BinaryExpression.Op.DIV, access, parseBinaryOrNormalUntil(end)));
+                        yield new AssignExpression(
+                                access,
+                                new BinaryExpression(BinaryExpression.Op.DIV, access, parseBinaryOrNormalUntil(end)));
                     }
                     case MUL_ASSIGN -> {
                         lexer.next();
-                        yield new AssignExpression(access, new BinaryExpression(BinaryExpression.Op.MUL, access, parseBinaryOrNormalUntil(end)));
+                        yield new AssignExpression(
+                                access,
+                                new BinaryExpression(BinaryExpression.Op.MUL, access, parseBinaryOrNormalUntil(end)));
                     }
                     case MOD_ASSIGN -> {
                         lexer.next();
-                        yield new AssignExpression(access, new BinaryExpression(BinaryExpression.Op.MOD, access, parseBinaryOrNormalUntil(end)));
+                        yield new AssignExpression(
+                                access,
+                                new BinaryExpression(BinaryExpression.Op.MOD, access, parseBinaryOrNormalUntil(end)));
                     }
                     case Lexer.Token.EQUALS -> {
                         lexer.next();

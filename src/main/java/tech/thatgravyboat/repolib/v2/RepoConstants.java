@@ -10,6 +10,7 @@ import tech.thatgravyboat.repolib.v2.builtin.BuiltinString;
 import tech.thatgravyboat.repolib.v2.builtin.Constants;
 import tech.thatgravyboat.repolib.v2.expl.value.StrValue;
 import tech.thatgravyboat.repolib.v2.expl.value.StructValue;
+import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
 public final class RepoConstants implements StructValue.Forwarding {
     private RepoLoader loader;
@@ -22,28 +23,34 @@ public final class RepoConstants implements StructValue.Forwarding {
         builder.field("Component", BuiltinComponent.COMPONENT);
         builder.field("Array", BuiltinArray.ARRAY);
 
-        builder.function("include", (function) -> {
+
+        builder.function("include", function -> {
             function.arity(1);
             function.execute((evaluator, args) -> {
-                if (args.size() != 1) {
-                    evaluator.error("Expected 1 argument for include, got " + args.size());
-                    return NIL;
+                var value = evaluator.getStringOrThrow(args.getFirst());
+                var requested = loader.getModule(value);
+                if (requested == null) {
+                    return evaluator.panic("Requested include " + value + " doesn't exist!");
                 }
-                var arg = args.getFirst();
-                if (arg instanceof StrValue(String value)) {
-                    var requested = loader.getExpression(value);
-                    if (requested == null) {
-                        evaluator.error("Requested include " + value + " doesn't exist!");
-                        return NIL;
-                    }
-                    evaluator.pushPop(value, () -> {
-                        evaluator.evaluate(requested);
-                        return NIL;
-                    });
-                } else {
-                    evaluator.error("Expected first argument to be a arg, got " + arg.toString());
+                evaluator.pushPop(
+                        value, () -> {
+                            evaluator.evaluate(requested);
+                            return Value.NIL;
+                        });
+
+                return Value.NIL;
+            });
+        });
+
+        builder.function("static", function -> {
+            function.arity(1);
+            function.execute((evaluator, args) -> {
+                var value = evaluator.getStringOrThrow(args.getFirst());
+                var requested = loader.getModule(value);
+                if (requested == null) {
+                    return evaluator.panic("Requested include " + value + " doesn't exist!");
                 }
-                return NIL;
+                return requested.getStaticData();
             });
         });
 

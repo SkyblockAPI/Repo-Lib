@@ -209,6 +209,13 @@ public final class Lexer {
         return source.substring(start, cursor).strip();
     }
 
+    public String peekSpan()  {
+        next();
+        var span = span();
+        cursor = start; // Reset to where it was before the call to next.
+        return span;
+    }
+
     private void consumeWhitespace() {
         boolean inComment = false;
         while (true) {
