@@ -17,6 +17,7 @@ public interface CraftingIngredient {
             case "pet" -> PetIngredient.fromJson(json);
             case "item" -> ItemIngredient.fromJson(json);
             case "enchantment" -> EnchantmentIngredient.fromJson(json);
+            case "rune" -> RuneIngredient.fromJson(json);
             case "attribute" -> AttributeIngredient.fromJson(json);
             case "currency" -> CurrencyIngredient.fromJson(json);
             case "potion" -> PotionIngredient.fromJson(json);

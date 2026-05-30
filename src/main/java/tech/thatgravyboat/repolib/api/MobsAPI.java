@@ -2,12 +2,16 @@ package tech.thatgravyboat.repolib.api;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import tech.thatgravyboat.repolib.api.mobs.LootTable;
 import tech.thatgravyboat.repolib.api.mobs.Mob;
+import tech.thatgravyboat.repolib.api.recipes.ingredient.CraftingIngredient;
 import tech.thatgravyboat.repolib.api.types.Position;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public final class MobsAPI {
 
@@ -22,10 +26,35 @@ public final class MobsAPI {
                         mobObject.has("island") ? mobObject.get("island").getAsString() : null,
                         mobObject.has("position") ? Position.fromJson(mobObject.getAsJsonObject("position")) : null,
                         mobObject.has("texture") ? mobObject.get("texture").getAsString() : null,
-                        mobObject.get("name").getAsString()
+                        mobObject.get("itemId").getAsString(),
+                        mobObject.get("name").getAsString(),
+                        mobObject.get("type").getAsString(),
+                        mobObject.has("lootTables") ?
+                        mobObject.getAsJsonArray("lootTables")
+                                .asList()
+                                .stream()
+                                .map(JsonElement::getAsJsonObject)
+                                .map(MobsAPI::loadLootTable)
+                                .collect(Collectors.toList()) : List.of()
                 ));
             }
         }
+    }
+
+    private static LootTable loadLootTable(JsonObject json) {
+        return new LootTable(
+                json.get("name").getAsString(),
+                json.get("mobLevel").getAsInt(),
+                json.get("coins").getAsInt(),
+                json.get("xp").getAsInt(),
+                json.get("combatXp").getAsInt(),
+                json.getAsJsonArray("drops")
+                        .asList()
+                        .stream()
+                        .map(JsonElement::getAsJsonObject)
+                        .map(CraftingIngredient::parse)
+                        .collect(Collectors.toList())
+        );
     }
 
     public Map<String, Mob> mobs() {
