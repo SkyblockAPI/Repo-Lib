@@ -33,6 +33,8 @@ public class Test {
 
             var potions = RepoAPI.potions().getPotion("speed");
             System.out.println(potions);
+
+            System.out.println(RepoAPI.mobs().getMob("WEAVER_SPIDER_MONSTER"));
         });
 
         new Scanner(System.in).nextLine();

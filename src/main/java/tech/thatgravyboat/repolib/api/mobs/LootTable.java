@@ -1,7 +1,7 @@
 package tech.thatgravyboat.repolib.api.mobs;
 
 import org.jetbrains.annotations.NotNull;
-import tech.thatgravyboat.repolib.api.recipes.ingredient.CraftingIngredient;
+import tech.thatgravyboat.repolib.api.mobs.drop.MobDrop;
 
 import java.util.List;
 
@@ -11,6 +11,6 @@ public record LootTable(
         int coins,
         int xp,
         int combatXp,
-        @NotNull List<CraftingIngredient> drops
+        @NotNull List<MobDrop> drops
 ) {
 }

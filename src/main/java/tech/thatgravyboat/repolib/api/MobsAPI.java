@@ -4,7 +4,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import tech.thatgravyboat.repolib.api.mobs.LootTable;
 import tech.thatgravyboat.repolib.api.mobs.Mob;
-import tech.thatgravyboat.repolib.api.recipes.ingredient.CraftingIngredient;
+import tech.thatgravyboat.repolib.api.mobs.drop.MobDrop;
 import tech.thatgravyboat.repolib.api.types.Position;
 
 import java.util.HashMap;
@@ -52,7 +52,7 @@ public final class MobsAPI {
                         .asList()
                         .stream()
                         .map(JsonElement::getAsJsonObject)
-                        .map(CraftingIngredient::parse)
+                        .map(MobDrop::parse)
                         .collect(Collectors.toList())
         );
     }
