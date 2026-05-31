@@ -12,7 +12,7 @@ public record Mob(
         @Nullable String texture,
         @NotNull String itemId,
         @NotNull String name,
-        @NotNull String type,
+        @Nullable String type,
         List<LootTable> lootTables
 ) {
 }

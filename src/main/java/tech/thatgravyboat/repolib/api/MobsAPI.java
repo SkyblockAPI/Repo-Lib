@@ -28,7 +28,7 @@ public final class MobsAPI {
                         mobObject.has("texture") ? mobObject.get("texture").getAsString() : null,
                         mobObject.get("itemId").getAsString(),
                         mobObject.get("name").getAsString(),
-                        mobObject.get("type").getAsString(),
+                        mobObject.has("type") ? mobObject.get("type").getAsString() : null,
                         mobObject.has("lootTables") ?
                         mobObject.getAsJsonArray("lootTables")
                                 .asList()
