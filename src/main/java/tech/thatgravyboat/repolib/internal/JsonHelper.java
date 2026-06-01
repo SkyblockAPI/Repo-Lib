@@ -40,6 +40,10 @@ public class JsonHelper {
         return fallback;
     }
 
+    public static String getStringOrNull(@NotNull JsonObject json, @NotNull String key) {
+        return json.has(key) ? json.get(key).getAsString() : null;
+    }
+
     @Contract("_,_,null->_;_,_,!null->!null")
     public static String getString(@NotNull JsonObject json, @NotNull String key, String fallback) {
         if (json.get(key) instanceof JsonPrimitive primitive && primitive.isString()) {

@@ -6,6 +6,7 @@ import tech.thatgravyboat.repolib.api.mobs.LootTable;
 import tech.thatgravyboat.repolib.api.mobs.Mob;
 import tech.thatgravyboat.repolib.api.mobs.drop.MobDrop;
 import tech.thatgravyboat.repolib.api.types.Position;
+import tech.thatgravyboat.repolib.internal.JsonHelper;
 
 import java.util.HashMap;
 import java.util.List;
@@ -23,12 +24,12 @@ public final class MobsAPI {
                 String id = entry.getKey();
                 JsonObject mobObject = entry.getValue().getAsJsonObject();
                 this.mobs.put(id.toUpperCase(Locale.ROOT), new Mob(
-                        mobObject.has("island") ? mobObject.get("island").getAsString() : null,
+                        JsonHelper.getStringOrNull(mobObject, "island"),
                         mobObject.has("position") ? Position.fromJson(mobObject.getAsJsonObject("position")) : null,
-                        mobObject.has("texture") ? mobObject.get("texture").getAsString() : null,
+                        JsonHelper.getStringOrNull(mobObject, "texture"),
                         mobObject.get("itemId").getAsString(),
                         mobObject.get("name").getAsString(),
-                        mobObject.has("type") ? mobObject.get("type").getAsString() : null,
+                        JsonHelper.getStringOrNull(mobObject, "type"),
                         mobObject.has("lootTables") ?
                         mobObject.getAsJsonArray("lootTables")
                                 .asList()
@@ -44,10 +45,10 @@ public final class MobsAPI {
     private static LootTable loadLootTable(JsonObject json) {
         return new LootTable(
                 json.get("name").getAsString(),
-                json.get("mobLevel").getAsInt(),
-                json.get("coins").getAsInt(),
-                json.get("xp").getAsInt(),
-                json.get("combatXp").getAsInt(),
+                JsonHelper.getInt(json, "mobLevel", 0),
+                JsonHelper.getInt(json, "coins", 0),
+                JsonHelper.getInt(json, "xp", 0),
+                JsonHelper.getInt(json, "combatXp", 0),
                 json.getAsJsonArray("drops")
                         .asList()
                         .stream()
