@@ -38,6 +38,10 @@ public final class PotionsAPI {
         return this.potions.get("POTION_" + id.toUpperCase(Locale.ROOT));
     }
 
+    public @Nullable IdOverlaysAPI.OverlayData getOverlay(String id, int level) {
+        return RepoAPI.overlays().getPotion(id, level);
+    }
+
     public record Potion(
             @NotNull String id,
             @NotNull Map<Integer, PotionLevel> levels,

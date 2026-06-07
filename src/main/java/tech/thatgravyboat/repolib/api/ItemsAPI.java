@@ -3,6 +3,7 @@ package tech.thatgravyboat.repolib.api;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Locale;
@@ -31,5 +32,9 @@ public final class ItemsAPI {
 
     public JsonObject getItem(String name) {
         return this.items.get(name.toUpperCase(Locale.ROOT));
+    }
+
+    public @Nullable IdOverlaysAPI.OverlayData getOverlay(String name) {
+        return RepoAPI.overlays().getItem(name);
     }
 }

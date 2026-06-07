@@ -35,6 +35,7 @@ public final class RepoAPI {
     private static final EnchantsAPI enchants = new EnchantsAPI();
     private static final AttributesAPI attributes = new AttributesAPI();
     private static final PotionsAPI potions = new PotionsAPI();
+    private static final IdOverlaysAPI overlays = new IdOverlaysAPI();
 
     //region Setup
 
@@ -125,6 +126,7 @@ public final class RepoAPI {
         RepoAPI.enchants.load(tryVersionedLoad(shas, localShas, "enchantments", "enchantments.min.json"));
         RepoAPI.attributes.load(tryVersionedLoad(shas, localShas, "attributes", "attributes.min.json"));
         RepoAPI.potions.load(tryVersionedLoad(shas, localShas, "potions", "potions.min.json"));
+        RepoAPI.overlays.load(tryVersionedLoad(shas, localShas, "id_overlays", "id_overlays.min.json"));
 
         // Constants
         RepoAPI.reforgeStones.load(tryLoad(shas, localShas, "reforge_stones", "constants/reforge_stones.min.json"));
@@ -179,6 +181,10 @@ public final class RepoAPI {
 
     public static PotionsAPI potions() {
         return RepoAPI.potions;
+    }
+
+    public static IdOverlaysAPI overlays() {
+        return RepoAPI.overlays;
     }
 
 }

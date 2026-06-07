@@ -2,6 +2,7 @@ package tech.thatgravyboat.repolib.api;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import org.jetbrains.annotations.Nullable;
 import tech.thatgravyboat.repolib.api.mobs.LootTable;
 import tech.thatgravyboat.repolib.api.mobs.Mob;
 import tech.thatgravyboat.repolib.api.mobs.drop.MobDrop;
@@ -64,5 +65,9 @@ public final class MobsAPI {
 
     public Mob getMob(String name) {
         return this.mobs.get(name.toUpperCase(Locale.ROOT));
+    }
+
+    public @Nullable IdOverlaysAPI.OverlayData getOverlay(String name) {
+        return RepoAPI.overlays().getMob(name);
     }
 }

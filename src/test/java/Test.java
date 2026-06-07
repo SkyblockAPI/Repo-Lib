@@ -38,6 +38,9 @@ public class Test {
 
             System.out.println(RepoAPI.parents().getMainParent("LOOTING", 2));
             System.out.println(RepoAPI.parents().getFamily("LOOTING", 2));
+
+            System.out.println(RepoAPI.items().getOverlay("DIRT"));
+            System.out.println(RepoAPI.pets().getOverlay("BEE", "LEGENDARY"));
         });
 
         new Scanner(System.in).nextLine();
