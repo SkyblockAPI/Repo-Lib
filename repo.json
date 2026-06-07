@@ -7,11 +7,14 @@
     "mobs.min.json",
     "pets.min.json",
     "recipes.min.json",
-    "runes.min.json"
+    "runes.min.json",
+    "potions.min.json",
+    "id_overlays.min.json"
   ],
   "static": [
     "constants.min.json",
     "shas.json",
-    "constants/reforge_stones.min.json"
+    "constants/reforge_stones.min.json",
+    "constants/parents.min.json"
   ]
 }
