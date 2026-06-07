@@ -35,6 +35,9 @@ public class Test {
             System.out.println(potions);
 
             System.out.println(RepoAPI.mobs().getMob("WEAVER_SPIDER_MONSTER"));
+
+            System.out.println(RepoAPI.parents().getMainParent("LOOTING", 2));
+            System.out.println(RepoAPI.parents().getFamily("LOOTING", 2));
         });
 
         new Scanner(System.in).nextLine();

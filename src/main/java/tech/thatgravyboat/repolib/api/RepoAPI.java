@@ -29,7 +29,8 @@ public final class RepoAPI {
     private static final ItemsAPI items = new ItemsAPI();
     private static final RecipesAPI recipes = new RecipesAPI();
     private static final MobsAPI mobs = new MobsAPI();
-    private static final ReforgeStonesAPI refogeStones = new ReforgeStonesAPI();
+    private static final ReforgeStonesAPI reforgeStones = new ReforgeStonesAPI();
+    private static final ParentsAPI parents = new ParentsAPI();
     private static final RunesAPI runes = new RunesAPI();
     private static final EnchantsAPI enchants = new EnchantsAPI();
     private static final AttributesAPI attributes = new AttributesAPI();
@@ -126,7 +127,8 @@ public final class RepoAPI {
         RepoAPI.potions.load(tryVersionedLoad(shas, localShas, "potions", "potions.min.json"));
 
         // Constants
-        RepoAPI.refogeStones.load(tryLoad(shas, localShas, "reforge_stones", "constants/reforge_stones.min.json"));
+        RepoAPI.reforgeStones.load(tryLoad(shas, localShas, "reforge_stones", "constants/reforge_stones.min.json"));
+        RepoAPI.parents.load(tryLoad(shas, localShas, "parents", "constants/parents.min.json"));
 
         if (shas != null) {
             Files.writeString(impl.getShasFile(), shas.toString());
@@ -156,7 +158,11 @@ public final class RepoAPI {
     }
 
     public static ReforgeStonesAPI reforgeStones() {
-        return RepoAPI.refogeStones;
+        return RepoAPI.reforgeStones;
+    }
+
+    public static ParentsAPI parents() {
+        return RepoAPI.parents;
     }
 
     public static RunesAPI runes() {
