@@ -3,12 +3,17 @@ package tech.thatgravyboat.repolib.api.mobs.drop;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
 
 public interface MobDrop {
 
     String type();
 
     float chance();
+    @Nullable String condition();
+    List<String> extraLore();
 
     int minAmount();
     int maxAmount();
