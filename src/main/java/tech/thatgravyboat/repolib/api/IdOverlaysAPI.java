@@ -27,12 +27,14 @@ public final class IdOverlaysAPI {
 
     public record OverlayData(
             @Nullable WikiData wiki,
-            boolean vanilla
+            boolean vanilla,
+            JsonObject rawObject
     ) {
         public static OverlayData fromJson(JsonObject json) {
             return new OverlayData(
                     json.has("wiki") ? WikiData.fromJson(json.getAsJsonObject("wiki")) : null,
-                    JsonHelper.getBoolean(json, "vanilla", false)
+                    JsonHelper.getBoolean(json, "vanilla", false),
+                    json
             );
         }
     }
