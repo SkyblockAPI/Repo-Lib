@@ -28,6 +28,7 @@ public interface MobDrop {
             case "rune" -> RuneDrop.fromJson(json);
             case "attribute" -> AttributeDrop.fromJson(json);
             case "potion" -> PotionDrop.fromJson(json);
+            case "currency" -> CurrencyDrop.fromJson(json);
             default -> UnknownDrop.fromJson(json);
         };
     }
