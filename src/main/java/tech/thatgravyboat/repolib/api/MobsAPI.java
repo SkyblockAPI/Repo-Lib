@@ -47,7 +47,6 @@ public final class MobsAPI {
         return new LootTable(
                 json.get("name").getAsString(),
                 JsonHelper.getInt(json, "mobLevel", 0),
-                JsonHelper.getInt(json, "coins", 0),
                 JsonHelper.getInt(json, "xp", 0),
                 JsonHelper.getInt(json, "combatXp", 0),
                 json.getAsJsonArray("drops")
