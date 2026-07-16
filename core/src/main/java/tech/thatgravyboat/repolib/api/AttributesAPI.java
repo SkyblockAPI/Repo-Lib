@@ -39,6 +39,10 @@ public final class AttributesAPI {
         return this.attributes.get(id.toUpperCase(Locale.ROOT));
     }
 
+    public @Nullable IdOverlaysAPI.OverlayData getOverlay(String id) {
+        return RepoAPI.overlays().getAttribute(id);
+    }
+
     public record Attribute(
             @NotNull String id,
             @NotNull List<String> lore,

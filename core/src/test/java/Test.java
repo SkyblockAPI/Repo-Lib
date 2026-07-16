@@ -30,6 +30,17 @@ public class Test {
             for (var attribute : attributes) {
                 System.out.printf("%s -> %s%n", attribute.attributeId(), attribute.shardId());
             }
+
+            var potions = RepoAPI.potions().getPotion("speed");
+            System.out.println(potions);
+
+            System.out.println(RepoAPI.mobs().getMob("WEAVER_SPIDER_MONSTER"));
+
+            System.out.println(RepoAPI.parents().getMainParent("LOOTING", 2));
+            System.out.println(RepoAPI.parents().getFamily("LOOTING", 2));
+
+            System.out.println(RepoAPI.items().getOverlay("DIRT"));
+            System.out.println(RepoAPI.pets().getOverlay("BEE", "LEGENDARY"));
         });
 
         new Scanner(System.in).nextLine();

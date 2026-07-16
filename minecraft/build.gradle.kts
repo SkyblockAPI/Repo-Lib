@@ -7,12 +7,6 @@ plugins {
 
 dependencies {
     minecraft(versionedCatalog["minecraft"])
-    mappings(loom.layered {
-        officialMojangMappings()
-        parchment(variantOf(versionedCatalog["parchment"]) {
-            artifactType("zip")
-        })
-    })
 }
 
 accessWidener {

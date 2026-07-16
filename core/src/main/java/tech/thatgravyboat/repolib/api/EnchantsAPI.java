@@ -3,6 +3,7 @@ package tech.thatgravyboat.repolib.api;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.List;
@@ -31,6 +32,10 @@ public final class EnchantsAPI {
 
     public Enchant getEnchantment(String id) {
         return this.enchantments.get(id.toUpperCase(Locale.ROOT));
+    }
+
+    public @Nullable IdOverlaysAPI.OverlayData getOverlay(String id, int level) {
+        return RepoAPI.overlays().getEnchantment(id, level);
     }
 
     public record Enchant(

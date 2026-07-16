@@ -5,11 +5,7 @@ plugins {
 }
 
 dependencies {
-    minecraft("com.mojang:minecraft:1.21.11")
-    mappings(loom.layered {
-        officialMojangMappings()
-        parchment("org.parchmentmc.data:parchment-1.21.9:2025.10.05@zip")
-    })
+    minecraft("com.mojang:minecraft:26.2")
 }
 
 accessWidener {

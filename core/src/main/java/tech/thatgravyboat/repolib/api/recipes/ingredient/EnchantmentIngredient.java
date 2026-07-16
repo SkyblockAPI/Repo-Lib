@@ -2,6 +2,7 @@ package tech.thatgravyboat.repolib.api.recipes.ingredient;
 
 import com.google.gson.JsonObject;
 import org.jetbrains.annotations.NotNull;
+import tech.thatgravyboat.repolib.internal.JsonHelper;
 
 public record EnchantmentIngredient(
         String id,
@@ -13,7 +14,7 @@ public record EnchantmentIngredient(
         return new EnchantmentIngredient(
                 json.get("globalId").getAsString(),
                 json.get("level").getAsInt(),
-                json.get("count").getAsInt()
+                JsonHelper.getInt(json, "count", 1)
         );
     }
 

@@ -29,16 +29,21 @@ public final class RepoAPI {
     private static final ItemsAPI items = new ItemsAPI();
     private static final RecipesAPI recipes = new RecipesAPI();
     private static final MobsAPI mobs = new MobsAPI();
-    private static final ReforgeStonesAPI refogeStones = new ReforgeStonesAPI();
+    private static final ReforgeStonesAPI reforgeStones = new ReforgeStonesAPI();
+    private static final ParentsAPI parents = new ParentsAPI();
     private static final RunesAPI runes = new RunesAPI();
     private static final EnchantsAPI enchants = new EnchantsAPI();
     private static final AttributesAPI attributes = new AttributesAPI();
+    private static final PotionsAPI potions = new PotionsAPI();
+    private static final IdOverlaysAPI overlays = new IdOverlaysAPI();
 
     //region Setup
 
     private static void assertVersion(RepoVersion version) {
         if (RepoAPI.version != null && version != RepoAPI.version) {
             throw new IllegalStateException("RepoAPI has already been setup with a different version");
+        } else if (!version.isSupported()) {
+            throw new IllegalArgumentException("Version " + version.version() + " is no longer supported");
         }
     }
 
@@ -120,9 +125,12 @@ public final class RepoAPI {
         RepoAPI.runes.load(tryVersionedLoad(shas, localShas, "runes", "runes.min.json").getAsJsonObject());
         RepoAPI.enchants.load(tryVersionedLoad(shas, localShas, "enchantments", "enchantments.min.json"));
         RepoAPI.attributes.load(tryVersionedLoad(shas, localShas, "attributes", "attributes.min.json"));
+        RepoAPI.potions.load(tryVersionedLoad(shas, localShas, "potions", "potions.min.json"));
+        RepoAPI.overlays.load(tryVersionedLoad(shas, localShas, "id_overlays", "id_overlays.min.json"));
 
         // Constants
-        RepoAPI.refogeStones.load(tryLoad(shas, localShas, "reforge_stones", "constants/reforge_stones.min.json"));
+        RepoAPI.reforgeStones.load(tryLoad(shas, localShas, "reforge_stones", "constants/reforge_stones.min.json"));
+        RepoAPI.parents.load(tryLoad(shas, localShas, "parents", "constants/parents.min.json"));
 
         if (shas != null) {
             Files.writeString(impl.getShasFile(), shas.toString());
@@ -152,7 +160,11 @@ public final class RepoAPI {
     }
 
     public static ReforgeStonesAPI reforgeStones() {
-        return RepoAPI.refogeStones;
+        return RepoAPI.reforgeStones;
+    }
+
+    public static ParentsAPI parents() {
+        return RepoAPI.parents;
     }
 
     public static RunesAPI runes() {
@@ -165,6 +177,14 @@ public final class RepoAPI {
 
     public static EnchantsAPI enchantments() {
         return RepoAPI.enchants;
+    }
+
+    public static PotionsAPI potions() {
+        return RepoAPI.potions;
+    }
+
+    public static IdOverlaysAPI overlays() {
+        return RepoAPI.overlays;
     }
 
 }

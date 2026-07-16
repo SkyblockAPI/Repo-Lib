@@ -4,23 +4,22 @@ import com.google.gson.JsonObject;
 import org.jetbrains.annotations.NotNull;
 import tech.thatgravyboat.repolib.internal.JsonHelper;
 
-public record CurrencyIngredient(
-        String currency,
+public record RuneIngredient(
+        String id,
+        int tier,
         int count
 ) implements CraftingIngredient {
 
-
-    static @NotNull CurrencyIngredient fromJson(@NotNull JsonObject json) {
-        return new CurrencyIngredient(
-                json.get("currency").getAsString(),
+    public static @NotNull RuneIngredient fromJson(@NotNull JsonObject json) {
+        return new RuneIngredient(
+                json.get("id").getAsString(),
+                json.get("tier").getAsInt(),
                 JsonHelper.getInt(json, "count", 1)
         );
     }
 
-
     @Override
     public String type() {
-        return "currency";
+        return "rune";
     }
 }
-

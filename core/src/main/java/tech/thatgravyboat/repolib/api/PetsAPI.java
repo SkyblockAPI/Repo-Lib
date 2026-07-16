@@ -70,6 +70,10 @@ public final class PetsAPI {
         return this.petItems.getOrDefault(item, Map.of());
     }
 
+    public @Nullable IdOverlaysAPI.OverlayData getOverlay(String name, String tier) {
+        return RepoAPI.overlays().getPet(name, tier);
+    }
+
     public record Data(
             String name,
             Map<String, Tier> tiers

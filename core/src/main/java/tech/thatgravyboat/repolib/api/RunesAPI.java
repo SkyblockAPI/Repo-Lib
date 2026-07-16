@@ -2,6 +2,7 @@ package tech.thatgravyboat.repolib.api;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.List;
@@ -18,6 +19,10 @@ public class RunesAPI {
 
     public List<Rune> getRunes(String id) {
         return this.runes.get(id.toUpperCase(Locale.ROOT));
+    }
+
+    public @Nullable IdOverlaysAPI.OverlayData getOverlay(String id, int tier) {
+        return RepoAPI.overlays().getRune(id, tier);
     }
 
     void load(JsonObject json) {

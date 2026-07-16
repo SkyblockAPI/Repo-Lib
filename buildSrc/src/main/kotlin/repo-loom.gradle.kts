@@ -3,7 +3,7 @@ import net.fabricmc.loom.task.ValidateAccessWidenerTask
 
 plugins {
     idea
-    id("fabric-loom")
+    id("net.fabricmc.fabric-loom")
     id("repo-kotlin")
 }
 
