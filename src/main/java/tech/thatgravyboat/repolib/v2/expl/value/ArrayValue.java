@@ -77,7 +77,7 @@ public non-sealed interface ArrayValue extends Value, KeyValue, Iterable<Value> 
                         var current = MutableArrayValue.create();
                         for (var entry : entries) {
                             if (current.entries().size() >= amount) {
-                                array.add(entry);
+                                array.add(current);
                                 current = MutableArrayValue.create();
                             }
                             current.add(entry);
