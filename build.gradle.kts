@@ -96,7 +96,7 @@ sourceSets.main.configure {
 }
 
 tasks.build.configure {
-    this.dependsOn(downloadRepo);
+    this.dependsOn(downloadRepo)
     this.mustRunAfter(downloadRepo)
 }
 

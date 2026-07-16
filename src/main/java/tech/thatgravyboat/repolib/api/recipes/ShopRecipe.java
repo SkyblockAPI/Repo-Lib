@@ -8,12 +8,14 @@ import tech.thatgravyboat.repolib.internal.JsonHelper;
 import java.util.List;
 
 public record ShopRecipe(
+        @NotNull String npc,
         @NotNull List<CraftingIngredient> inputs,
         @NotNull CraftingIngredient result
 ) implements Recipe<ShopRecipe> {
 
     static @NotNull ShopRecipe fromJson(@NotNull JsonObject json) {
         return new ShopRecipe(
+                json.get("npc").getAsString(),
                 JsonHelper.getList(json, "inputs", it -> CraftingIngredient.parse(it.getAsJsonObject())),
                 CraftingIngredient.parse(json.getAsJsonObject("result"))
         );
