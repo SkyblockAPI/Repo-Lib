@@ -161,6 +161,22 @@ public final class Parser {
                 lexer.next();
                 yield new BinaryExpression(BinaryExpression.Op.OR, first, parseUntil(end));
             }
+            case GT -> {
+                lexer.next();
+                yield new BinaryExpression(BinaryExpression.Op.GT, first, parseUntil(end));
+            }
+            case GTE -> {
+                lexer.next();
+                yield new BinaryExpression(BinaryExpression.Op.GTE, first, parseUntil(end));
+            }
+            case LT -> {
+                lexer.next();
+                yield new BinaryExpression(BinaryExpression.Op.LT, first, parseUntil(end));
+            }
+            case LTE -> {
+                lexer.next();
+                yield new BinaryExpression(BinaryExpression.Op.LTE, first, parseUntil(end));
+            }
             case null, default -> first;
         };
     }

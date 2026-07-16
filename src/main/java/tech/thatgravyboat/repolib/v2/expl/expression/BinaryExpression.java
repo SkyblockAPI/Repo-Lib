@@ -7,7 +7,7 @@ import tech.thatgravyboat.repolib.v2.expl.value.NumValue;
 import tech.thatgravyboat.repolib.v2.expl.value.StrValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
-public record BinaryExpression(Op op, Expression first, Expression second) implements SelfEvaluatingExpression{
+public record BinaryExpression(Op op, Expression first, Expression second) implements SelfEvaluatingExpression {
 
     @Override
     public Value evaluate(Evaluator evaluator) {
@@ -37,7 +37,7 @@ public record BinaryExpression(Op op, Expression first, Expression second) imple
             @Override
             Value perform(Evaluator evaluator, Expression first, Expression second) {
                 var a = evaluator.getNumberOrThrow(evaluator.eval0(first));
-                var  b = evaluator.getNumberOrThrow(evaluator.eval0(second));
+                var b = evaluator.getNumberOrThrow(evaluator.eval0(second));
                 return new NumValue(a - b);
             }
         },
@@ -45,7 +45,7 @@ public record BinaryExpression(Op op, Expression first, Expression second) imple
             @Override
             Value perform(Evaluator evaluator, Expression first, Expression second) {
                 var a = evaluator.getNumberOrThrow(evaluator.eval0(first));
-                var  b = evaluator.getNumberOrThrow(evaluator.eval0(second));
+                var b = evaluator.getNumberOrThrow(evaluator.eval0(second));
                 return new NumValue(a * b);
             }
         },
@@ -53,7 +53,7 @@ public record BinaryExpression(Op op, Expression first, Expression second) imple
             @Override
             Value perform(Evaluator evaluator, Expression first, Expression second) {
                 var a = evaluator.getNumberOrThrow(evaluator.eval0(first));
-                var  b = evaluator.getNumberOrThrow(evaluator.eval0(second));
+                var b = evaluator.getNumberOrThrow(evaluator.eval0(second));
                 return new NumValue(a / b);
             }
         },
@@ -61,7 +61,7 @@ public record BinaryExpression(Op op, Expression first, Expression second) imple
             @Override
             Value perform(Evaluator evaluator, Expression first, Expression second) {
                 var a = evaluator.getNumberOrThrow(evaluator.eval0(first));
-                var  b = evaluator.getNumberOrThrow(evaluator.eval0(second));
+                var b = evaluator.getNumberOrThrow(evaluator.eval0(second));
                 return new NumValue(a % b);
             }
         },
@@ -69,20 +69,54 @@ public record BinaryExpression(Op op, Expression first, Expression second) imple
             @Override
             Value perform(Evaluator evaluator, Expression first, Expression second) {
                 var a = evaluator.getNumberOrThrow(evaluator.eval0(first));
-                var  b = evaluator.getNumberOrThrow(evaluator.eval0(second));
+                var b = evaluator.getNumberOrThrow(evaluator.eval0(second));
                 return new NumValue(Math.pow(a, b));
             }
         },
         AND {
             @Override
             Value perform(Evaluator evaluator, Expression first, Expression second) {
-                return new BoolValue(evaluator.getBooleanOrThrow(evaluator.eval0(first)) && evaluator.getBooleanOrThrow(evaluator.eval0(second)));
+                return new BoolValue(evaluator.getBooleanOrThrow(evaluator.eval0(first)) && evaluator.getBooleanOrThrow(
+                        evaluator.eval0(second)));
             }
         },
         OR {
             @Override
             Value perform(Evaluator evaluator, Expression first, Expression second) {
-                return new BoolValue(evaluator.getBooleanOrThrow(evaluator.eval0(first)) || evaluator.getBooleanOrThrow(evaluator.eval0(second)));
+                return new BoolValue(evaluator.getBooleanOrThrow(evaluator.eval0(first)) || evaluator.getBooleanOrThrow(
+                        evaluator.eval0(second)));
+            }
+        },
+        GT {
+            @Override
+            Value perform(Evaluator evaluator, Expression first, Expression second) {
+                var a = evaluator.getNumberOrThrow(evaluator.eval0(first));
+                var b = evaluator.getNumberOrThrow(evaluator.eval0(second));
+                return new BoolValue(a > b);
+            }
+        },
+        GTE {
+            @Override
+            Value perform(Evaluator evaluator, Expression first, Expression second) {
+                var a = evaluator.getNumberOrThrow(evaluator.eval0(first));
+                var b = evaluator.getNumberOrThrow(evaluator.eval0(second));
+                return new BoolValue(a >= b);
+            }
+        },
+        LT {
+            @Override
+            Value perform(Evaluator evaluator, Expression first, Expression second) {
+                var a = evaluator.getNumberOrThrow(evaluator.eval0(first));
+                var b = evaluator.getNumberOrThrow(evaluator.eval0(second));
+                return new BoolValue(a < b);
+            }
+        },
+        LTE {
+            @Override
+            Value perform(Evaluator evaluator, Expression first, Expression second) {
+                var a = evaluator.getNumberOrThrow(evaluator.eval0(first));
+                var b = evaluator.getNumberOrThrow(evaluator.eval0(second));
+                return new BoolValue(a <= b);
             }
         },
         ;

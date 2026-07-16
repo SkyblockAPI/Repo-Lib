@@ -209,7 +209,7 @@ public final class Lexer {
         return source.substring(start, cursor).strip();
     }
 
-    public String peekSpan()  {
+    public String peekSpan() {
         next();
         var span = span();
         cursor = start; // Reset to where it was before the call to next.
@@ -364,6 +364,10 @@ public final class Lexer {
                 INCLUSIVE_EXCLUSIVE_RANGE,
                 EXCLUSIVE_INCLUSIVE_RANGE,
                 EXCLUSIVE_EXCLUSIVE_RANGE,
+                GT,
+                GTE,
+                LT,
+                LTE,
         };
     }
 
