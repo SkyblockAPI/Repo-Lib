@@ -24,6 +24,11 @@ public class BuiltinComponent {
         builder.function(
                 "join", function -> {
                     function.vararg(true);
+                    function.execute(((evaluator, values) -> {
+                        var components = MutableArrayValue.create();
+                        values.forEach(components::add);
+                        return components;
+                    }));
                 });
 
         builder.function(
