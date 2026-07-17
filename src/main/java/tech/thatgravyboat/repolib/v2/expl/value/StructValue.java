@@ -34,6 +34,8 @@ public interface StructValue extends KeyValue, Iterable<Map.Entry<String, Value>
         return builder.toString();
     }
 
+    interface MutableStruct extends StructValue, KeyValue.Mutable {}
+
     interface Forwarding extends KeyValue.Forwarding, StructValue {
         @Override
         StructValue delegate();

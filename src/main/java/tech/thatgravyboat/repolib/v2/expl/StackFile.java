@@ -1,6 +1,7 @@
 package tech.thatgravyboat.repolib.v2.expl;
 
 import tech.thatgravyboat.repolib.v2.RepoConfig;
+import tech.thatgravyboat.repolib.v2.RepoConstants;
 import tech.thatgravyboat.repolib.v2.RepoLoader;
 import tech.thatgravyboat.repolib.v2.builtin.Constants;
 import tech.thatgravyboat.repolib.v2.expl.expression.Expression;
@@ -8,6 +9,7 @@ import tech.thatgravyboat.repolib.v2.expl.expression.SelfEvaluatingExpression;
 import tech.thatgravyboat.repolib.v2.expl.value.ArrayValue;
 import tech.thatgravyboat.repolib.v2.expl.value.ImmutableStructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.KeyValue;
+import tech.thatgravyboat.repolib.v2.expl.value.LayeredStructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.MutableArrayValue;
 import tech.thatgravyboat.repolib.v2.expl.value.MutableStructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.StructValue;
@@ -31,7 +33,7 @@ public final class StackFile implements SelfEvaluatingExpression {
         this.metaScript = meta;
     }
 
-    public void init() {
+    public void init(RepoConstants constants) {
         var struct = new MutableStructValue();
         struct.set(
                 "include", Constants.Builder.FunctionBuilder.create(function -> {
@@ -63,7 +65,7 @@ public final class StackFile implements SelfEvaluatingExpression {
                         return requested.getStaticData();
                     });
                 }));
-        var evaluator = new Evaluator(struct);
+        var evaluator = new Evaluator(new LayeredStructValue<>(struct, constants));
         evaluator.evaluate(this.metaScript);
         struct.fields().remove("include");
         this.meta = struct.toFullyImmutable();

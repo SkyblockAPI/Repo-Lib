@@ -2,6 +2,7 @@ package tech.thatgravyboat.repolib.v2;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import tech.thatgravyboat.repolib.v2.builtin.Constants;
 import tech.thatgravyboat.repolib.v2.expl.ModuleFile;
 import tech.thatgravyboat.repolib.v2.expl.expression.Expression;
 import tech.thatgravyboat.repolib.v2.expl.StackFile;
@@ -40,8 +41,10 @@ public class RepoLoader implements FileVisitor<Path> {
         errors.clear();
         Files.walkFileTree(path, this);
 
+        var constants = new RepoConstants(this);
+
         for (var entry : this.stackFiles.values()) {
-            entry.init();
+            entry.init(constants);
         }
 
         if (rootList == null) {
