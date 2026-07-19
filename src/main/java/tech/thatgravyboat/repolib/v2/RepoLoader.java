@@ -111,7 +111,7 @@ public class RepoLoader implements FileVisitor<Path> {
         if (file.getFileName().toString().startsWith(".")) return FileVisitResult.CONTINUE;
 
         try {
-            var relativeFileName = RepoLoader.this.path.relativize(file).toString();
+            var relativeFileName = RepoLoader.this.path.relativize(file).toString().replace("\\", "/");
             var relativeName = unescape(relativeFileName.substring(0, relativeFileName.lastIndexOf('.')));
 
             var content = Files.readString(file, StandardCharsets.UTF_8);
