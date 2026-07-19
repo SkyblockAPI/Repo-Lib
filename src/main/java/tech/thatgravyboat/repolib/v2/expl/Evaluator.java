@@ -56,16 +56,17 @@ public class Evaluator {
 
     public static final Evaluator CONSTANT = new Evaluator(ImmutableStructValue.EMPTY);
 
-    public void evaluate(Expression expression) {
+    public Value evaluate(Expression expression) {
         try {
             eval0(expression);
-        } catch (ExecutionExceptions.Return ignored) {
-            // execution escaped. Do nothing.
+        } catch (ExecutionExceptions.Return ret) {
+            return ret.retVal;
         } catch (ExecutionExceptions.Break e) {
             error("Break statement not within loop.");
         } catch (ExecutionExceptions.Continue e) {
             error("Continue statement not within loop.");
         }
+        return Value.NIL;
     }
 
     @Contract("_->fail")

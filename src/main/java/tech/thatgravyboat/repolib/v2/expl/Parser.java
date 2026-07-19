@@ -1,25 +1,7 @@
 package tech.thatgravyboat.repolib.v2.expl;
 
 import tech.thatgravyboat.repolib.v2.RepoLoader;
-import tech.thatgravyboat.repolib.v2.expl.expression.AccessExpression;
-import tech.thatgravyboat.repolib.v2.expl.expression.ArrayExpression;
-import tech.thatgravyboat.repolib.v2.expl.expression.AssignExpression;
-import tech.thatgravyboat.repolib.v2.expl.expression.BinaryExpression;
-import tech.thatgravyboat.repolib.v2.expl.expression.BlockExpression;
-import tech.thatgravyboat.repolib.v2.expl.expression.BoolExpression;
-import tech.thatgravyboat.repolib.v2.expl.expression.CallExpression;
-import tech.thatgravyboat.repolib.v2.expl.expression.DebugExpression;
-import tech.thatgravyboat.repolib.v2.expl.expression.Expression;
-import tech.thatgravyboat.repolib.v2.expl.expression.ForExpression;
-import tech.thatgravyboat.repolib.v2.expl.expression.IfExpression;
-import tech.thatgravyboat.repolib.v2.expl.expression.InExpression;
-import tech.thatgravyboat.repolib.v2.expl.expression.MatchExpression;
-import tech.thatgravyboat.repolib.v2.expl.expression.NumExpression;
-import tech.thatgravyboat.repolib.v2.expl.expression.RangeExpression;
-import tech.thatgravyboat.repolib.v2.expl.expression.StatementExpression;
-import tech.thatgravyboat.repolib.v2.expl.expression.StrExpression;
-import tech.thatgravyboat.repolib.v2.expl.expression.StructExpression;
-import tech.thatgravyboat.repolib.v2.expl.expression.UnaryExpression;
+import tech.thatgravyboat.repolib.v2.expl.expression.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,9 +9,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public final class Parser {
@@ -247,11 +227,11 @@ public final class Parser {
             case FOR -> forExpr();
             case LITERAL_STR -> {
                 var span = lexer.span();
-                var negate = lexer.peek() == Lexer.Token.UNARY_NOT;
+                var negate = lexer.peek() == Lexer.Token.NOT;
 
                 if (negate || lexer.peek() == Lexer.Token.IN) {
                     if (negate) {
-                        lexer.expect(Lexer.Token.UNARY_NOT);
+                        lexer.expect(Lexer.Token.NOT);
                     }
                     lexer.expect(Lexer.Token.IN);
                     lexer.expect(Lexer.Token.IDENT); // The first span must be expected as memberAccess checks for the span right away.
@@ -311,11 +291,14 @@ public final class Parser {
                 lexer.expect(Lexer.Token.R_PARENTHESES);
                 yield expr;
             }
-            case RETURN -> new StatementExpression(StatementExpression.Op.RETURN);
+            case RETURN -> {
+                if (lexer.peek() != null && !endings.contains(lexer.peek())) yield new ReturnExpression(parseBinaryOrNormalUntil(end));
+                yield new StatementExpression(StatementExpression.Op.RETURN);
+            }
             case BREAK -> new StatementExpression(StatementExpression.Op.BREAK);
             case CONTINUE -> new StatementExpression(StatementExpression.Op.CONTINUE);
-            case UNARY_MINUS -> new UnaryExpression(UnaryExpression.Op.NEGATE, parseUntil(end));
-            case UNARY_NOT -> new UnaryExpression(UnaryExpression.Op.NOT, parseUntil(end));
+            case MINUS -> new UnaryExpression(UnaryExpression.Op.NEGATE, parseUntil(end));
+            case NOT -> new UnaryExpression(UnaryExpression.Op.NOT, parseUntil(end));
             case MATCH -> matchExpr();
             case null, default -> throw new IllegalStateException("Unexpected value: " + lexer.span());
         };
