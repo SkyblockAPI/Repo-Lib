@@ -2,16 +2,7 @@ package tech.thatgravyboat.repolib.v2.expl;
 
 import org.jetbrains.annotations.Contract;
 import tech.thatgravyboat.repolib.v2.expl.expression.*;
-import tech.thatgravyboat.repolib.v2.expl.value.ArrayValue;
-import tech.thatgravyboat.repolib.v2.expl.value.BoolValue;
-import tech.thatgravyboat.repolib.v2.expl.value.FunctionValue;
-import tech.thatgravyboat.repolib.v2.expl.value.ImmutableStructValue;
-import tech.thatgravyboat.repolib.v2.expl.value.KeyValue;
-import tech.thatgravyboat.repolib.v2.expl.value.MutableStructValue;
-import tech.thatgravyboat.repolib.v2.expl.value.NilValue;
-import tech.thatgravyboat.repolib.v2.expl.value.NumValue;
-import tech.thatgravyboat.repolib.v2.expl.value.StrValue;
-import tech.thatgravyboat.repolib.v2.expl.value.Value;
+import tech.thatgravyboat.repolib.v2.expl.value.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,16 +16,30 @@ public class Evaluator {
     private static final int MAX_ITERATIONS = Short.MAX_VALUE;
 
     public final KeyValue defaults;
+    private final Scope scope;
     public final List<ContentInfo> debugs = new ArrayList<>();
     public final LinkedList<String> fileStack = new LinkedList<>();
     public final LinkedList<String> stack = new LinkedList<>();
     public final List<ContentInfo> errors = new ArrayList<>();
 
-    public Value pushPop(String stack, Supplier<Value> supplier) {
+    public Value pushPop(String stack, MutableStructValue scope, Supplier<Value> supplier) {
         try {
+            this.scope.pushWithScope(scope);
             this.stack.addLast(stack);
             return supplier.get();
         } finally {
+            this.scope.pop();
+            this.stack.removeLast();
+        }
+    }
+
+    public Value pushPop(String stack, Supplier<Value> supplier) {
+        try {
+            this.scope.push();
+            this.stack.addLast(stack);
+            return supplier.get();
+        } finally {
+            this.scope.pop();
             this.stack.removeLast();
         }
     }
@@ -52,6 +57,7 @@ public class Evaluator {
 
     public Evaluator(KeyValue defaults) {
         this.defaults = defaults;
+        scope = new Scope(defaults);
     }
 
     public static final Evaluator CONSTANT = new Evaluator(ImmutableStructValue.EMPTY);
@@ -90,7 +96,7 @@ public class Evaluator {
     }
 
     public Value getField(String field) {
-        return defaults.get(field);
+        return scope.get().get(field);
     }
 
     public String getStringOrNull(Value value) {
@@ -144,6 +150,13 @@ public class Evaluator {
             return kv;
         }
         throw new Panic("Failed to convert " + value + " into a key value");
+    }
+
+    public MutableStructValue getMutableStructOrThrow(Value value) {
+        if (value instanceof MutableStructValue msv) {
+            return msv;
+        }
+        throw new Panic("Failed to convert " + value + " into a mutable struct");
     }
 
     public Value eval0(Expression expression) {
@@ -292,7 +305,7 @@ public class Evaluator {
         var access = assign.lhs();
         final Value field;
         if (access.lhs() == null) {
-            field = defaults;
+            field = scope.get();
         } else {
             field = eval0(access.lhs());
         }
@@ -315,7 +328,7 @@ public class Evaluator {
         var field = eval0(expression.field());
 
         if (lhs == null) {
-            return defaults.get(getStringOrThrow(field));
+            return scope.get().get(getStringOrThrow(field));
         }
         var left = eval0(lhs);
         if (left instanceof ArrayValue arrayValue && field instanceof NumValue(double value)) {
@@ -333,6 +346,28 @@ public class Evaluator {
 
         public Panic(String message) {
             super(message);
+        }
+    }
+
+    private static class Scope {
+        KeyValue defaults;
+        LinkedList<KeyValue> scopes = new LinkedList<>();
+        public Scope(KeyValue defaults) {
+            this.defaults = defaults;
+            scopes.add(defaults);
+        }
+        public KeyValue get() {
+            return scopes.getLast();
+        }
+        public void push() {
+            scopes.add(new ScopeLayeredStructValue(scopes.getLast(), new MutableStructValue()));
+        }
+        public void pushWithScope(MutableStructValue newScope) {
+            scopes.add(new ScopeLayeredStructValue(defaults, newScope));
+        }
+        public void pop() {
+            if (scopes.size() == 1) throw new IllegalStateException("Cannot pop base scope");
+            scopes.removeLast();
         }
     }
 }

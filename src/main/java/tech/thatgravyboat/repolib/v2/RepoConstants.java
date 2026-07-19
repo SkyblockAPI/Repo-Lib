@@ -24,29 +24,45 @@ public final class RepoConstants implements StructValue.Forwarding {
 
 
         builder.function("include", function -> {
-            function.arity(1);
+            function.arity(1, 2);
+            function.vararg(true);
             function.execute((evaluator, args) -> {
                 var value = evaluator.getStringOrThrow(args.getFirst());
                 var requested = loader.getModule(value);
                 if (requested == null) {
                     return evaluator.panic("Requested include " + value + " doesn't exist!");
                 }
-                return evaluator.pushPop(value, () -> {
-                    evaluator.evaluate(requested);
-                    return Value.NIL;
-                });
+
+                if (args.size() == 2) {
+                    var scope = evaluator.getMutableStructOrThrow(args.get(1));
+                    return evaluator.pushPop(value, scope, () -> {
+                        evaluator.evaluate(requested);
+                        return Value.NIL;
+                    });
+                } else {
+                    return evaluator.pushPop(value, () -> {
+                        evaluator.evaluate(requested);
+                        return Value.NIL;
+                    });
+                }
             });
         });
 
         builder.function("call", function -> {
-            function.arity(1);
+            function.arity(1, 2);
+            function.vararg(true);
             function.execute((evaluator, args) -> {
                 var value = evaluator.getStringOrThrow(args.getFirst());
                 var requested = loader.getModule(value);
                 if (requested == null) {
                     return evaluator.panic("Requested include " + value + " doesn't exist!");
                 }
-                return evaluator.pushPop(value, () -> evaluator.evaluate(requested));
+                if (args.size() == 2) {
+                    var scope = evaluator.getMutableStructOrThrow(args.get(1));
+                    return evaluator.pushPop(value, scope, () -> evaluator.evaluate(requested));
+                } else {
+                    return evaluator.pushPop(value, () -> evaluator.evaluate(requested));
+                }
             });
         });
 

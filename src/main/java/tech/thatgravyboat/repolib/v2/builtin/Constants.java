@@ -110,19 +110,23 @@ public record Constants(Map<String, Value> map) implements StructValue {
         }
 
         public static class FunctionBuilder {
-            private int arity = 0;
+            private int arityMin = 0;
+            private int arityMax = Short.MAX_VALUE;
             private boolean vararg = false;
             private BiFunction<Evaluator, List<Value>, Value> executor;
 
             public static FunctionValue create(Consumer<FunctionBuilder> builderConsumer) {
                 var builder = new FunctionBuilder();
                 builderConsumer.accept(builder);
-                int arity = builder.arity;
+                int arityMin = builder.arityMin;
+                int arityMax = builder.arityMax;
                 boolean vararg = builder.vararg;
                 var executor = builder.executor;
                 return ((evaluator, args) -> {
-                    if ((vararg && args.size() < arity) || (!vararg && args.size() != arity)) {
-                        evaluator.error("Arity mismatched, expected " + arity + " arguments but got " + args.size());
+                    if ((vararg && (args.size() > arityMax || args.size() < arityMin)) || (!vararg && args.size() != arityMin)) {
+                        evaluator.error("Arity mismatched, expected " + arityMin + (arityMin != arityMax ?
+                                " - " + arityMax :
+                                "") + " arguments but got " + args.size());
                         return NIL;
                     }
 
@@ -138,7 +142,19 @@ public record Constants(Map<String, Value> map) implements StructValue {
                 if (arity < 0) {
                     throw new IllegalArgumentException("Arity " + arity + "out of range [0;[");
                 }
-                this.arity = arity;
+                arityMin = arity;
+                arityMax = Short.MAX_VALUE;
+            }
+
+            public void arity(int arityMin, int arityMax) {
+                if (arityMax <= arityMin) {
+                    throw new IllegalArgumentException("Max arity is below (or equal) min arity!");
+                }
+                if (arityMax < 0 || arityMin < 0) {
+                    throw new IllegalArgumentException("Arity is out of range");
+                }
+                this.arityMin = arityMin;
+                this.arityMax = arityMax;
             }
 
             public void execute(BiFunction<Evaluator, List<Value>, Value> executor) {
