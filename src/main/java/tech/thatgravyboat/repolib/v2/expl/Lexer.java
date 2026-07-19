@@ -164,7 +164,7 @@ public final class Lexer {
                 }
                 yield Token.AND;
             }
-            case '!' -> Token.UNARY_NOT;
+            case '!' -> Token.NOT;
             case '?' -> Token.QUESTION;
             case ':' -> Token.COLON;
             case ';' -> Token.SEMICOLON;
@@ -318,8 +318,7 @@ public final class Lexer {
         COLON,
         SEMICOLON,
 
-        UNARY_NOT,
-        UNARY_MINUS,
+        NOT,
         LAMBDA_ARROW,
 
         GT,

@@ -8,7 +8,6 @@ import tech.thatgravyboat.repolib.v2.builtin.BuiltinObjects;
 import tech.thatgravyboat.repolib.v2.builtin.BuiltinRarities;
 import tech.thatgravyboat.repolib.v2.builtin.BuiltinString;
 import tech.thatgravyboat.repolib.v2.builtin.Constants;
-import tech.thatgravyboat.repolib.v2.expl.value.StrValue;
 import tech.thatgravyboat.repolib.v2.expl.value.StructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
@@ -32,13 +31,22 @@ public final class RepoConstants implements StructValue.Forwarding {
                 if (requested == null) {
                     return evaluator.panic("Requested include " + value + " doesn't exist!");
                 }
-                evaluator.pushPop(
-                        value, () -> {
-                            evaluator.evaluate(requested);
-                            return Value.NIL;
-                        });
+                return evaluator.pushPop(value, () -> {
+                    evaluator.evaluate(requested);
+                    return Value.NIL;
+                });
+            });
+        });
 
-                return Value.NIL;
+        builder.function("call", function -> {
+            function.arity(1);
+            function.execute((evaluator, args) -> {
+                var value = evaluator.getStringOrThrow(args.getFirst());
+                var requested = loader.getModule(value);
+                if (requested == null) {
+                    return evaluator.panic("Requested include " + value + " doesn't exist!");
+                }
+                return evaluator.pushPop(value, () -> evaluator.evaluate(requested));
             });
         });
 
