@@ -1,4 +1,4 @@
-wpackage tech.thatgravyboat.repolib.v2.builtin;
+package tech.thatgravyboat.repolib.v2.builtin;
 
 import org.jetbrains.annotations.NotNull;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
