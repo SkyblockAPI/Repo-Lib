@@ -11,6 +11,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
+import tech.thatgravyboat.repolib.v2.expl.value.BoolValue;
 
 public final class Parser {
     private final String source;
@@ -317,9 +318,14 @@ public final class Parser {
     }
 
     private Expression matchExpr() {
-        lexer.expect(Lexer.Token.L_PARENTHESES);
-        var value = parseBinaryOrNormalUntil(Lexer.Token.R_PARENTHESES);
-        lexer.expect(Lexer.Token.R_PARENTHESES);
+        final Expression value;
+        if (lexer.peek() == Lexer.Token.L_PARENTHESES) {
+            lexer.expect(Lexer.Token.L_PARENTHESES);
+            value = parseBinaryOrNormalUntil(Lexer.Token.R_PARENTHESES);
+            lexer.expect(Lexer.Token.R_PARENTHESES);
+        } else {
+            value = new BoolExpression(true);
+        }
 
         var branches = new LinkedList<MatchExpression.MatchBranch>();
 
