@@ -1,4 +1,4 @@
-package tech.thatgravyboat.repolib.v2.builtin;
+wpackage tech.thatgravyboat.repolib.v2.builtin;
 
 import org.jetbrains.annotations.NotNull;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
@@ -155,6 +155,7 @@ public record Constants(Map<String, Value> map) implements StructValue {
                 }
                 this.arityMin = arityMin;
                 this.arityMax = arityMax;
+                vararg = true;
             }
 
             public void execute(BiFunction<Evaluator, List<Value>, Value> executor) {
