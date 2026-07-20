@@ -20,10 +20,10 @@ public record ScopeLayeredStructValue(KeyValue base, MutableStructValue overlay)
 
     @Override
     public Value get(String field) {
-        if (overlay.contains(field)) {
-            return overlay.get(field);
+        if (!overlay.contains(field) && base.contains(field)) {
+            return base.get(field);
         }
-        return base.get(field);
+        return overlay.get(field);
     }
 
     @Override
