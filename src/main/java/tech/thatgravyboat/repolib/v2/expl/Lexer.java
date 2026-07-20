@@ -218,7 +218,7 @@ public final class Lexer {
 
     private void consumeWhitespace() {
         boolean inComment = false;
-        while (true) {
+        while (!atEnd()) {
             if (peek0() == '#') {
                 inComment = true;
                 advance();
