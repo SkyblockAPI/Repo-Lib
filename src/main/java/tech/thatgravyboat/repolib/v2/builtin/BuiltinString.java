@@ -48,6 +48,11 @@ public class BuiltinString {
             function.execute(BuiltinString::lowercase);
         });
 
+        builder.function("snake_case", function -> {
+            function.arity(1);
+            function.execute(BuiltinString::snake_case);
+        });
+
         builder.function("formatted", function -> {
             function.arity(1);
             var format = new DecimalFormat("+#.####;-#.####", DecimalFormatSymbols.getInstance(Locale.ROOT));
@@ -104,5 +109,8 @@ public class BuiltinString {
     }
     private static Value lowercase(Evaluator evaluator, List<Value> args) {
         return new StrValue(evaluator.getStringOrThrow(args.getFirst()).toUpperCase(Locale.ROOT));
+    }
+    private static Value snake_case(Evaluator evaluator, List<Value> args) {
+        return new StrValue(evaluator.getStringOrThrow(args.getFirst()).toLowerCase(Locale.ROOT).replace(" ", "_"));
     }
 }
