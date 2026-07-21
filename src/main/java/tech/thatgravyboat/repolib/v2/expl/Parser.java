@@ -364,7 +364,7 @@ public final class Parser {
             lexer.expect(Lexer.Token.LAMBDA_ARROW);
             var branch = scopeOrSingleStatement();
 
-            lexer.expect(Lexer.Token.SEMICOLON);
+            lexer.expect(Lexer.Token.COMMA);
             branches.add(new MatchExpression.MatchBranch(condition, check, branch));
         }
         lexer.expect(Lexer.Token.R_BRACE);
