@@ -64,7 +64,11 @@ public class Evaluator {
 
     public Value evaluate(Expression expression) {
         try {
-            eval0(expression);
+            if (expression.canReturnValueBeReturned()) {
+                return eval0(expression);
+            } else {
+                eval0(expression);
+            }
         } catch (ExecutionExceptions.Return ret) {
             return ret.retVal;
         } catch (ExecutionExceptions.Break e) {
@@ -298,7 +302,11 @@ public class Evaluator {
     private Value evalBlock(BlockExpression block) {
         Value last = Value.NIL;
         for (var expr : block.exprs()) {
-            last = eval0(expr);
+            if (expr instanceof BlockExpression.LastElement(Expression expression)) {
+                last = eval0(expression);
+            } else {
+                eval0(expr);
+            }
         }
         return last;
     }

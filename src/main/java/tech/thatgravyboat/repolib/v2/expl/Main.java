@@ -1,6 +1,8 @@
 package tech.thatgravyboat.repolib.v2.expl;
 
+import org.jetbrains.annotations.NotNull;
 import tech.thatgravyboat.repolib.v2.builtin.Constants;
+import tech.thatgravyboat.repolib.v2.expl.expression.Expression;
 import tech.thatgravyboat.repolib.v2.expl.value.BoolValue;
 import tech.thatgravyboat.repolib.v2.expl.value.MutableStructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.NumValue;
@@ -34,22 +36,23 @@ public class Main {
                 });
             });
         });
-        var root = new Constants(builder -> {
-            builder.field("Math", math);
-            builder.field("temp", new MutableStructValue());
-            builder.function("print", function -> {
-                function.arity(1);
-                function.executeSimpleVoid(values -> System.out.println(values.getFirst()));
-            });
-        });
 
-        var evaluator = new Evaluator(new MutableStructValue(root));
+        Expression include = new Parser("""
+        print("hi from inclusion");
+        
+        (1 + 1)
+        """).parseExpression();
+
+
+        var evaluator = getEvaluator(math, include);
         var expression = new Parser("""
-        if (true) {
-            print("meow");
+        value = if (true) {
+            "meow";
         }
         
-        meow = 2;
+        print(value);
+        
+        meow = include();
         
         match (meow) {
             2 -> print("rawr");
@@ -64,6 +67,24 @@ public class Main {
         """).parseExpression();
 
         evaluator.evaluate(expression);
+    }
+
+    private static @NotNull Evaluator getEvaluator(Constants math, Expression include) {
+        var root = new Constants(builder -> {
+            builder.field("Math", math);
+            builder.field("temp", new MutableStructValue());
+            builder.function("include", function -> {
+                function.arity(0);
+                function.executeArgless(evaluator -> evaluator.evaluate(include));
+            } );
+            builder.function("print", function -> {
+                function.arity(1);
+                function.executeSimpleVoid(values -> System.out.println(values.getFirst()));
+            });
+        });
+
+
+        return new Evaluator(new MutableStructValue(root));
     }
 
 }

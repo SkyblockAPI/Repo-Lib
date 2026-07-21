@@ -25,5 +25,8 @@ public sealed interface Expression
     default boolean requiresSemicolon() {
         return true;
     }
+    default boolean canReturnValueBeReturned() {
+        return false;
+    }
 
 }

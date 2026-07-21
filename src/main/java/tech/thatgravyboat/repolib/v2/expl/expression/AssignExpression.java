@@ -8,4 +8,9 @@ public record AssignExpression(AccessExpression lhs, Expression value) implement
     public @NotNull String toString() {
         return lhs + " = " + value;
     }
+
+    @Override
+    public boolean requiresSemicolon() {
+        return value.requiresSemicolon();
+    }
 }

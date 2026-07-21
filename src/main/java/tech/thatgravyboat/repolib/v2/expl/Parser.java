@@ -85,10 +85,14 @@ public final class Parser {
         List<Expression> expressions = new ArrayList<>();
 
         while (this.lexer.peek() != null) {
-            var expression = parseUntil(Lexer.Token.SEMICOLON);
-            expressions.add(expression);
-            if (lexer.peek() == Lexer.Token.SEMICOLON || expression.requiresSemicolon()) {
-                lexer.expect(Lexer.Token.SEMICOLON);
+            var expression = parseUntil(Lexer.Token.SEMICOLON, null);
+            if (lexer.atEnd()) {
+                expressions.add(new BlockExpression.LastElement(expression));
+            } else {
+                expressions.add(expression);
+                if (lexer.peek() == Lexer.Token.SEMICOLON || expression.requiresSemicolon()) {
+                    lexer.expect(Lexer.Token.SEMICOLON);
+                }
             }
         }
 
@@ -306,7 +310,7 @@ public final class Parser {
             case null, default -> throw new IllegalStateException("Unexpected value: " + lexer.span());
         };
 
-        if (lexer.peek() != null && endings.contains(lexer.peek())) {
+        if (endings.contains(lexer.peek())) {
             return expression;
         }
 
@@ -426,8 +430,13 @@ public final class Parser {
         var block = new BlockExpression(new ArrayList<>());
 
         while (lexer.peek() != Lexer.Token.R_BRACE) {
-            block.exprs().add(parseUntil(Lexer.Token.SEMICOLON));
-            lexer.expect(Lexer.Token.SEMICOLON);
+            var expression = parseUntil(Lexer.Token.SEMICOLON, Lexer.Token.R_BRACE);
+            if (lexer.peek() == Lexer.Token.R_BRACE) {
+                block.exprs().add(new BlockExpression.LastElement(expression));
+            } else {
+                block.exprs().add(expression);
+                lexer.expect(Lexer.Token.SEMICOLON);
+            }
         }
         lexer.expect(Lexer.Token.R_BRACE);
 
