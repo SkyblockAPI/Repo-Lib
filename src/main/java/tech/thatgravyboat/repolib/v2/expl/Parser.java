@@ -268,8 +268,13 @@ public final class Parser {
                         field = field.substring(1, field.length() - 1);
                     }
 
-                    lexer.expect(Lexer.Token.COLON);
-                    fields.fields().put(field, parseBinaryOrNormalUntil(Lexer.Token.COMMA, Lexer.Token.R_BRACE));
+                    if (lexer.peek() == Lexer.Token.COLON) {
+                        lexer.expect(Lexer.Token.COLON);
+                        fields.fields().put(field, parseBinaryOrNormalUntil(Lexer.Token.COMMA, Lexer.Token.R_BRACE));
+                    } else {
+                        fields.fields().put(field, new AccessExpression(null, new StrExpression(field)));
+                        if (this.lexer.peek() != Lexer.Token.COMMA) break;
+                    }
 
                     if (lexer.peek() == Lexer.Token.COMMA) {
                         lexer.next();

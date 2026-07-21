@@ -37,5 +37,10 @@ public final class ModuleFile implements SelfEvaluatingExpression {
     public Value evaluate(Evaluator evaluator) {
         return evaluator.eval0(script);
     }
+
+    @Override
+    public boolean canReturnValueBeReturned() {
+        return this.script.canReturnValueBeReturned();
+    }
 }
 

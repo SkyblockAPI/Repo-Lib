@@ -302,8 +302,8 @@ public class Evaluator {
     private Value evalBlock(BlockExpression block) {
         Value last = Value.NIL;
         for (var expr : block.exprs()) {
-            if (expr instanceof BlockExpression.LastElement(Expression expression)) {
-                last = eval0(expression);
+            if (expr.canReturnValueBeReturned()) {
+                last = eval0(expr);
             } else {
                 eval0(expr);
             }
