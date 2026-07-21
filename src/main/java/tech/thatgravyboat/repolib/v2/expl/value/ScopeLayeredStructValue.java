@@ -30,4 +30,9 @@ public record ScopeLayeredStructValue(KeyValue base, MutableStructValue overlay)
     public MutableStructValue delegate() {
         return overlay;
     }
+
+    @Override
+    public boolean isEmpty() {
+        return overlay.isEmpty() && base.isEmpty();
+    }
 }

@@ -51,6 +51,11 @@ public record Constants(Map<String, Value> map) implements StructValue {
         return map.entrySet().iterator();
     }
 
+    @Override
+    public boolean isEmpty() {
+        return map.isEmpty();
+    }
+
     public static class Builder {
         private java.util.function.Function<Map<String, Value>, KeyValue> struct;
         private final Map<String, Value> map = new HashMap<>();

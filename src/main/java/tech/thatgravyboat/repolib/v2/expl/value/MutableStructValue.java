@@ -74,4 +74,9 @@ public record MutableStructValue(Map<String, Value> fields) implements StructVal
     public @NotNull Iterator<Map.Entry<String, Value>> iterator() {
         return fields.entrySet().iterator();
     }
+
+    @Override
+    public boolean isEmpty() {
+        return fields.isEmpty();
+    }
 }

@@ -38,4 +38,9 @@ public record ImmutableArrayValue(
     public @NotNull Iterator<Value> iterator() {
         return entries.iterator();
     }
+
+    @Override
+    public boolean isEmpty() {
+        return entries.isEmpty();
+    }
 }

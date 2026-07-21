@@ -73,4 +73,9 @@ public record MutableArrayValue(
     public @NotNull String toString() {
         return entries.toString();
     }
+
+    @Override
+    public boolean isEmpty() {
+        return entries.isEmpty();
+    }
 }
