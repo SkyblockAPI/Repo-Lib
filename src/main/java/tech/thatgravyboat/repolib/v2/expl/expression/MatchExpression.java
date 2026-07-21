@@ -19,6 +19,11 @@ public record MatchExpression(Expression value, List<MatchBranch> branches) impl
         return Value.NIL;
     }
 
+    @Override
+    public boolean requiresSemicolon() {
+        return false;
+    }
+
     public record MatchBranch(MatchCondition condition, Expression check, Expression branch) {}
 
     public enum MatchCondition {

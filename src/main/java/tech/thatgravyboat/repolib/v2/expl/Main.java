@@ -43,10 +43,20 @@ public class Main {
             });
         });
 
-        var evaluator = new Evaluator(root);
+        var evaluator = new Evaluator(new MutableStructValue(root));
         var expression = new Parser("""
-        temp.test = 1..5;
-        print(temp.test);
+        if (true) {
+            print("meow");
+        }
+        
+        meow = 2;
+        
+        match (meow) {
+            2 -> print("rawr");
+            else -> print("purr");
+        }
+        
+        print("meow2");
         """).parseExpression();
 
         evaluator.evaluate(expression);

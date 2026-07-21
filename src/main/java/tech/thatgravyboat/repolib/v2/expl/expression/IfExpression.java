@@ -12,4 +12,9 @@ public record IfExpression(Expression cond, Expression thenExpr, @Nullable Expre
         }
         return String.format("if (%s) %s else %s", cond, thenExpr, elseExpr);
     }
+
+    @Override
+    public boolean requiresSemicolon() {
+        return false;
+    }
 }

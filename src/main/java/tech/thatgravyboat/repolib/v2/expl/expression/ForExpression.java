@@ -14,4 +14,9 @@ public record ForExpression(@Nullable Expression init, @Nullable Expression cond
                 body
         );
     }
+
+    @Override
+    public boolean requiresSemicolon() {
+        return false;
+    }
 }

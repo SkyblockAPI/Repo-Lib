@@ -22,5 +22,8 @@ public sealed interface Expression
         return new Parser(source).parseExpression();
     }
 
+    default boolean requiresSemicolon() {
+        return true;
+    }
 
 }

@@ -11,7 +11,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
-import tech.thatgravyboat.repolib.v2.expl.value.BoolValue;
 
 public final class Parser {
     private final String source;
@@ -86,8 +85,11 @@ public final class Parser {
         List<Expression> expressions = new ArrayList<>();
 
         while (this.lexer.peek() != null) {
-            expressions.add(parseUntil(Lexer.Token.SEMICOLON));
-            lexer.expect(Lexer.Token.SEMICOLON);
+            var expression = parseUntil(Lexer.Token.SEMICOLON);
+            expressions.add(expression);
+            if (lexer.peek() == Lexer.Token.SEMICOLON || expression.requiresSemicolon()) {
+                lexer.expect(Lexer.Token.SEMICOLON);
+            }
         }
 
         if (expressions.size() == 1) {
@@ -305,6 +307,10 @@ public final class Parser {
         };
 
         if (lexer.peek() != null && endings.contains(lexer.peek())) {
+            return expression;
+        }
+
+        if (!expression.requiresSemicolon() && lexer.peek() != Lexer.Token.SEMICOLON) {
             return expression;
         }
         throw new IllegalStateException("Expected one of " + endings + " but got " + lexer.peek() + " near " + lexer.near());
