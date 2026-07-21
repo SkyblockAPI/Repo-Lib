@@ -174,6 +174,9 @@ public class BuiltinComponent {
     }
 
     private static String toRomanNumeral(int number) {
+        if (number >= 4000) return "TOO_HIGH_NUMBER";
+        if (number == 0) return "O";
+        if (number < 0) return "TOO_LOW_NUMBER";
         return thousandsPlace[number / 1000] + hundredsPlace[number % 1000 / 100] + tensPlace[number % 100 / 10] + onesPlace[number % 10];
     }
 }
