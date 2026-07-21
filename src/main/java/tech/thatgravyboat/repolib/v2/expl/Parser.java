@@ -387,18 +387,30 @@ public final class Parser {
     private Expression forExpr() {
         lexer.expect(Lexer.Token.L_PARENTHESES);
 
-        Expression init = parseUntil(Lexer.Token.SEMICOLON);
-        lexer.expect(Lexer.Token.SEMICOLON);
+        Expression init = parseUntil(Lexer.Token.SEMICOLON, Lexer.Token.COLON);
 
-        Expression cond = parseUntil(Lexer.Token.SEMICOLON);
-        lexer.expect(Lexer.Token.SEMICOLON);
+        if (lexer.peek() == Lexer.Token.COLON  && init instanceof AccessExpression access) {
+            lexer.expect(Lexer.Token.COLON);
 
-        Expression incr = parseUntil(Lexer.Token.R_PARENTHESES);
-        lexer.expect(Lexer.Token.R_PARENTHESES);
+            var array = parseUntil(Lexer.Token.R_PARENTHESES);
+            lexer.expect(Lexer.Token.R_PARENTHESES);
 
-        var body = scopeOrSingleStatement();
+            var body = scopeOrSingleStatement();
 
-        return new ForExpression(init, cond, incr, body);
+            return new ForEachExpression(access, array, body);
+        } else {
+            lexer.expect(Lexer.Token.SEMICOLON);
+
+            Expression cond = parseUntil(Lexer.Token.SEMICOLON);
+            lexer.expect(Lexer.Token.SEMICOLON);
+
+            Expression incr = parseUntil(Lexer.Token.R_PARENTHESES);
+            lexer.expect(Lexer.Token.R_PARENTHESES);
+
+            var body = scopeOrSingleStatement();
+
+            return new ForExpression(init, cond, incr, body);
+        }
     }
 
     private Expression scopeOrSingleStatement() {
