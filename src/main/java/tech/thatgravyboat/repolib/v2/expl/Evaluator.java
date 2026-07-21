@@ -226,6 +226,7 @@ public class Evaluator {
             case NilValue ignored -> false;
             case BoolValue bool -> bool.value();
             case StrValue str -> !str.value().isEmpty();
+            case NumValue num -> ((int) num.value()) != 0;
             case KeyValue kv -> !kv.isEmpty();
             default -> throw new Panic("Unable to convert " + value + " into boolean.");
         };
