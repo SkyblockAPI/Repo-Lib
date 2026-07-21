@@ -35,4 +35,9 @@ public record ImmutableStructValue(Map<String, Value> fields) implements StructV
     public @NotNull Iterator<Map.Entry<String, Value>> iterator() {
         return fields.entrySet().iterator();
     }
+
+    @Override
+    public boolean isEmpty() {
+        return fields.isEmpty();
+    }
 }

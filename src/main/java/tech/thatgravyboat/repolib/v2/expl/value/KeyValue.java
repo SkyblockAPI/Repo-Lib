@@ -1,16 +1,13 @@
 package tech.thatgravyboat.repolib.v2.expl.value;
 
-import org.jetbrains.annotations.NotNull;
-
-import java.util.Iterator;
-import java.util.Map;
-
 non-sealed public interface KeyValue extends Value {
     Value get(String field);
 
     Mutable toMutable();
 
     boolean contains(String field);
+
+    boolean isEmpty();
 
     interface Forwarding extends KeyValue {
         KeyValue delegate();
@@ -30,6 +27,10 @@ non-sealed public interface KeyValue extends Value {
             return delegate().contains(field);
         }
 
+        @Override
+        default boolean isEmpty() {
+            return delegate().isEmpty();
+        }
     }
 
     interface Mutable extends KeyValue {

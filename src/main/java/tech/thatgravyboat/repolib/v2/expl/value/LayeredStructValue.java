@@ -44,4 +44,9 @@ public record LayeredStructValue<Type extends StructValue & KeyValue.Mutable>(Ty
     public KeyValue toFullyImmutable() {
         return base.toFullyImmutable();
     }
+
+    @Override
+    public boolean isEmpty() {
+        return overlay.isEmpty() && base.isEmpty();
+    }
 }

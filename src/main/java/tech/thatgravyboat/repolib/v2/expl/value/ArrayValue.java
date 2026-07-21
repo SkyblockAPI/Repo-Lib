@@ -4,7 +4,6 @@ import tech.thatgravyboat.repolib.v2.builtin.Constants;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public non-sealed interface ArrayValue extends Value, KeyValue, Iterable<Value> {
     public static String prettyPrint(ArrayValue array, String prefix) {
@@ -65,6 +64,11 @@ public non-sealed interface ArrayValue extends Value, KeyValue, Iterable<Value> 
                 builder.function("get", function -> {
                     function.arity(1);
                     function.execute((evaluator, args) -> ArrayValue.get(entries, (int)  evaluator.getNumberOrThrow(args.getFirst())));
+                });
+
+                builder.function("contains", function -> {
+                    function.arity(1);
+                    function.execute((evaluator, args) -> BoolValue.wrap(entries.contains(args.getFirst())));
                 });
 
                 builder.function("chunked", function -> {

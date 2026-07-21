@@ -36,4 +36,9 @@ public class RepoConfig implements KeyValue {
     public boolean contains(String field) {
         return !(get(field) instanceof NilValue);
     }
+
+    @Override
+    public boolean isEmpty() {
+        return false;
+    }
 }
