@@ -2,6 +2,7 @@ package tech.thatgravyboat.repolib.v2.expl.expression;
 
 import org.jetbrains.annotations.NotNull;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
+import tech.thatgravyboat.repolib.v2.expl.value.NilValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
 public record ForEachExpression(AccessExpression field, Expression array, Expression body) implements SelfEvaluatingExpression {
@@ -13,7 +14,7 @@ public record ForEachExpression(AccessExpression field, Expression array, Expres
             evaluator.eval0(new AssignExpression(field, new ValueExpression(value)));
             return evaluator.eval0(body);
         }));
-        return null;
+        return NilValue.NIL;
     }
 
     @Override
