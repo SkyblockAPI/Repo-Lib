@@ -109,13 +109,13 @@ public final class Parser {
 
         var peek = lexer.peek();
         return switch (peek) {
-            case INCLUSIVE_EXCLUSIVE_RANGE,
-                 EXCLUSIVE_INCLUSIVE_RANGE,
-                 INCLUSIVE_INCLUSIVE_RANGE,
+            case INCLUSIVE_EXCLUSIVE_RANGE, EXCLUSIVE_INCLUSIVE_RANGE, INCLUSIVE_INCLUSIVE_RANGE,
                  EXCLUSIVE_EXCLUSIVE_RANGE -> {
                 var type = lexer.next();
-                boolean inclusiveStart = type == Lexer.Token.INCLUSIVE_EXCLUSIVE_RANGE || type == Lexer.Token.INCLUSIVE_INCLUSIVE_RANGE;
-                boolean inclusiveEnd = type == Lexer.Token.EXCLUSIVE_INCLUSIVE_RANGE || type == Lexer.Token.INCLUSIVE_INCLUSIVE_RANGE;
+                boolean inclusiveStart =
+                    type == Lexer.Token.INCLUSIVE_EXCLUSIVE_RANGE || type == Lexer.Token.INCLUSIVE_INCLUSIVE_RANGE;
+                boolean inclusiveEnd =
+                    type == Lexer.Token.EXCLUSIVE_INCLUSIVE_RANGE || type == Lexer.Token.INCLUSIVE_INCLUSIVE_RANGE;
                 var second = parseBinaryOrNormalUntil(end);
 
                 yield new RangeExpression(inclusiveStart, inclusiveEnd, first, second);
@@ -168,68 +168,89 @@ public final class Parser {
         };
     }
 
+    public Expression memberAccessor(Expression expression, Lexer.Token... end) {
+        if (expression instanceof AccessExpression access) {
+            var result = switch (lexer.peek()) {
+
+                case PLUS_ASSIGN -> {
+                    lexer.next();
+                    yield new AssignExpression(
+                        access,
+                        new BinaryExpression(BinaryExpression.Op.PLUS, access, parseBinaryOrNormalUntil(end)));
+                }
+                case MINUS_ASSIGN -> {
+                    lexer.next();
+                    yield new AssignExpression(
+                        access,
+                        new BinaryExpression(BinaryExpression.Op.MINUS, access, parseBinaryOrNormalUntil(end)));
+                }
+                case DIV_ASSIGN -> {
+                    lexer.next();
+                    yield new AssignExpression(
+                        access,
+                        new BinaryExpression(BinaryExpression.Op.DIV, access, parseBinaryOrNormalUntil(end)));
+                }
+                case MUL_ASSIGN -> {
+                    lexer.next();
+                    yield new AssignExpression(
+                        access,
+                        new BinaryExpression(BinaryExpression.Op.MUL, access, parseBinaryOrNormalUntil(end)));
+                }
+                case MOD_ASSIGN -> {
+                    lexer.next();
+                    yield new AssignExpression(
+                        access,
+                        new BinaryExpression(BinaryExpression.Op.MOD, access, parseBinaryOrNormalUntil(end)));
+                }
+                case Lexer.Token.EQUALS -> {
+                    lexer.next();
+
+                    var value = parseBinaryOrNormalUntil(end);
+
+                    yield new AssignExpression(access, value);
+                }
+                case null, default -> null;
+            };
+
+            if (result != null) {
+                return result;
+            }
+        }
+
+        return switch (lexer.peek()) {
+            case Lexer.Token.L_PARENTHESES -> {
+                lexer.next();
+
+                List<Expression> args = new ArrayList<>();
+                var next = lexer.peek();
+
+                if (next != null && next != Lexer.Token.R_PARENTHESES) {
+                    do {
+                        args.add(parseBinaryOrNormalUntil(Lexer.Token.COMMA, Lexer.Token.R_PARENTHESES));
+                        next = lexer.peek();
+                    } while (next == Lexer.Token.COMMA && lexer.next() != null);
+                }
+                lexer.expect(Lexer.Token.R_PARENTHESES);
+
+                var call = new CallExpression(expression, args);
+
+                if (lexer.peek() == Lexer.Token.DOT) {
+                    lexer.expect(Lexer.Token.DOT);
+                    lexer.next();
+                    var access = memberAccess(call);
+                    yield memberAccessor(access, end);
+                }
+
+                yield memberAccessor(call, end);
+            }
+            case null, default -> expression;
+        };
+    }
+
     public Expression parseUntil(Lexer.Token... end) {
         var endings = new HashSet<>(Arrays.asList(end));
         var expression = switch (lexer.next()) {
-            case IDENT -> {
-                var access = memberAccess();
-
-                yield switch (lexer.peek()) {
-                    case PLUS_ASSIGN -> {
-                        lexer.next();
-                        yield new AssignExpression(
-                                access,
-                                new BinaryExpression(BinaryExpression.Op.PLUS, access, parseBinaryOrNormalUntil(end)));
-                    }
-                    case MINUS_ASSIGN -> {
-                        lexer.next();
-                        yield new AssignExpression(
-                                access,
-                                new BinaryExpression(BinaryExpression.Op.MINUS, access, parseBinaryOrNormalUntil(end)));
-                    }
-                    case DIV_ASSIGN -> {
-                        lexer.next();
-                        yield new AssignExpression(
-                                access,
-                                new BinaryExpression(BinaryExpression.Op.DIV, access, parseBinaryOrNormalUntil(end)));
-                    }
-                    case MUL_ASSIGN -> {
-                        lexer.next();
-                        yield new AssignExpression(
-                                access,
-                                new BinaryExpression(BinaryExpression.Op.MUL, access, parseBinaryOrNormalUntil(end)));
-                    }
-                    case MOD_ASSIGN -> {
-                        lexer.next();
-                        yield new AssignExpression(
-                                access,
-                                new BinaryExpression(BinaryExpression.Op.MOD, access, parseBinaryOrNormalUntil(end)));
-                    }
-                    case Lexer.Token.EQUALS -> {
-                        lexer.next();
-
-                        var value = parseBinaryOrNormalUntil(end);
-
-                        yield new AssignExpression(access, value);
-                    }
-                    case Lexer.Token.L_PARENTHESES -> {
-                        lexer.next();
-
-                        List<Expression> args = new ArrayList<>();
-                        var next = lexer.peek();
-
-                        if (next != null && next != Lexer.Token.R_PARENTHESES) {
-                            do {
-                                args.add(parseBinaryOrNormalUntil(Lexer.Token.COMMA, Lexer.Token.R_PARENTHESES));
-                                next = lexer.peek();
-                            } while (next == Lexer.Token.COMMA && lexer.next() != null);
-                        }
-                        lexer.expect(Lexer.Token.R_PARENTHESES);
-                        yield new CallExpression(access, args);
-                    }
-                    case null, default -> access;
-                };
-            }
+            case IDENT -> memberAccessor(memberAccess(null), end);
             case IF -> ifExpr();
             case FOR -> forExpr();
             case LITERAL_STR -> {
@@ -241,8 +262,9 @@ public final class Parser {
                         lexer.expect(Lexer.Token.NOT);
                     }
                     lexer.expect(Lexer.Token.IN);
-                    lexer.expect(Lexer.Token.IDENT); // The first span must be expected as memberAccess checks for the span right away.
-                    var access = memberAccess();
+                    lexer.expect(Lexer.Token.IDENT); // The first span must be expected as memberAccess checks for
+                    // the span right away.
+                    var access = memberAccess(null);
                     var field = span.substring(1, span.length() - 1);
                     var inExpr = new InExpression(access, field);
 
@@ -273,7 +295,9 @@ public final class Parser {
                         fields.fields().put(field, parseBinaryOrNormalUntil(Lexer.Token.COMMA, Lexer.Token.R_BRACE));
                     } else {
                         fields.fields().put(field, new AccessExpression(null, new StrExpression(field)));
-                        if (this.lexer.peek() != Lexer.Token.COMMA) break;
+                        if (this.lexer.peek() != Lexer.Token.COMMA) {
+                            break;
+                        }
                     }
 
                     if (lexer.peek() == Lexer.Token.COMMA) {
@@ -304,7 +328,9 @@ public final class Parser {
                 yield expr;
             }
             case RETURN -> {
-                if (lexer.peek() != null && !endings.contains(lexer.peek())) yield new ReturnExpression(parseBinaryOrNormalUntil(end));
+                if (lexer.peek() != null && !endings.contains(lexer.peek())) {
+                    yield new ReturnExpression(parseBinaryOrNormalUntil(end));
+                }
                 yield new StatementExpression(StatementExpression.Op.RETURN);
             }
             case BREAK -> new StatementExpression(StatementExpression.Op.BREAK);
@@ -312,6 +338,7 @@ public final class Parser {
             case MINUS -> new UnaryExpression(UnaryExpression.Op.NEGATE, parseUntil(end));
             case NOT -> new UnaryExpression(UnaryExpression.Op.NOT, parseUntil(end));
             case MATCH -> matchExpr();
+            case LAMBDA_FUNCTION_PARAMETERS -> lambdaExpr();
             case null, default -> throw new IllegalStateException("Unexpected value: " + lexer.span());
         };
 
@@ -322,7 +349,8 @@ public final class Parser {
         if (!expression.requiresSemicolon() && lexer.peek() != Lexer.Token.SEMICOLON) {
             return expression;
         }
-        throw new IllegalStateException("Expected one of " + endings + " but got " + lexer.peek() + " near " + lexer.near());
+        throw new IllegalStateException(
+            "Expected one of " + endings + " but got " + lexer.peek() + " near " + lexer.near());
     }
 
     private Lexer.Token[] join(Lexer.Token[] first, Lexer.Token... tokens) {
@@ -330,6 +358,20 @@ public final class Parser {
         System.arraycopy(first, 0, newArray, 0, first.length);
         System.arraycopy(tokens, 0, newArray, first.length, tokens.length);
         return newArray;
+    }
+
+    private Expression lambdaExpr() {
+        var arguments = new ArrayList<LambdaExpression.LambdaArgument>();
+        while (lexer.peek() != Lexer.Token.LAMBDA_FUNCTION_PARAMETERS) {
+            lexer.expect(Lexer.Token.IDENT);
+            arguments.add(new LambdaExpression.LambdaArgument(lexer.span(), arguments.size()));
+            if (lexer.peek() != Lexer.Token.LAMBDA_FUNCTION_PARAMETERS) {
+                lexer.expect(Lexer.Token.COMMA);
+            }
+        }
+        lexer.expect(Lexer.Token.LAMBDA_FUNCTION_PARAMETERS);
+        var scope = scopeOrSingleStatement(true);
+        return new LambdaExpression(arguments, new BlockExpression.LastElement(scope));
     }
 
     private Expression matchExpr() {
@@ -423,10 +465,14 @@ public final class Parser {
     }
 
     private Expression scopeOrSingleStatement() {
+        return scopeOrSingleStatement(false);
+    }
+
+    private Expression scopeOrSingleStatement(boolean allowBinary) {
         if (lexer.peek() == Lexer.Token.L_BRACE) {
             return block();
         }
-        return parseUntil(Lexer.Token.SEMICOLON);
+        return allowBinary ? parseBinaryOrNormalUntil(Lexer.Token.SEMICOLON) : parseUntil(Lexer.Token.SEMICOLON);
     }
 
     private BlockExpression block() {
@@ -448,8 +494,8 @@ public final class Parser {
         return block;
     }
 
-    private AccessExpression memberAccess() {
-        var access = new AccessExpression(null, new StrExpression(lexer.span()));
+    private AccessExpression memberAccess(Expression lhs) {
+        var access = new AccessExpression(lhs, new StrExpression(lexer.span()));
 
         Lexer.Token next;
         loop:

@@ -154,7 +154,7 @@ public final class Lexer {
             }
             case '|' -> {
                 if (!match('|')) {
-                    unexpected(c);
+                    yield Token.LAMBDA_FUNCTION_PARAMETERS;
                 }
                 yield Token.OR;
             }
@@ -319,6 +319,7 @@ public final class Lexer {
         SEMICOLON,
 
         NOT,
+        LAMBDA_FUNCTION_PARAMETERS,
         LAMBDA_ARROW,
 
         GT,

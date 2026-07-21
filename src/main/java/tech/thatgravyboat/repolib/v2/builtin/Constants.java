@@ -6,6 +6,7 @@ import tech.thatgravyboat.repolib.v2.expl.value.BoolValue;
 import tech.thatgravyboat.repolib.v2.expl.value.FunctionValue;
 import tech.thatgravyboat.repolib.v2.expl.value.ImmutableStructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.KeyValue;
+import tech.thatgravyboat.repolib.v2.expl.value.LambdaFunctionValue;
 import tech.thatgravyboat.repolib.v2.expl.value.MutableStructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.NumValue;
 import tech.thatgravyboat.repolib.v2.expl.value.StrValue;
@@ -127,7 +128,7 @@ public record Constants(Map<String, Value> map) implements StructValue {
                 int arityMax = builder.arityMax;
                 boolean vararg = builder.vararg;
                 var executor = builder.executor;
-                return ((evaluator, args) -> {
+                return new LambdaFunctionValue((evaluator, args) -> {
                     if ((vararg && (args.size() > arityMax || args.size() < arityMin)) || (!vararg && args.size() != arityMin)) {
                         evaluator.error("Arity mismatched, expected " + arityMin + (arityMin != arityMax ?
                                 " - " + arityMax :
@@ -136,7 +137,7 @@ public record Constants(Map<String, Value> map) implements StructValue {
                     }
 
                     return executor.apply(evaluator, args);
-                });
+                }, vararg, arityMin, arityMax);
             }
 
             public void vararg(boolean isVararg) {
@@ -196,6 +197,22 @@ public record Constants(Map<String, Value> map) implements StructValue {
 
             public void runs(Runnable executor) {
                 this.executeVoid((evaluator, values) -> executor.run());
+            }
+
+            public int getArityMin() {
+                return arityMin;
+            }
+
+            public int getArityMax() {
+                return arityMax;
+            }
+
+            public boolean isVararg() {
+                return vararg;
+            }
+
+            public BiFunction<Evaluator, List<Value>, Value> getExecutor() {
+                return executor;
             }
         }
     }

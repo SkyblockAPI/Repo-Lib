@@ -117,6 +117,13 @@ public class Evaluator {
         throw new Panic("Failed to convert " + value + " into a string");
     }
 
+    public LambdaFunctionValue getLambdaOrThrow(Value value) {
+        if (value instanceof LambdaFunctionValue function) {
+            return function;
+        }
+        throw new Panic("Failed to convert " + value + " into a function");
+    }
+
     public double getNumber(Value value, double defaultValue) {
         if (value instanceof NumValue(double literal)) {
             return literal;
@@ -311,6 +318,22 @@ public class Evaluator {
         return last;
     }
 
+    public void set(String fieldName, Expression value) {
+        set(scope.get(), fieldName, value);
+    }
+
+    Value set(Value value, String fieldName, Expression valueSupplier) {
+        if (value instanceof KeyValue.Mutable keyValue) {
+            var val = eval0(valueSupplier);
+            keyValue.set(fieldName, val);
+            return val;
+        } else if (value instanceof KeyValue) {
+            throw new Panic("Unable to set property '" + fieldName + "' on immutable key/value " + value);
+        }
+
+        throw new Panic("Unable to set property '" + fieldName + "' on non key/value " + value);
+    }
+
     private Value evalAssign(AssignExpression assign) {
         var access = assign.lhs();
         final Value field;
@@ -320,16 +343,7 @@ public class Evaluator {
             field = eval0(access.lhs());
         }
 
-        if (field instanceof KeyValue.Mutable keyValue) {
-            var value = eval0(assign.value());
-            var fieldName = getStringOrThrow(eval0(access.field()));
-            keyValue.set(fieldName, value);
-            return value;
-        } else if (field instanceof KeyValue) {
-            throw new Panic("Unable to set property '" + access.field() + "' on immutable key/value " + access.lhs());
-        }
-
-        throw new Panic("Unable to set property '" + access.field() + "' on non key/value " + access.lhs());
+        return set(field, getStringOrThrow(eval0(access.field())), assign.value());
     }
 
 

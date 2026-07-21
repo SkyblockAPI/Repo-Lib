@@ -95,6 +95,69 @@ public non-sealed interface ArrayValue extends Value, KeyValue, Iterable<Value> 
                     });
                 });
 
+                builder.function("forEach", function -> {
+                    function.arity(1);
+                    function.executeVoid((evaluator, values) -> {
+                        var lambda = evaluator.getLambdaOrThrow(values.getFirst());
+                        if (lambda.arityMin() == 1 || (lambda.vararg() && lambda.arityMin() >= 1)) {
+                            for (var entry : entries) {
+                                lambda.apply(evaluator, List.of(entry));
+                            }
+                        } else {
+                            evaluator.panic("Unable to invoke for each lambda, no matching entry found.");
+                        }
+                    });
+                });
+                builder.function("forEachIndexed", function -> {
+                    function.arity(1);
+                    function.executeVoid((evaluator, values) -> {
+                        var lambda = evaluator.getLambdaOrThrow(values.getFirst());
+                        if (lambda.arityMin() == 2 || (lambda.vararg() && lambda.arityMin() >= 2)) {
+                            for (var i = 0; i < entries.size(); i++) {
+                                lambda.apply(evaluator, List.of(entries.get(i), new NumValue(i)));
+                            }
+                        } else {
+                            evaluator.panic("Unable to invoke for each lambda, no matching entry found.");
+                        }
+                    });
+                });
+
+
+                builder.function("map", function -> {
+                    function.arity(1);
+                    function.execute((evaluator, values) -> {
+                        var result = MutableArrayValue.create();
+
+                        var lambda = evaluator.getLambdaOrThrow(values.getFirst());
+                        if (lambda.arityMin() == 1 || (lambda.vararg() && lambda.arityMin() >= 1)) {
+                            for (var entry : entries) {
+                                result.add(lambda.apply(evaluator, List.of(entry)));
+                            }
+                        } else {
+                            evaluator.panic("Unable to invoke for each lambda, no matching entry found.");
+                        }
+
+                        return result;
+                    });
+                });
+                builder.function("mapIndexed", function -> {
+                    function.arity(1);
+                    function.execute((evaluator, values) -> {
+                        var result = MutableArrayValue.create();
+
+                        var lambda = evaluator.getLambdaOrThrow(values.getFirst());
+                        if (lambda.arityMin() == 2 || (lambda.vararg() && lambda.arityMin() >= 2)) {
+                            for (var i = 0; i < entries.size(); i++) {
+                                result.add(lambda.apply(evaluator, List.of(entries.get(i), new NumValue(i))));
+                            }
+                        } else {
+                            evaluator.panic("Unable to invoke for each lambda, no matching entry found.");
+                        }
+
+                        return result;
+                    });
+                });
+
                 if (!mutable) {
                     return;
                 }

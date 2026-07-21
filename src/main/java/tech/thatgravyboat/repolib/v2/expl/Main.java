@@ -46,27 +46,24 @@ public class Main {
 
         var evaluator = getEvaluator(math, include);
         var expression = new Parser("""
-        value = if (true) {
-            "meow";
-        }
         
-        print(value);
+        test = |a, b| {
+           (a + b)
+        };
         
-        meow = include();
+        testArray = [1,2,3,4,5,6,7,8,9,0];
         
-        match (meow) {
-            2 -> print("rawr");
-            else -> print("purr");
-        }
+        testArray.mapIndexed(test).forEach(print);
         
-        for (test : [1,2,3,4,5,6,7,8,9,0]) {
-            print(test);
-        }
+        print(test(2, 3));
         
-        print("meow2");
         """).parseExpression();
 
+
         evaluator.evaluate(expression);
+        for (var error : evaluator.errors) {
+            System.out.println(error);
+        }
     }
 
     private static @NotNull Evaluator getEvaluator(Constants math, Expression include) {
@@ -78,8 +75,9 @@ public class Main {
                 function.executeArgless(evaluator -> evaluator.evaluate(include));
             } );
             builder.function("print", function -> {
+                function.vararg(true);
                 function.arity(1);
-                function.executeSimpleVoid(values -> System.out.println(values.getFirst()));
+                function.executeSimpleVoid(System.out::println);
             });
         });
 
