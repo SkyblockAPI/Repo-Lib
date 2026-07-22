@@ -15,7 +15,7 @@ public class BuiltinMath {
                 var first = evaluator.getNumberOrThrow(args.getFirst());
                 var second = evaluator.getNumberOrThrow(args.get(1));
 
-                return new BoolValue(first > second);
+                return BoolValue.wrap(first > second);
             });
         });
 
@@ -25,7 +25,7 @@ public class BuiltinMath {
                 var first = evaluator.getNumberOrThrow(args.getFirst());
                 var second = evaluator.getNumberOrThrow(args.get(1));
 
-                return new BoolValue(first >= second);
+                return BoolValue.wrap(first >= second);
             });
         });
 
@@ -35,7 +35,7 @@ public class BuiltinMath {
                 var first = evaluator.getNumberOrThrow(args.getFirst());
                 var second = evaluator.getNumberOrThrow(args.get(1));
 
-                return new BoolValue(first < second);
+                return BoolValue.wrap(first < second);
             });
         });
 
@@ -45,7 +45,7 @@ public class BuiltinMath {
                 var first = evaluator.getNumberOrThrow(args.getFirst());
                 var second = evaluator.getNumberOrThrow(args.get(1));
 
-                return new BoolValue(first <= second);
+                return BoolValue.wrap(first <= second);
             });
         });
 

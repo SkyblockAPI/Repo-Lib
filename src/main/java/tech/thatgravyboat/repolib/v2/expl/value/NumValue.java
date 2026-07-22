@@ -1,5 +1,6 @@
 package tech.thatgravyboat.repolib.v2.expl.value;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 
 public record NumValue(double value) implements Value {
@@ -18,6 +19,19 @@ public record NumValue(double value) implements Value {
             return Double.compare(this.value, literal);
         }
         return 0;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof NumValue(double literal)) {
+            return value == literal;
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return Double.hashCode(this.value);
     }
 
     @Override

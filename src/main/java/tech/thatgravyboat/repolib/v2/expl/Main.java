@@ -1,4 +1,4 @@
-package tech.thatgravyboat.repolib.v2.utils;
+package tech.thatgravyboat.repolib.v2.expl;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -9,10 +9,8 @@ import com.google.gson.JsonPrimitive;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardWatchEventKinds;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -20,7 +18,6 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.OptionalInt;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.stream.Collectors;
@@ -32,6 +29,8 @@ import tech.thatgravyboat.repolib.v2.RepoConfig;
 import tech.thatgravyboat.repolib.v2.RepoLoader;
 import tech.thatgravyboat.repolib.v2.expl.value.ArrayValue;
 import tech.thatgravyboat.repolib.v2.expl.value.BoolValue;
+import tech.thatgravyboat.repolib.v2.expl.value.ImmutableStructValue;
+import tech.thatgravyboat.repolib.v2.expl.value.KeyValue;
 import tech.thatgravyboat.repolib.v2.expl.value.MutableArrayValue;
 import tech.thatgravyboat.repolib.v2.expl.value.MutableStructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.NilValue;
@@ -39,6 +38,7 @@ import tech.thatgravyboat.repolib.v2.expl.value.NumValue;
 import tech.thatgravyboat.repolib.v2.expl.value.StrValue;
 import tech.thatgravyboat.repolib.v2.expl.value.StructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
+import tech.thatgravyboat.repolib.v2.utils.WatchDir;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class Main extends WebSocketServer {
@@ -48,70 +48,44 @@ public class Main extends WebSocketServer {
     boolean running = true;
 
     public static void main(String[] args) throws IOException {
-        new Main();
-    }
-
-    private final RepoLoader loader = new RepoLoader(Path.of("Repo-Data").toRealPath().normalize().toAbsolutePath());
-
-    public Main() throws IOException {
-        super(new InetSocketAddress("0.0.0.0", 8008));
-        start();
-        reloadAndSend();
-        new Thread(() -> {
-            try {
-                new WatchDir(loader.path, this).processEvents();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }).start();
-    }
-
-    private int reloadCount = 0;
-
-    public void reloadAndSend() throws IOException {
+        RepoLoader loader = new RepoLoader(Path.of("Repo-Data").toRealPath().normalize().toAbsolutePath());
         var instance = loader.create();
 
         var errors = loader.load();
-        System.out.printf("Reloading (%d %s)%n", reloadCount++, lastModifiedItem);
         errors.forEach(System.out::println);
 
         var data =
             JsonParser.parseString(Files.readString(Path.of("data.jsonc"), StandardCharsets.UTF_8)).getAsJsonObject();
 
-        var stackFile = Objects.requireNonNull(loader.getStackFile(lastModifiedItem));
-        var evaluator = stackFile.createEvaluator(instance.constants(), toValue(data), RepoConfig.DEFAULT);
-        var stack = stackFile.evaluateScript(evaluator);
+        var stackFile = Objects.requireNonNull(loader.getStackFile("items/aspect_of_the_void"));
 
-        evaluator.errors.forEach(System.out::println);
-        evaluator.debugs.forEach(System.out::println);
+        long sum = 0;
+        for (int i = 0; i < 1000; i++) {
 
-        var item = new JsonObject();
-        item.add("minecraft:custom_name", asComponent(stack.get("name")));
-        //noinspection RedundantCast
-        item.add("minecraft:lore", asComponent((ArrayValue) stack.get("lore")).get("extra"));
-        item.add("minecraft:custom_data", data);
+            var evaluator = stackFile.createEvaluator(instance.constants(), ImmutableStructValue.EMPTY, RepoConfig.DEFAULT);
+            long start = System.nanoTime();
+            var stack = stackFile.evaluateScript(evaluator);
+            sum += System.nanoTime() - start;
+            evaluator.errors.forEach(System.out::println);
+            evaluator.debugs.forEach(System.out::println);
+        }
 
-        var itemStack = new JsonObject();
-        itemStack.add("components", item);
+        System.out.println("Took " + (sum / 1000_000000.0) + "ms");
 
-        this.connections.forEach(webSocket -> {
-            webSocket.send("importFromJson(`%s`)".formatted(itemStack.toString().replaceAll("`", "\\`")));
-            webSocket.send("console.log(`%s`)".formatted(itemStack.toString().replaceAll("`", "\\`")));
-        });
     }
 
-    private StructValue toValue(JsonObject data) {
+    private static StructValue toValue(JsonObject data) {
         return new MutableStructValue(data.entrySet()
             .stream()
             .map((entry) -> Map.entry(entry.getKey(), toValue(entry.getValue())))
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
     }
 
-    private ArrayValue toValue(JsonArray data) {
-        return MutableArrayValue.create(data.asList().stream().map(this::toValue).toList());
+    private static ArrayValue toValue(JsonArray data) {
+        return MutableArrayValue.create(data.asList().stream().map(Main::toValue).toList());
     }
 
-    private Value toValue(JsonElement element) {
+    private static Value toValue(JsonElement element) {
         return switch (element) {
             case JsonObject object -> toValue(object);
             case JsonArray array -> toValue(array);
@@ -125,7 +99,7 @@ public class Main extends WebSocketServer {
     }
 
 
-    private JsonElement toJson(Value value) {
+    private static JsonElement toJson(Value value) {
         return switch (value) {
             case StructValue kv -> StreamSupport.stream(kv.spliterator(), false)
                 .map((e) -> Map.entry(e.getKey(), toJson(e.getValue())))
@@ -134,7 +108,7 @@ public class Main extends WebSocketServer {
                     (obj, entry) -> obj.add(entry.getKey(), entry.getValue()),
                     (obj1, obj2) -> obj1.asMap().forEach(obj2::add));
             case ArrayValue array -> StreamSupport.stream(array.spliterator(), false)
-                .map(this::toJson)
+                .map(Main::toJson)
                 .collect(JsonArray::new, JsonArray::add, JsonArray::addAll);
             case StrValue(String val) -> new JsonPrimitive(val);
             case NumValue(double val) -> new JsonPrimitive(val);
@@ -144,7 +118,7 @@ public class Main extends WebSocketServer {
         };
     }
 
-    private JsonObject asComponent(Value value) {
+    private static JsonObject asComponent(Value value) {
         return switch (value) {
             case StrValue(String literal) -> {
                 var obj = new JsonObject();
@@ -156,7 +130,7 @@ public class Main extends WebSocketServer {
                 obj.add(
                     "extra",
                     StreamSupport.stream(array.spliterator(), false)
-                        .map(this::asComponent)
+                        .map(Main::asComponent)
                         .collect(JsonArray::new, JsonArray::add, JsonArray::addAll));
                 yield obj;
             }
@@ -188,44 +162,44 @@ public class Main extends WebSocketServer {
         };
     }
 
-    private Optional<Boolean> getBool(StructValue val, String field) {
+    private static Optional<Boolean> getBool(StructValue val, String field) {
         return Optional.of(val.get(field)).filter(it -> it instanceof BoolValue).map(it -> ((BoolValue) it).value());
     }
 
-    private Optional<String> getString(StructValue val, String field) {
+    private static Optional<String> getString(StructValue val, String field) {
         return Optional.of(val.get(field)).filter(it -> it instanceof StrValue).map(it -> ((StrValue) it).value());
     }
 
-    private IntConsumer setInt(JsonObject obj, String field) {
+    private static IntConsumer setInt(JsonObject obj, String field) {
         return (value) -> obj.addProperty(field, "#" + Integer.toString(value, 16));
     }
 
-    private Consumer<Boolean> setBoolean(JsonObject obj, String field) {
+    private static Consumer<Boolean> setBoolean(JsonObject obj, String field) {
         return (value) -> obj.addProperty(field, value);
     }
 
-    private Consumer<String> setString(JsonObject obj, String field) {
+    private static Consumer<String> setString(JsonObject obj, String field) {
         return (value) -> obj.addProperty(field, value);
     }
 
-    Optional<String> BLACK = Optional.of("black");
-    Optional<String> DARK_BLUE = Optional.of("dark_blue");
-    Optional<String> DARK_GREEN = Optional.of("dark_green");
-    Optional<String> DARK_AQUA = Optional.of("dark_aqua");
-    Optional<String> DARK_RED = Optional.of("dark_red");
-    Optional<String> DARK_PURPLE = Optional.of("dark_purple");
-    Optional<String> GOLD = Optional.of("gold");
-    Optional<String> GRAY = Optional.of("gray");
-    Optional<String> DARK_GRAY = Optional.of("dark_gray");
-    Optional<String> BLUE = Optional.of("blue");
-    Optional<String> GREEN = Optional.of("green");
-    Optional<String> AQUA = Optional.of("aqua");
-    Optional<String> RED = Optional.of("red");
-    Optional<String> LIGHT_PURPLE = Optional.of("light_purple");
-    Optional<String> YELLOW = Optional.of("yellow");
-    Optional<String> WHITE = Optional.of("white");
+    static Optional<String> BLACK = Optional.of("black");
+    static Optional<String> DARK_BLUE = Optional.of("dark_blue");
+    static Optional<String> DARK_GREEN = Optional.of("dark_green");
+    static Optional<String> DARK_AQUA = Optional.of("dark_aqua");
+    static Optional<String> DARK_RED = Optional.of("dark_red");
+    static Optional<String> DARK_PURPLE = Optional.of("dark_purple");
+    static Optional<String> GOLD = Optional.of("gold");
+    static Optional<String> GRAY = Optional.of("gray");
+    static Optional<String> DARK_GRAY = Optional.of("dark_gray");
+    static Optional<String> BLUE = Optional.of("blue");
+    static Optional<String> GREEN = Optional.of("green");
+    static Optional<String> AQUA = Optional.of("aqua");
+    static Optional<String> RED = Optional.of("red");
+    static Optional<String> LIGHT_PURPLE = Optional.of("light_purple");
+    static Optional<String> YELLOW = Optional.of("yellow");
+    static Optional<String> WHITE = Optional.of("white");
 
-    private Optional<String> color(Value value) {
+    private static Optional<String> color(Value value) {
         if (!(value instanceof StrValue(String color))) {
             return Optional.empty();
         }

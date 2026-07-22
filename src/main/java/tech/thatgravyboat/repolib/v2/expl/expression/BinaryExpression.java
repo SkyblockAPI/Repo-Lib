@@ -76,14 +76,14 @@ public record BinaryExpression(Op op, Expression first, Expression second) imple
         AND {
             @Override
             Value perform(Evaluator evaluator, Expression first, Expression second) {
-                return new BoolValue(evaluator.getBooleanOrThrow(evaluator.eval0(first)) && evaluator.getBooleanOrThrow(
+                return BoolValue.wrap(evaluator.getBooleanOrThrow(evaluator.eval0(first)) && evaluator.getBooleanOrThrow(
                         evaluator.eval0(second)));
             }
         },
         OR {
             @Override
             Value perform(Evaluator evaluator, Expression first, Expression second) {
-                return new BoolValue(evaluator.getBooleanOrThrow(evaluator.eval0(first)) || evaluator.getBooleanOrThrow(
+                return BoolValue.wrap(evaluator.getBooleanOrThrow(evaluator.eval0(first)) || evaluator.getBooleanOrThrow(
                         evaluator.eval0(second)));
             }
         },
@@ -92,7 +92,7 @@ public record BinaryExpression(Op op, Expression first, Expression second) imple
             Value perform(Evaluator evaluator, Expression first, Expression second) {
                 var a = evaluator.getNumberOrThrow(evaluator.eval0(first));
                 var b = evaluator.getNumberOrThrow(evaluator.eval0(second));
-                return new BoolValue(a > b);
+                return BoolValue.wrap(a > b);
             }
         },
         GTE {
@@ -100,7 +100,7 @@ public record BinaryExpression(Op op, Expression first, Expression second) imple
             Value perform(Evaluator evaluator, Expression first, Expression second) {
                 var a = evaluator.getNumberOrThrow(evaluator.eval0(first));
                 var b = evaluator.getNumberOrThrow(evaluator.eval0(second));
-                return new BoolValue(a >= b);
+                return BoolValue.wrap(a >= b);
             }
         },
         LT {
@@ -108,7 +108,7 @@ public record BinaryExpression(Op op, Expression first, Expression second) imple
             Value perform(Evaluator evaluator, Expression first, Expression second) {
                 var a = evaluator.getNumberOrThrow(evaluator.eval0(first));
                 var b = evaluator.getNumberOrThrow(evaluator.eval0(second));
-                return new BoolValue(a < b);
+                return BoolValue.wrap(a < b);
             }
         },
         LTE {
@@ -116,7 +116,7 @@ public record BinaryExpression(Op op, Expression first, Expression second) imple
             Value perform(Evaluator evaluator, Expression first, Expression second) {
                 var a = evaluator.getNumberOrThrow(evaluator.eval0(first));
                 var b = evaluator.getNumberOrThrow(evaluator.eval0(second));
-                return new BoolValue(a <= b);
+                return BoolValue.wrap(a <= b);
             }
         },
         EQUAL {

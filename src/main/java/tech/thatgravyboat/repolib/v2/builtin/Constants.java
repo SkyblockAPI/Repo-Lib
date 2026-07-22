@@ -76,7 +76,7 @@ public record Constants(Map<String, Value> map) implements StructValue {
         }
 
         public void constant(String name, boolean value) {
-            field(name, new BoolValue(value));
+            field(name, BoolValue.wrap(value));
         }
 
         public void constant(String name, int value) {

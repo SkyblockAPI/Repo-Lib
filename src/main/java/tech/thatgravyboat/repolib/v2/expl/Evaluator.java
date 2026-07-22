@@ -139,8 +139,8 @@ public class Evaluator {
     }
 
     public boolean getBooleanOrThrow(Value value) {
-        if (value instanceof BoolValue(boolean literal)) {
-            return literal;
+        if (value instanceof BoolValue bool) {
+            return bool.value();
         }
         throw new Panic("Failed to convert " + value + " into a boolean");
     }
@@ -189,7 +189,7 @@ public class Evaluator {
                 case ForExpression aFor -> evalFor(aFor);
                 case NumExpression num -> new NumValue(num.value());
                 case StrExpression str -> new StrValue(str.value());
-                case BoolExpression bool -> new BoolValue(bool.value());
+                case BoolExpression bool -> BoolValue.wrap(bool.value());
                 case StructExpression struct -> evalStruct(struct);
                 case UnaryExpression unary -> evalUnary(unary);
                 case StatementExpression token -> {
@@ -217,16 +217,16 @@ public class Evaluator {
     private Value evalIn(InExpression in) {
         var holder = evalAccess(in.holder());
         if (holder instanceof KeyValue keyValue) {
-            return new BoolValue(keyValue.contains(in.field()));
+            return BoolValue.wrap(keyValue.contains(in.field()));
         } else if (holder instanceof StrValue(String value)) {
-            return new BoolValue(value.contains(in.field()));
+            return BoolValue.wrap(value.contains(in.field()));
         }
         throw new Panic("Can't check if '" + in.field() + "' is in non string or keyvalue type " + holder);
     }
 
     private Value evalUnary(UnaryExpression unary) {
         return switch (unary.op()) {
-            case NOT -> new BoolValue(!asBool(eval0(unary.rhs())));
+            case NOT -> BoolValue.wrap(!asBool(eval0(unary.rhs())));
             case NEGATE -> new NumValue(-getNumberOrThrow(eval0(unary.rhs())));
         };
     }

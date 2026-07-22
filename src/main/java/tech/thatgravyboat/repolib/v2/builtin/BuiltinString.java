@@ -35,7 +35,7 @@ public class BuiltinString {
                 var first = evaluator.getStringOrThrow(values.getFirst());
                 var second = evaluator.getStringOrThrow(values.get(1));
 
-                return new BoolValue(first.equalsIgnoreCase(second));
+                return BoolValue.wrap(first.equalsIgnoreCase(second));
             });
         });
 

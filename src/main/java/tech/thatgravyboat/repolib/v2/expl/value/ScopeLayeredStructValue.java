@@ -81,6 +81,19 @@ public record ScopeLayeredStructValue(StructValue base, MutableStructValue overl
         base.forEach(e -> keys.add(e.getKey()));
         overlay.forEach(e -> keys.add(e.getKey()));
 
-        return keys.stream().map(key -> Map.entry(key, get(key))).collect(Collectors.toList()).iterator();
+        var parent = keys.iterator();
+
+        return new Iterator<>() {
+            @Override
+            public boolean hasNext() {
+                return parent.hasNext();
+            }
+
+            @Override
+            public Map.Entry<String, Value> next() {
+                String key = parent.next();
+                return Map.entry(key, get(key));
+            }
+        };
     }
 }

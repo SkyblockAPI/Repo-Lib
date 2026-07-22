@@ -2,10 +2,12 @@ package tech.thatgravyboat.repolib.v2.expl.value;
 
 import org.jetbrains.annotations.NotNull;
 
-public record BoolValue(boolean value) implements Value {
-
+public final class BoolValue implements Value {
     public static final Value TRUE = new BoolValue(true);
     public static final Value FALSE = new BoolValue(false);
+    private final boolean value;
+
+    private BoolValue(boolean value) {this.value = value;}
 
     public static Value wrap(boolean value) {
         return value ? TRUE : FALSE;
@@ -18,8 +20,8 @@ public record BoolValue(boolean value) implements Value {
 
     @Override
     public int compareTo(@NotNull Value value) {
-        if (value instanceof BoolValue(boolean literal)) {
-            return Boolean.compare(this.value, literal);
+        if (value instanceof BoolValue boolValue) {
+            return Boolean.compare(this.value, boolValue.value);
         }
         return 0;
     }
@@ -28,4 +30,13 @@ public record BoolValue(boolean value) implements Value {
     public String type() {
         return "boolean";
     }
+
+    public boolean value() {return value;}
+
+
+    @Override
+    public int hashCode() {
+        return Boolean.hashCode(value);
+    }
+
 }
