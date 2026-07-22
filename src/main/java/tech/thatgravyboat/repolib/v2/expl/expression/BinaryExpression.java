@@ -119,6 +119,19 @@ public record BinaryExpression(Op op, Expression first, Expression second) imple
                 return new BoolValue(a <= b);
             }
         },
+        EQUAL {
+            @Override
+            Value perform(Evaluator evaluator, Expression first, Expression second) {
+                var a = evaluator.eval0(first);
+                var b = evaluator.eval0(second);
+                if (a instanceof StrValue(String aValue) && b instanceof StrValue(String bValue)) {
+                    return BoolValue.wrap(aValue == bValue);
+                } else if (a instanceof NumValue(double aValue) && b instanceof NumValue(double bValue)) {
+                    return BoolValue.wrap(aValue == bValue);
+                }
+                return evaluator.panic("Dont know how to compare " + a + " and " + b + "!");
+            }
+        }
         ;
 
         abstract Value perform(Evaluator evaluator, Expression first, Expression second);

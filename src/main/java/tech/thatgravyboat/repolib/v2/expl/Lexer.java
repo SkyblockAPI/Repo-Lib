@@ -75,8 +75,14 @@ public final class Lexer {
             case ')' -> Token.R_PARENTHESES;
             case '{' -> Token.L_BRACE;
             case '}' -> Token.R_BRACE;
-            case '=' -> Token.EQUALS;
             case ',' -> Token.COMMA;
+            case '=' -> {
+                if (match('=')) {
+                    yield Token.EQUAL;
+                }
+
+                yield Token.ASSIGN;
+            }
             case '+' -> {
                 if (match('=')) {
                     yield Token.PLUS_ASSIGN;
@@ -301,7 +307,7 @@ public final class Lexer {
         CONTINUE,
         MATCH,
 
-        EQUALS,
+        ASSIGN,
 
         L_PARENTHESES,
         R_PARENTHESES,
@@ -326,6 +332,7 @@ public final class Lexer {
         GTE,
         LT,
         LTE,
+        EQUAL,
 
         L_BRACKET,
         R_BRACKET,
@@ -368,6 +375,7 @@ public final class Lexer {
                 GTE,
                 LT,
                 LTE,
+                EQUAL,
         };
     }
 

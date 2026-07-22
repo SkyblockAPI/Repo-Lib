@@ -165,6 +165,10 @@ public final class Parser {
                 lexer.next();
                 yield new BinaryExpression(BinaryExpression.Op.LTE, first, parseUntil(end));
             }
+            case EQUAL -> {
+                lexer.next();
+                yield new BinaryExpression(BinaryExpression.Op.EQUAL, first, parseUntil(end));
+            }
             case null, default -> first;
         };
     }
@@ -203,7 +207,7 @@ public final class Parser {
                         access,
                         new BinaryExpression(BinaryExpression.Op.MOD, access, parseBinaryOrNormalUntil(end)));
                 }
-                case Lexer.Token.EQUALS -> {
+                case Lexer.Token.ASSIGN -> {
                     lexer.next();
 
                     var value = parseBinaryOrNormalUntil(end);
