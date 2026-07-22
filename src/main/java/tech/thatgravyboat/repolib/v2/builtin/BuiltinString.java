@@ -108,7 +108,7 @@ public class BuiltinString {
         return new StrValue(evaluator.getStringOrThrow(args.getFirst()).toUpperCase(Locale.ROOT));
     }
     private static Value lowercase(Evaluator evaluator, List<Value> args) {
-        return new StrValue(evaluator.getStringOrThrow(args.getFirst()).toUpperCase(Locale.ROOT));
+        return new StrValue(evaluator.getStringOrThrow(args.getFirst()).toLowerCase(Locale.ROOT));
     }
     private static Value snake_case(Evaluator evaluator, List<Value> args) {
         return new StrValue(evaluator.getStringOrThrow(args.getFirst()).toLowerCase(Locale.ROOT).replace(" ", "_"));

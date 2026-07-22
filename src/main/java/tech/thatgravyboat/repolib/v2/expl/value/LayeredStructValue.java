@@ -5,7 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Iterator;
 import java.util.Map;
 
-public record LayeredStructValue<Type extends StructValue & KeyValue.Mutable>(Type base, KeyValue overlay) implements StructValue, KeyValue.Mutable {
+public record LayeredStructValue(StructValue.MutableStruct base, KeyValue overlay) implements StructValue, KeyValue.Mutable {
     @Override
     public @NotNull Iterator<Map.Entry<String, Value>> iterator() {
         return base.iterator();
@@ -21,8 +21,8 @@ public record LayeredStructValue<Type extends StructValue & KeyValue.Mutable>(Ty
     }
 
     @Override
-    public Mutable toMutable() {
-        return base.toMutable();
+    public StructValue.MutableStruct toMutableStruct() {
+        return base.toMutableStruct();
     }
 
     @Override

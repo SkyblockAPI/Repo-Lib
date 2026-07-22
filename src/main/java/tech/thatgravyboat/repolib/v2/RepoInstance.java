@@ -41,7 +41,7 @@ public record RepoInstance(
     }
 
     public RepoStackResult createStack(StructValue data, RepoConfig repoConfig) {
-        var constants = this.constants.toMutable();
+        var constants = this.constants.toMutableStruct();
         constants.set("data", data);
         var evaluator = new Evaluator(constants);
         evaluator.evaluate(loader.rootFile());

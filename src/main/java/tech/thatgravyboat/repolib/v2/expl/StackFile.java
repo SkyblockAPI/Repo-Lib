@@ -65,7 +65,7 @@ public final class StackFile implements SelfEvaluatingExpression {
                         return requested.getStaticData();
                     });
                 }));
-        var evaluator = new Evaluator(new LayeredStructValue<>(struct, constants));
+        var evaluator = new Evaluator(new LayeredStructValue(struct, constants));
         evaluator.evaluate(this.metaScript);
         struct.fields().remove("include");
         this.meta = struct.toFullyImmutable();

@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-public record MutableStructValue(Map<String, Value> fields) implements StructValue, KeyValue.Mutable {
+public record MutableStructValue(Map<String, Value> fields) implements StructValue.MutableStruct {
     public MutableStructValue() {
         this(new HashMap<>());
     }
@@ -66,7 +66,7 @@ public record MutableStructValue(Map<String, Value> fields) implements StructVal
     }
 
     @Override
-    public Mutable toMutable() {
+    public MutableStructValue toMutableStruct() {
         return new MutableStructValue(new HashMap<>(fields));
     }
 

@@ -34,7 +34,7 @@ public record Constants(Map<String, Value> map) implements StructValue {
     }
 
     @Override
-    public MutableStructValue toMutable() {
+    public MutableStructValue toMutableStruct() {
         return new MutableStructValue(new HashMap<>(map));
     }
 

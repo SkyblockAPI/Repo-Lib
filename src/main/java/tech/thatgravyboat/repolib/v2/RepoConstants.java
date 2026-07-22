@@ -85,6 +85,11 @@ public final class RepoConstants implements StructValue.Forwarding {
                 return NIL;
             });
         });
+
+        builder.function("print", (function) -> {
+            function.vararg(true);
+            function.executeSimpleVoid(System.out::println);
+        });
     });
 
     public RepoConstants(RepoLoader loader) {

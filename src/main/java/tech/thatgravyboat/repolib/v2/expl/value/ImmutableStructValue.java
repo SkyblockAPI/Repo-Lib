@@ -21,10 +21,6 @@ public record ImmutableStructValue(Map<String, Value> fields) implements StructV
         return fields.toString();
     }
 
-    @Override
-    public MutableStructValue toMutable() {
-        return new MutableStructValue(new HashMap<>(fields));
-    }
 
     @Override
     public boolean contains(String field) {
@@ -39,5 +35,10 @@ public record ImmutableStructValue(Map<String, Value> fields) implements StructV
     @Override
     public boolean isEmpty() {
         return fields.isEmpty();
+    }
+
+    @Override
+    public MutableStruct toMutableStruct() {
+        return new MutableStructValue(new HashMap<>(fields));
     }
 }

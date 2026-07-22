@@ -166,8 +166,8 @@ public class Main extends WebSocketServer {
                 }
                 var obj = new JsonObject();
 
-                color(val.get("color")).ifPresent(setInt(obj, "color"));
-                color(val.get("shadow_color")).ifPresent(setInt(obj, "shadow_color"));
+                color(val.get("color")).ifPresent(setString(obj, "color"));
+                color(val.get("shadow_color")).ifPresent(setString(obj, "shadow_color"));
                 getBool(val, "bold").ifPresent(setBoolean(obj, "bold"));
                 getBool(val, "italic").or(() -> Optional.of(false)).ifPresent(setBoolean(obj, "italic"));
                 getBool(val, "obfuscated").ifPresent(setBoolean(obj, "obfuscated"));
@@ -208,26 +208,26 @@ public class Main extends WebSocketServer {
         return (value) -> obj.addProperty(field, value);
     }
 
-    OptionalInt BLACK = OptionalInt.of(0x000000);
-    OptionalInt DARK_BLUE = OptionalInt.of(0x0000AA);
-    OptionalInt DARK_GREEN = OptionalInt.of(0x00AA00);
-    OptionalInt DARK_AQUA = OptionalInt.of(0x00AAAA);
-    OptionalInt DARK_RED = OptionalInt.of(0xAA0000);
-    OptionalInt DARK_PURPLE = OptionalInt.of(0xAA00AA);
-    OptionalInt GOLD = OptionalInt.of(0xFFAA00);
-    OptionalInt GRAY = OptionalInt.of(0xAAAAAA);
-    OptionalInt DARK_GRAY = OptionalInt.of(0x555555);
-    OptionalInt BLUE = OptionalInt.of(0x5555FF);
-    OptionalInt GREEN = OptionalInt.of(0x55FF55);
-    OptionalInt AQUA = OptionalInt.of(0x55FFFF);
-    OptionalInt RED = OptionalInt.of(0xFF5555);
-    OptionalInt LIGHT_PURPLE = OptionalInt.of(0xFF55FF);
-    OptionalInt YELLOW = OptionalInt.of(0xFFFF55);
-    OptionalInt WHITE = OptionalInt.of(0xFFFFFF);
+    Optional<String> BLACK = Optional.of("black");
+    Optional<String> DARK_BLUE = Optional.of("dark_blue");
+    Optional<String> DARK_GREEN = Optional.of("dark_green");
+    Optional<String> DARK_AQUA = Optional.of("dark_aqua");
+    Optional<String> DARK_RED = Optional.of("dark_red");
+    Optional<String> DARK_PURPLE = Optional.of("dark_purple");
+    Optional<String> GOLD = Optional.of("gold");
+    Optional<String> GRAY = Optional.of("gray");
+    Optional<String> DARK_GRAY = Optional.of("dark_gray");
+    Optional<String> BLUE = Optional.of("blue");
+    Optional<String> GREEN = Optional.of("green");
+    Optional<String> AQUA = Optional.of("aqua");
+    Optional<String> RED = Optional.of("red");
+    Optional<String> LIGHT_PURPLE = Optional.of("light_purple");
+    Optional<String> YELLOW = Optional.of("yellow");
+    Optional<String> WHITE = Optional.of("white");
 
-    private OptionalInt color(Value value) {
+    private Optional<String> color(Value value) {
         if (!(value instanceof StrValue(String color))) {
-            return OptionalInt.empty();
+            return Optional.empty();
         }
 
         return switch (color.toLowerCase(Locale.ROOT)) {
@@ -249,10 +249,10 @@ public class Main extends WebSocketServer {
             case "white" -> WHITE;
             default -> {
                 if (color.startsWith("#")) {
-                    yield OptionalInt.of(Integer.parseInt(color.substring(1), 16));
+                    yield Optional.of(color);
                 }
 
-                yield OptionalInt.empty();
+                yield Optional.empty();
             }
         };
     }

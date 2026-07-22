@@ -24,7 +24,7 @@ public record MutableArrayValue(
     }
 
     public static MutableArrayValue create(List<Value> entries) {
-        return new MutableArrayValue(new ArrayList<>(entries), ArrayValue.createPrototype(entries, true, ImmutableStructValue.EMPTY));
+        return new MutableArrayValue(entries, ArrayValue.createPrototype(entries, true, ImmutableStructValue.EMPTY));
     }
 
     public static MutableArrayValue create() {

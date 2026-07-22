@@ -55,7 +55,7 @@ public class Evaluator {
         return stringBuilder.toString();
     }
 
-    public Evaluator(KeyValue defaults) {
+    public Evaluator(StructValue defaults) {
         this.defaults = defaults;
         scope = new Scope(defaults);
     }
@@ -393,9 +393,9 @@ public class Evaluator {
     }
 
     private static class Scope {
-        KeyValue defaults;
-        LinkedList<KeyValue> scopes = new LinkedList<>();
-        public Scope(KeyValue defaults) {
+        StructValue defaults;
+        LinkedList<StructValue> scopes = new LinkedList<>();
+        public Scope(StructValue defaults) {
             this.defaults = defaults;
             scopes.add(defaults);
         }

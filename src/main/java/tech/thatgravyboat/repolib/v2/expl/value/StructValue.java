@@ -7,6 +7,13 @@ import java.util.Map;
 
 public interface StructValue extends KeyValue, Iterable<Map.Entry<String, Value>> {
 
+    StructValue.MutableStruct toMutableStruct();
+
+    @Override
+    default Mutable toMutable() {
+        return this.toMutableStruct();
+    }
+
     static String prettyPrint(StructValue result) {
         return prettyPrint(result, "");
     }
@@ -39,6 +46,15 @@ public interface StructValue extends KeyValue, Iterable<Map.Entry<String, Value>
     interface Forwarding extends KeyValue.Forwarding, StructValue {
         @Override
         StructValue delegate();
+
+        default StructValue.MutableStruct toMutableStruct() {
+            return delegate().toMutableStruct();
+        }
+
+        @Override
+        default StructValue.Mutable toMutable() {
+            return toMutableStruct();
+        }
 
         @Override
         default @NotNull Iterator<Map.Entry<String, Value>> iterator() {
