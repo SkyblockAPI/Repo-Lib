@@ -18,7 +18,7 @@ public final class IdOverlaysAPI {
     ) {
         public static @Nullable WikiData fromJson(JsonObject json) {
             if (json == null) return null;
-            return new WikiData(null,JsonHelper.getStringOrNull(json, "independent"));
+            return new WikiData(null, JsonHelper.getStringOrNull(json, "independent"));
         }
     }
 
