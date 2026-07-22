@@ -13,15 +13,12 @@ import java.util.Map;
 public final class IdOverlaysAPI {
 
     public record WikiData(
-            @Nullable String official,
+            @Deprecated(forRemoval = true) @Nullable String official,
             @Nullable String independent
     ) {
         public static @Nullable WikiData fromJson(JsonObject json) {
             if (json == null) return null;
-            return new WikiData(
-                    JsonHelper.getStringOrNull(json, "official"),
-                    JsonHelper.getStringOrNull(json, "independent")
-            );
+            return new WikiData(null,JsonHelper.getStringOrNull(json, "independent"));
         }
     }
 
