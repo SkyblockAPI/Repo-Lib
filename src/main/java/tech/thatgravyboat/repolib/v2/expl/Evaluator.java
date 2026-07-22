@@ -64,7 +64,7 @@ public class Evaluator {
 
     public Value evaluate(Expression expression) {
         try {
-            if (expression.canReturnValueBeReturned()) {
+            if (expression != null && expression.canReturnValueBeReturned()) {
                 return eval0(expression);
             } else {
                 eval0(expression);
@@ -170,6 +170,13 @@ public class Evaluator {
         throw new Panic("Failed to convert " + value + " into a mutable struct");
     }
 
+    public StructValue getStructOrThrow(Value value) {
+        if (value instanceof StructValue msv) {
+            return msv;
+        }
+        throw new Panic("Failed to convert " + value + " into a struct");
+    }
+
     public Value eval0(Expression expression) {
         try {
             return switch (expression) {
@@ -224,12 +231,24 @@ public class Evaluator {
         };
     }
 
-    private Value evalStruct(StructExpression struct) {
-        var fields = new HashMap<String, Value>();
-        for (var entry : struct.fields().entrySet()) {
-            fields.put(entry.getKey(), eval0(entry.getValue()));
+    private Value evalStructValue(MutableStructValue self, Expression expression) {
+        if (expression instanceof IdentityExpression identity) {
+            return identity.valueFunction().apply(self);
         }
-        return new MutableStructValue(fields);
+        return this.eval0(expression);
+    }
+
+    private Value evalStruct(StructExpression struct) {
+        var fields = new MutableStructValue(new HashMap<>());
+
+        if (struct.spread() != null) {
+            getStructOrThrow(this.eval0(struct.spread())).forEach(entry -> fields.set(entry.getKey(), entry.getValue()));
+        }
+
+        for (var entry : struct.fields().entrySet()) {
+            fields.set(entry.getKey(), evalStructValue(fields, entry.getValue()));
+        }
+        return fields;
     }
 
     private boolean asBool(Value value) {

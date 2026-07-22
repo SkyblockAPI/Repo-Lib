@@ -1,5 +1,6 @@
 package tech.thatgravyboat.repolib.v2.expl;
 
+import java.util.Map;
 import tech.thatgravyboat.repolib.v2.RepoLoader;
 import tech.thatgravyboat.repolib.v2.expl.expression.*;
 
@@ -277,10 +278,19 @@ public final class Parser {
             case LITERAL_BOOL -> new BoolExpression(Boolean.parseBoolean(lexer.span()));
             case DEBUG -> DebugExpression.INSTANCE;
             case L_BRACE -> {
-                var fields = new StructExpression(new HashMap<>());
+                Map<String, Expression> fields = new HashMap<>();
+                AccessExpression accessor = null;
 
                 while (lexer.peek() != Lexer.Token.R_BRACE) {
                     String field;
+                    if (lexer.peek() == Lexer.Token.INCLUSIVE_INCLUSIVE_RANGE) {
+                        this.lexer.expect(Lexer.Token.INCLUSIVE_INCLUSIVE_RANGE);
+                        this.lexer.expect(Lexer.Token.DOT);
+                        this.lexer.expect(Lexer.Token.IDENT);
+                        accessor = this.memberAccess(null);
+                        break;
+                    }
+
                     if (lexer.peek() == Lexer.Token.IDENT) {
                         lexer.next();
                         field = lexer.span();
@@ -292,9 +302,14 @@ public final class Parser {
 
                     if (lexer.peek() == Lexer.Token.COLON) {
                         lexer.expect(Lexer.Token.COLON);
-                        fields.fields().put(field, parseBinaryOrNormalUntil(Lexer.Token.COMMA, Lexer.Token.R_BRACE));
+                        var expr =  parseBinaryOrNormalUntil(Lexer.Token.COMMA, Lexer.Token.R_BRACE);
+                        if (expr instanceof LambdaExpression lambda) {
+                            fields.put(field, new IdentityExpression((self) -> new LambdaExpression(lambda.arguments(), lambda.body(), self).function()));
+                        } else {
+                            fields.put(field, expr);
+                        }
                     } else {
-                        fields.fields().put(field, new AccessExpression(null, new StrExpression(field)));
+                        fields.put(field, new AccessExpression(null, new StrExpression(field)));
                         if (this.lexer.peek() != Lexer.Token.COMMA) {
                             break;
                         }
@@ -306,7 +321,7 @@ public final class Parser {
                 }
                 lexer.expect(Lexer.Token.R_BRACE);
 
-                yield fields;
+                yield new StructExpression(fields, accessor);
             }
             case L_BRACKET -> {
                 ArrayExpression array = new ArrayExpression(new ArrayList<>());
@@ -404,7 +419,7 @@ public final class Parser {
 
             var check = condition == MatchExpression.MatchCondition.ELSE ? null : parseUntil(Lexer.Token.LAMBDA_ARROW);
             lexer.expect(Lexer.Token.LAMBDA_ARROW);
-            var branch = scopeOrSingleStatement();
+            var branch = scopeOrSingleStatement(Lexer.Token.COMMA);
 
             lexer.expect(Lexer.Token.COMMA);
             branches.add(new MatchExpression.MatchBranch(condition, check, branch));
@@ -468,11 +483,19 @@ public final class Parser {
         return scopeOrSingleStatement(false);
     }
 
+    private Expression scopeOrSingleStatement(Lexer.Token... ends) {
+        return scopeOrSingleStatement(false, ends);
+    }
+
     private Expression scopeOrSingleStatement(boolean allowBinary) {
+        return scopeOrSingleStatement(allowBinary, Lexer.Token.SEMICOLON);
+    }
+
+    private Expression scopeOrSingleStatement(boolean allowBinary, Lexer.Token... ends) {
         if (lexer.peek() == Lexer.Token.L_BRACE) {
             return block();
         }
-        return allowBinary ? parseBinaryOrNormalUntil(Lexer.Token.SEMICOLON) : parseUntil(Lexer.Token.SEMICOLON);
+        return allowBinary ? parseBinaryOrNormalUntil(ends) : parseUntil(ends);
     }
 
     private BlockExpression block() {

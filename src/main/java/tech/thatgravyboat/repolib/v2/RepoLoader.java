@@ -21,7 +21,7 @@ import java.util.Map;
 
 public class RepoLoader implements FileVisitor<Path> {
 
-    private final Path path;
+    public final Path path;
     private final Map<String, ModuleFile> files = new HashMap<>();
     private Expression rootList = null;
     private Expression rootFile = null;

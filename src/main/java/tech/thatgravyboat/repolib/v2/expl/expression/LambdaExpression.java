@@ -1,28 +1,43 @@
 package tech.thatgravyboat.repolib.v2.expl.expression;
 
 import java.util.List;
+import org.jetbrains.annotations.Nullable;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.value.FunctionValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
-public record LambdaExpression(List<LambdaArgument> arguments, Expression body) implements SelfEvaluatingExpression {
-    @Override
-    public Value evaluate(Evaluator _evaluator) {
-        return FunctionValue.builder(builder -> {
-            builder.arity(arguments.size());
-            builder.execute((evaluator, values) -> evaluator.pushPop("lambda", () -> {
-                for (var argument : arguments) {
-                    evaluator.set(argument.name, values.get(argument.position));
-                }
+public record LambdaExpression(
+    List<LambdaArgument> arguments, Expression body, Value function, boolean requiresSemicolon
+) implements SelfEvaluatingExpression {
 
-                return evaluator.evaluate(body);
-            }));
-        });
+
+    public LambdaExpression(List<LambdaArgument> arguments, Expression body) {
+        this(arguments, body, null);
     }
 
+    public LambdaExpression(List<LambdaArgument> arguments, Expression body, Value self) {
+        this(
+            arguments, body, FunctionValue.builder(builder -> {
+                builder.arity(arguments.size());
+                builder.execute((evaluator, values) -> evaluator.pushPop(
+                    "lambda", () -> {
+                        if (self != null) {
+                            evaluator.set("self", self);
+                        }
+
+                        for (var argument : arguments) {
+                            evaluator.set(argument.name, values.get(argument.position));
+                        }
+
+                        return evaluator.evaluate(body);
+                    }));
+            }), body.requiresSemicolon());
+    }
+
+
     @Override
-    public boolean requiresSemicolon() {
-        return body.requiresSemicolon();
+    public Value evaluate(Evaluator _evaluator) {
+        return function;
     }
 
     @Override
