@@ -131,19 +131,6 @@ public class BuiltinString {
         });
     });
 
-    public static void main(String[] args) {
-        var format = new CompactNumberFormat(
-            "#;#",
-            DecimalFormatSymbols.getInstance(Locale.ROOT),
-            new String[]{
-                "", "", "",
-                "0K", "00K", "000K",
-                "0M", "00M", "000M",
-                "0B", "00B", "000B",
-                "0T", "00T", "000T"
-            });
-    }
-
     private static Value uppercase(Evaluator evaluator, List<Value> args) {
         return new StrValue(evaluator.getStringOrThrow(args.getFirst()).toUpperCase(Locale.ROOT));
     }

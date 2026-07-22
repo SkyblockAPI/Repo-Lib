@@ -423,7 +423,7 @@ public final class Parser {
 
             var check = condition == MatchExpression.MatchCondition.ELSE ? null : parseUntil(Lexer.Token.LAMBDA_ARROW);
             lexer.expect(Lexer.Token.LAMBDA_ARROW);
-            var branch = scopeOrSingleStatement(Lexer.Token.COMMA);
+            var branch = scopeOrSingleStatement(true, Lexer.Token.COMMA);
 
             lexer.expect(Lexer.Token.COMMA);
             branches.add(new MatchExpression.MatchBranch(condition, check, branch));
@@ -462,7 +462,7 @@ public final class Parser {
         if (lexer.peek() == Lexer.Token.COLON  && init instanceof AccessExpression access) {
             lexer.expect(Lexer.Token.COLON);
 
-            var array = parseUntil(Lexer.Token.R_PARENTHESES);
+            var array = parseBinaryOrNormalUntil(Lexer.Token.R_PARENTHESES);
             lexer.expect(Lexer.Token.R_PARENTHESES);
 
             var body = scopeOrSingleStatement();
@@ -471,10 +471,10 @@ public final class Parser {
         } else {
             lexer.expect(Lexer.Token.SEMICOLON);
 
-            Expression cond = parseUntil(Lexer.Token.SEMICOLON);
+            Expression cond = parseBinaryOrNormalUntil(Lexer.Token.SEMICOLON);
             lexer.expect(Lexer.Token.SEMICOLON);
 
-            Expression incr = parseUntil(Lexer.Token.R_PARENTHESES);
+            Expression incr = parseBinaryOrNormalUntil(Lexer.Token.R_PARENTHESES);
             lexer.expect(Lexer.Token.R_PARENTHESES);
 
             var body = scopeOrSingleStatement();
