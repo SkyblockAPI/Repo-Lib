@@ -1,5 +1,6 @@
 package tech.thatgravyboat.repolib.v2.builtin;
 
+import java.text.CompactNumberFormat;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.value.BoolValue;
 import tech.thatgravyboat.repolib.v2.expl.value.KeyValue;
@@ -102,7 +103,46 @@ public class BuiltinString {
                 return new StrValue(format.format(evaluator.getNumberOrThrow(arg)));
             });
         });
+        builder.function("compact", function -> {
+            function.arity(1, 2);
+            var format = new CompactNumberFormat(
+                "#;#",
+                DecimalFormatSymbols.getInstance(Locale.ROOT),
+                new String[]{
+                    "", "", "",
+                    "0K", "00K", "000K",
+                    "0M", "00M", "000M",
+                    "0B", "00B", "000B",
+                    "0T", "00T", "000T"
+                });
+            function.execute((evaluator, values) -> {
+                var arg = values.getFirst();
+                int digits;
+                if (values.size() == 2) {
+                    digits = (int) evaluator.getNumberOrThrow(values.get(1));
+                } else {
+                    digits = 1;
+                }
+
+                format.setMinimumFractionDigits(digits);
+                format.setMaximumFractionDigits(digits);
+                return new StrValue(format.format(evaluator.getNumberOrThrow(arg)));
+            });
+        });
     });
+
+    public static void main(String[] args) {
+        var format = new CompactNumberFormat(
+            "#;#",
+            DecimalFormatSymbols.getInstance(Locale.ROOT),
+            new String[]{
+                "", "", "",
+                "0K", "00K", "000K",
+                "0M", "00M", "000M",
+                "0B", "00B", "000B",
+                "0T", "00T", "000T"
+            });
+    }
 
     private static Value uppercase(Evaluator evaluator, List<Value> args) {
         return new StrValue(evaluator.getStringOrThrow(args.getFirst()).toUpperCase(Locale.ROOT));
