@@ -1,13 +1,7 @@
 package tech.thatgravyboat.repolib.v2.builtin;
 
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
-import tech.thatgravyboat.repolib.v2.expl.value.ArrayValue;
-import tech.thatgravyboat.repolib.v2.expl.value.KeyValue;
-import tech.thatgravyboat.repolib.v2.expl.value.MutableArrayValue;
-import tech.thatgravyboat.repolib.v2.expl.value.MutableStructValue;
-import tech.thatgravyboat.repolib.v2.expl.value.StrValue;
-import tech.thatgravyboat.repolib.v2.expl.value.StructValue;
-import tech.thatgravyboat.repolib.v2.expl.value.Value;
+import tech.thatgravyboat.repolib.v2.expl.value.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -126,23 +120,29 @@ public class BuiltinComponent {
 
         if (text.contains("text")) {
             var literalText = evaluator.getStringOrThrow(text.get("text"));
-            var textLength = literalText.length();
-            var consumed = 0;
-            do {
-                var next = literalText.indexOf(' ', consumed);
-                final String span;
-                if (next == -1) {
-                    span = literalText.substring(consumed);
-                    consumed = textLength;
-                } else {
-                    span = literalText.substring(consumed, next + 1);
-                    consumed = next + 1;
-                }
-
+            if (text.get("do_not_split") == BoolValue.TRUE) {
                 var entry = new MutableStructValue(parent);
-                entry.set("text", new StrValue(span));
+                entry.set("text", new StrValue(literalText));
                 accumulator.add(entry);
-            } while (consumed < textLength);
+            } else {
+                var textLength = literalText.length();
+                var consumed = 0;
+                do {
+                    var next = literalText.indexOf(' ', consumed);
+                    final String span;
+                    if (next == -1) {
+                        span = literalText.substring(consumed);
+                        consumed = textLength;
+                    } else {
+                        span = literalText.substring(consumed, next + 1);
+                        consumed = next + 1;
+                    }
+
+                    var entry = new MutableStructValue(parent);
+                    entry.set("text", new StrValue(span));
+                    accumulator.add(entry);
+                } while (consumed < textLength);
+            }
         }
 
         if (text.contains("extra")) {
