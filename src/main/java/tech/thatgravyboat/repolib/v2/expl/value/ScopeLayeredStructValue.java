@@ -9,8 +9,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
 
-public record ScopeLayeredStructValue(StructValue base, MutableStructValue overlay)
-    implements StructValue.MutableStruct {
+public record ScopeLayeredStructValue(StructValue base, StructValue.MutableStruct overlay) implements StructValue.MutableStruct {
 
     @Override
     public void set(String field, Value value) {

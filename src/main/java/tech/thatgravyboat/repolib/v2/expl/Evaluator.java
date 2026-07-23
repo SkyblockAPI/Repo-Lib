@@ -22,7 +22,7 @@ public class Evaluator {
     public final LinkedList<String> stack = new LinkedList<>();
     public final List<ContentInfo> errors = new ArrayList<>();
 
-    public Value pushPop(String stack, MutableStructValue scope, Supplier<Value> supplier) {
+    public Value pushPop(String stack, StructValue.MutableStruct scope, Supplier<Value> supplier) {
         try {
             this.scope.pushWithScope(scope);
             this.stack.addLast(stack);
@@ -163,8 +163,8 @@ public class Evaluator {
         throw new Panic("Failed to convert " + value + " into a key value");
     }
 
-    public MutableStructValue getMutableStructOrThrow(Value value) {
-        if (value instanceof MutableStructValue msv) {
+    public StructValue.MutableStruct getMutableStructOrThrow(Value value) {
+        if (value instanceof StructValue.MutableStruct msv) {
             return msv;
         }
         throw new Panic("Failed to convert " + value + " into a mutable struct");
@@ -405,7 +405,7 @@ public class Evaluator {
         public void push() {
             scopes.add(new ScopeLayeredStructValue(scopes.getLast(), new MutableStructValue()));
         }
-        public void pushWithScope(MutableStructValue newScope) {
+        public void pushWithScope(StructValue.MutableStruct newScope) {
             scopes.add(new ScopeLayeredStructValue(defaults, newScope));
         }
         public void pop() {

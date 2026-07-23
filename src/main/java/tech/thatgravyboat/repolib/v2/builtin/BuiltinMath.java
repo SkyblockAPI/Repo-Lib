@@ -151,6 +151,33 @@ public class BuiltinMath {
             });
         });
 
+        builder.function("floor", function -> {
+            function.arity(1);
+            function.execute((evaluator, values) -> {
+                var first = evaluator.getNumberOrThrow(values.getFirst());
+
+                return new NumValue(Math.floor(first));
+            });
+        });
+
+        builder.function("ceil", function -> {
+            function.arity(1);
+            function.execute((evaluator, values) -> {
+                var first = evaluator.getNumberOrThrow(values.getFirst());
+
+                return new NumValue(Math.ceil(first));
+            });
+        });
+
+        builder.function("round", function -> {
+            function.arity(1);
+            function.execute((evaluator, values) -> {
+                var first = evaluator.getNumberOrThrow(values.getFirst());
+
+                return new NumValue(Math.round(first));
+            });
+        });
+
         builder.function("clamp", function -> {
             function.arity(3);
             function.execute((evaluator, values) -> {
