@@ -66,9 +66,4 @@ non-sealed public interface KeyValue extends Value {
     default String type() {
         return "object";
     }
-
-    @Override
-    default String render(int depth) {
-        return "[Object keyValue]";
-    }
 }
