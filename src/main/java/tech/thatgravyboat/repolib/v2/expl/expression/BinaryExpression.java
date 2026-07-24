@@ -1,5 +1,6 @@
 package tech.thatgravyboat.repolib.v2.expl.expression;
 
+import java.util.Objects;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.value.BoolValue;
 import tech.thatgravyboat.repolib.v2.expl.value.MutableArrayValue;
@@ -124,14 +125,7 @@ public record BinaryExpression(Op op, Expression first, Expression second) imple
             Value perform(Evaluator evaluator, Expression first, Expression second) {
                 var a = evaluator.eval0(first);
                 var b = evaluator.eval0(second);
-                if (a instanceof StrValue(String aValue) && b instanceof StrValue(String bValue)) {
-                    return BoolValue.wrap(aValue == bValue);
-                } else if (a instanceof NumValue(double aValue) && b instanceof NumValue(double bValue)) {
-                    return BoolValue.wrap(aValue == bValue);
-                } else if (a instanceof BoolValue firstBool && b instanceof BoolValue secondBool) {
-                    return BoolValue.wrap(firstBool.value() && secondBool.value());
-                }
-                return evaluator.panic("Dont know how to compare " + a + " and " + b + "!");
+                return Objects.equals(a, b);
             }
         }
         ;
