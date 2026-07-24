@@ -78,17 +78,9 @@ public final class RepoConstants implements StructValue.Forwarding {
             });
         });
 
-        builder.function("debug", (function) -> {
-            function.vararg(true);
-            function.execute((evaluator, values) -> {
-                evaluator.debug(values.toString());
-                return NIL;
-            });
-        });
-
         builder.function("print", (function) -> {
             function.vararg(true);
-            function.executeSimpleVoid(System.out::println);
+            function.executeSimpleVoid((values) -> System.out.println(values.stream().map(Value::prettyPrint).toList()));
         });
     });
 

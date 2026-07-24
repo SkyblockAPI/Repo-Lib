@@ -6,13 +6,13 @@ import java.util.LinkedList;
 import java.util.List;
 
 public non-sealed interface ArrayValue extends Value, KeyValue, Iterable<Value> {
-    public static String prettyPrint(ArrayValue array, String prefix) {
+    public static String prettyPrint(ArrayValue array, String prefix, int depth) {
         var values = getValues(array);
         var stringBuilder = new StringBuilder();
 
         stringBuilder.append("[").append("\n");
         for (var value : values) {
-            stringBuilder.append(prefix).append(" ").append(Value.prettyPrint(value, prefix)).append(",\n");
+            stringBuilder.append(prefix).append(" ").append(Value.prettyPrint(value, prefix, depth + 1)).append(",\n");
         }
         stringBuilder.append(prefix).append("]");
 

@@ -15,9 +15,9 @@ public interface StructValue extends KeyValue, Iterable<Map.Entry<String, Value>
     }
 
     static String prettyPrint(StructValue result) {
-        return prettyPrint(result, "");
+        return prettyPrint(result, "", 0);
     }
-    static String prettyPrint(StructValue result, String prefix) {
+    static String prettyPrint(StructValue result, String prefix, int depth) {
         var builder = new StringBuilder();
         builder.append("{");
 
@@ -28,7 +28,7 @@ public interface StructValue extends KeyValue, Iterable<Map.Entry<String, Value>
                     .append(" ")
                     .append(entry.getKey())
                     .append(": ")
-                    .append(Value.prettyPrint(entry.getValue(), prefix))
+                    .append(Value.prettyPrint(entry.getValue(), prefix, depth + 1))
                     .append(",");
         }
 
