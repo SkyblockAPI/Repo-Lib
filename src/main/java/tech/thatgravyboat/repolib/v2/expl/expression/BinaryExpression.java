@@ -125,7 +125,7 @@ public record BinaryExpression(Op op, Expression first, Expression second) imple
             Value perform(Evaluator evaluator, Expression first, Expression second) {
                 var a = evaluator.eval0(first);
                 var b = evaluator.eval0(second);
-                return Objects.equals(a, b);
+                return BoolValue.wrap(Objects.equals(a, b));
             }
         }
         ;
