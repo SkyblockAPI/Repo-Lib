@@ -93,16 +93,11 @@ public class BuiltinMath {
             function.vararg(true);
             function.arity(1);
             function.execute((evaluator, values) -> {
-                double min = 0;
+                var flattened = ArrayValue.flatten(values);
+                double min = evaluator.getNumberOrThrow(flattened.getFirst());
 
-                for (var value : values) {
-                    if (value instanceof ArrayValue array) {
-                        for (var arrayValue : array) {
-                            min = Math.min(evaluator.getNumberOrThrow(arrayValue), min);
-                        }
-                    } else {
-                        min = Math.min(evaluator.getNumberOrThrow(value), min);
-                    }
+                for (var value : flattened) {
+                    min = Math.min(evaluator.getNumberOrThrow(value), min);
                 }
 
                 return new NumValue(min);
@@ -113,9 +108,10 @@ public class BuiltinMath {
             function.vararg(true);
             function.arity(1);
             function.execute((evaluator, values) -> {
-                double min = 0;
+                var flattened = ArrayValue.flatten(values);
+                double min = evaluator.getNumberOrThrow(flattened.getFirst());
 
-                for (var value : ArrayValue.flatten(values)) {
+                for (var value : flattened) {
                     min = Math.max(evaluator.getNumberOrThrow(value), min);
                 }
 
