@@ -128,6 +128,8 @@ public record BinaryExpression(Op op, Expression first, Expression second) imple
                     return BoolValue.wrap(aValue == bValue);
                 } else if (a instanceof NumValue(double aValue) && b instanceof NumValue(double bValue)) {
                     return BoolValue.wrap(aValue == bValue);
+                } else if (a instanceof BoolValue firstBool && b instanceof BoolValue secondBool) {
+                    return BoolValue.wrap(firstBool.value() && secondBool.value());
                 }
                 return evaluator.panic("Dont know how to compare " + a + " and " + b + "!");
             }
