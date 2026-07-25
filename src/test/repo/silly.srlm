@@ -1,0 +1,14 @@
+print("test");
+
+name = "print";
+
+printf = ::<name + "f">::;
+
+printf("silly");
+printf("silly", "debug");
+
+printf{
+    message: "meow",
+    severity: "error",
+};
+

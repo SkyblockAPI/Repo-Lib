@@ -18,11 +18,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import tech.thatgravyboat.repolib.v2.expl.value.FunctionValue;
 
 public class RepoLoader implements FileVisitor<Path> {
 
     public final Path path;
-    private final Map<String, ModuleFile> files = new HashMap<>();
+    private final Map<String, FunctionValue> files = new HashMap<>();
     private Expression rootList = null;
     private Expression rootFile = null;
     private final Map<String, StackFile> stackFiles = new HashMap<>();
@@ -57,7 +58,7 @@ public class RepoLoader implements FileVisitor<Path> {
         return errors;
     }
 
-    public ModuleFile getModule(String name) {
+    public FunctionValue getModule(String name) {
         return files.get(name);
     }
 
@@ -122,7 +123,10 @@ public class RepoLoader implements FileVisitor<Path> {
             } else if (relativeFileName.equals("root.srlm")) {
                 rootFile = Expression.parse(content);
             } else if (relativeFileName.endsWith(".srlm")) {
-                var expression = Expression.parseModuleOrThrow(this, content);
+                var expression = Expression.parseModuleOrThrow(this, relativeName, content);
+                files.put(relativeName, expression);
+            } else if (relativeFileName.endsWith(".srlf")) {
+                var expression = Expression.parseFunctionOrThrow(this, relativeName, content);
                 files.put(relativeName, expression);
             } else if (relativeFileName.equals("root.srll")) {
                 rootList = Expression.parse(content);

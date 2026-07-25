@@ -8,6 +8,7 @@ import tech.thatgravyboat.repolib.v2.builtin.BuiltinObjects;
 import tech.thatgravyboat.repolib.v2.builtin.BuiltinRarities;
 import tech.thatgravyboat.repolib.v2.builtin.BuiltinString;
 import tech.thatgravyboat.repolib.v2.builtin.Constants;
+import tech.thatgravyboat.repolib.v2.expl.ModuleFile;
 import tech.thatgravyboat.repolib.v2.expl.value.StructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
@@ -74,7 +75,11 @@ public final class RepoConstants implements StructValue.Forwarding {
                 if (requested == null) {
                     return evaluator.panic("Requested include " + value + " doesn't exist!");
                 }
-                return requested.getStaticData();
+                if (requested instanceof ModuleFile module) {
+                    return module.getStaticData();
+                }
+
+                return evaluator.panic("Can't access static data of non module file!");
             });
         });
 

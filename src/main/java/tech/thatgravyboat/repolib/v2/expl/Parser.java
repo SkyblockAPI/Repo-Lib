@@ -63,7 +63,7 @@ public final class Parser {
         return new StackFile(loader, meta.get(), script.get(StackFile.DEFAULT_SCRIPT));
     }
 
-    public ModuleFile parseModuleFile(RepoLoader loader) {
+    public ModuleFile parseModuleFile(String name, RepoLoader loader) {
         Holder<StructExpression> struct = new Holder<>("static");
 
         if (lexer.peek() == Lexer.Token.IDENT && "static".equals(lexer.peekSpan())) {
@@ -79,7 +79,20 @@ public final class Parser {
             lexer.expect(Lexer.Token.SEMICOLON);
         }
 
-        return new ModuleFile(loader, struct.get(() -> null), parseExpression());
+        return new ModuleFile(name, loader, struct.get(() -> null), parseExpression());
+    }
+
+    public FunctionFile parseFunctionFile(String name, RepoLoader loader) {
+        var arguments = new ArrayList<LambdaExpression.LambdaArgument>();
+
+        if (this.lexer.peek() == Lexer.Token.LAMBDA_FUNCTION_PARAMETERS) {
+            lexer.expect(Lexer.Token.LAMBDA_FUNCTION_PARAMETERS);
+            arguments(arguments);
+        } else {
+            lexer.expect(Lexer.Token.OR);
+        }
+
+        return new FunctionFile(loader, name, arguments, parseExpression());
     }
 
     public Expression parseExpression() {
@@ -105,6 +118,9 @@ public final class Parser {
     }
 
     public Expression parseBinaryOrNormalUntil(Lexer.Token... ends) {
+        return parseBinaryOrNormalUntil(true, ends);
+    }
+    public Expression parseBinaryOrNormalUntil(boolean allowChainedPlus, Lexer.Token... ends) {
         var end = join(ends, Lexer.Token.BINARY);
         var first = parseUntil(end);
 
@@ -123,7 +139,7 @@ public final class Parser {
             }
             case PLUS -> {
                 lexer.next();
-                yield new BinaryExpression(BinaryExpression.Op.PLUS, first, parseBinaryOrNormalUntil(end));
+                yield new BinaryExpression(BinaryExpression.Op.PLUS, first, allowChainedPlus ? parseBinaryOrNormalUntil(end) : parseUntil(end));
             }
             case MINUS -> {
                 lexer.next();
@@ -248,6 +264,22 @@ public final class Parser {
 
                 yield memberAccessor(call, end);
             }
+            case Lexer.Token.L_BRACE -> {
+                lexer.next();
+                var arg = structExpr();
+
+                var call = new FileCallExpression(expression, arg);
+
+                if (lexer.peek() == Lexer.Token.DOT) {
+                    lexer.expect(Lexer.Token.DOT);
+                    lexer.next();
+                    var access = memberAccess(call);
+                    yield memberAccessor(access, end);
+                }
+
+                yield memberAccessor(call, end);
+
+            }
             case null, default -> expression;
         };
     }
@@ -255,6 +287,7 @@ public final class Parser {
     public Expression parseUntil(Lexer.Token... end) {
         var endings = new HashSet<>(Arrays.asList(end));
         var expression = switch (lexer.next()) {
+            case DOUBLE_COLON -> memberAccessor(fileExpression(), end);
             case IDENT -> memberAccessor(memberAccess(null), end);
             case IF -> ifExpr();
             case FOR -> forExpr();
@@ -281,52 +314,7 @@ public final class Parser {
             case LITERAL_NUM -> new NumExpression(Double.parseDouble(lexer.span()));
             case LITERAL_BOOL -> new BoolExpression(Boolean.parseBoolean(lexer.span()));
             case DEBUG -> DebugExpression.INSTANCE;
-            case L_BRACE -> {
-                Map<String, Expression> fields = new HashMap<>();
-                AccessExpression accessor = null;
-
-                while (lexer.peek() != Lexer.Token.R_BRACE) {
-                    String field;
-                    if (lexer.peek() == Lexer.Token.INCLUSIVE_INCLUSIVE_RANGE) {
-                        this.lexer.expect(Lexer.Token.INCLUSIVE_INCLUSIVE_RANGE);
-                        this.lexer.expect(Lexer.Token.DOT);
-                        this.lexer.expect(Lexer.Token.IDENT);
-                        accessor = this.memberAccess(null);
-                        break;
-                    }
-
-                    if (lexer.peek() == Lexer.Token.IDENT) {
-                        lexer.next();
-                        field = lexer.span();
-                    } else {
-                        lexer.expect(Lexer.Token.LITERAL_STR);
-                        field = lexer.span();
-                        field = field.substring(1, field.length() - 1);
-                    }
-
-                    if (lexer.peek() == Lexer.Token.COLON) {
-                        lexer.expect(Lexer.Token.COLON);
-                        var expr =  parseBinaryOrNormalUntil(Lexer.Token.COMMA, Lexer.Token.R_BRACE);
-                        if (expr instanceof LambdaExpression lambda) {
-                            fields.put(field, new IdentityExpression((self) -> new LambdaExpression(lambda.arguments(), lambda.body(), self).function()));
-                        } else {
-                            fields.put(field, expr);
-                        }
-                    } else {
-                        fields.put(field, new AccessExpression(null, new StrExpression(field)));
-                        if (this.lexer.peek() != Lexer.Token.COMMA) {
-                            break;
-                        }
-                    }
-
-                    if (lexer.peek() == Lexer.Token.COMMA) {
-                        lexer.next();
-                    }
-                }
-                lexer.expect(Lexer.Token.R_BRACE);
-
-                yield new StructExpression(fields, accessor);
-            }
+            case L_BRACE -> structExpr();
             case L_BRACKET -> {
                 ArrayExpression array = new ArrayExpression(new ArrayList<>());
 
@@ -357,7 +345,8 @@ public final class Parser {
             case MINUS -> new UnaryExpression(UnaryExpression.Op.NEGATE, parseUntil(end));
             case NOT -> new UnaryExpression(UnaryExpression.Op.NOT, parseUntil(end));
             case MATCH -> matchExpr();
-            case LAMBDA_FUNCTION_PARAMETERS -> lambdaExpr();
+            case LAMBDA_FUNCTION_PARAMETERS -> lambdaExpr(true);
+            case OR -> lambdaExpr(false);
             case null, default -> throw new IllegalStateException("Unexpected value: " + lexer.span());
         };
 
@@ -379,18 +368,87 @@ public final class Parser {
         return newArray;
     }
 
-    private Expression lambdaExpr() {
-        var arguments = new ArrayList<LambdaExpression.LambdaArgument>();
+    private void arguments(List<LambdaExpression.LambdaArgument> arguments) {
         while (lexer.peek() != Lexer.Token.LAMBDA_FUNCTION_PARAMETERS) {
             lexer.expect(Lexer.Token.IDENT);
-            arguments.add(new LambdaExpression.LambdaArgument(lexer.span(), arguments.size()));
+            var name = lexer.span();
+            boolean isOptional;
+            if (lexer.peek() == Lexer.Token.QUESTION) {
+                lexer.next();
+                isOptional = true;
+            } else {
+                isOptional = false;
+            }
+
+            arguments.add(new LambdaExpression.LambdaArgument(name, arguments.size(), isOptional));
             if (lexer.peek() != Lexer.Token.LAMBDA_FUNCTION_PARAMETERS) {
                 lexer.expect(Lexer.Token.COMMA);
             }
         }
+
         lexer.expect(Lexer.Token.LAMBDA_FUNCTION_PARAMETERS);
+    }
+
+    private Expression lambdaExpr(boolean withArguments) {
+        var arguments = new ArrayList<LambdaExpression.LambdaArgument>();
+        if (withArguments) {
+            arguments(arguments);
+        }
+
         var scope = scopeOrSingleStatement(true);
         return new LambdaExpression(arguments, new BlockExpression.LastElement(scope));
+    }
+
+    private StructExpression structExpr() {
+        Map<String, Expression> fields = new HashMap<>();
+        AccessExpression accessor = null;
+
+        while (lexer.peek() != Lexer.Token.R_BRACE) {
+            String field;
+            if (lexer.peek() == Lexer.Token.INCLUSIVE_INCLUSIVE_RANGE) {
+                this.lexer.expect(Lexer.Token.INCLUSIVE_INCLUSIVE_RANGE);
+                this.lexer.expect(Lexer.Token.DOT);
+                this.lexer.expect(Lexer.Token.IDENT);
+                accessor = this.memberAccess(null);
+                break;
+            }
+
+            if (lexer.peek() == Lexer.Token.IDENT) {
+                lexer.next();
+                field = lexer.span();
+            } else {
+                lexer.expect(Lexer.Token.LITERAL_STR);
+                field = lexer.span();
+                field = field.substring(1, field.length() - 1);
+            }
+
+            if (lexer.peek() == Lexer.Token.COLON) {
+                lexer.expect(Lexer.Token.COLON);
+                var expr = parseBinaryOrNormalUntil(Lexer.Token.COMMA, Lexer.Token.R_BRACE);
+                if (expr instanceof LambdaExpression lambda) {
+                    fields.put(
+                        field,
+                        new IdentityExpression((self) -> new LambdaExpression(
+                            lambda.arguments(),
+                            lambda.body(),
+                            self).function()));
+                } else {
+                    fields.put(field, expr);
+                }
+            } else {
+                fields.put(field, new AccessExpression(null, new StrExpression(field)));
+                if (this.lexer.peek() != Lexer.Token.COMMA) {
+                    break;
+                }
+            }
+
+            if (lexer.peek() == Lexer.Token.COMMA) {
+                lexer.next();
+            }
+        }
+        lexer.expect(Lexer.Token.R_BRACE);
+
+        return new StructExpression(fields, accessor);
     }
 
     private Expression matchExpr() {
@@ -459,7 +517,7 @@ public final class Parser {
 
         Expression init = parseUntil(Lexer.Token.SEMICOLON, Lexer.Token.COLON);
 
-        if (lexer.peek() == Lexer.Token.COLON  && init instanceof AccessExpression access) {
+        if (lexer.peek() == Lexer.Token.COLON && init instanceof AccessExpression access) {
             lexer.expect(Lexer.Token.COLON);
 
             var array = parseBinaryOrNormalUntil(Lexer.Token.R_PARENTHESES);
@@ -546,6 +604,35 @@ public final class Parser {
         }
 
         return access;
+    }
+
+    private FileAccessExpression fileExpression() {
+
+        List<Expression> path = new ArrayList<>();
+
+        Lexer.Token next;
+        loop:
+        while ((next = lexer.peek()) != null) {
+            switch (next) {
+                case Lexer.Token.IDENT -> {
+                    lexer.next();
+                    path.addLast(new StrExpression(lexer.span()));
+                    lexer.expect(Lexer.Token.DOUBLE_COLON);
+                }
+                case Lexer.Token.LT -> {
+                    lexer.next();
+                    var field = parseBinaryOrNormalUntil(false, Lexer.Token.GT);
+                    lexer.expect(Lexer.Token.GT);
+                    path.addLast(field);
+                    lexer.expect(Lexer.Token.DOUBLE_COLON);
+                }
+                default -> {
+                    break loop;
+                }
+            }
+        }
+
+        return new FileAccessExpression(path);
     }
 
     public String source() {

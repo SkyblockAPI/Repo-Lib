@@ -9,7 +9,7 @@ public record LambdaFunctionValue(
     boolean vararg,
     int arityMin,
     int arityMax
-) implements FunctionValue {
+) implements LambdaValue {
     @Override
     public Value apply(Evaluator evaluator, List<Value> args) {
         return executor.apply(evaluator, args);

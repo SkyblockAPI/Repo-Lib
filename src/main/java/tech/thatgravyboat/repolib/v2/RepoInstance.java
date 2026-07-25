@@ -31,7 +31,7 @@ public record RepoInstance(
                     });
 
                 }));
-        var evaluator = new Evaluator(listConstants);
+        var evaluator = new Evaluator(listConstants, this.loader::getModule);
         evaluator.evaluate(loader.rootList());
         return stacks;
     }
@@ -43,7 +43,7 @@ public record RepoInstance(
     public RepoStackResult createStack(StructValue data, RepoConfig repoConfig) {
         var constants = this.constants.toMutableStruct();
         constants.set("data", data);
-        var evaluator = new Evaluator(constants);
+        var evaluator = new Evaluator(constants, this.loader::getModule);
         evaluator.evaluate(loader.rootFile());
         var file = evaluator.getStringOrNull(evaluator.getField("file"));
         if (file == null) {
@@ -59,7 +59,7 @@ public record RepoInstance(
 
     public RepoStackResult createStack(String id, StructValue data, RepoConfig repoConfig) {
         var stackFile = loader.getStackFile(id);
-        var evaluator = stackFile.createEvaluator(constants, data, repoConfig);
+        var evaluator = stackFile.createEvaluator(constants, data, repoConfig, this.loader::getModule);
         var stack = stackFile.evaluateScript(evaluator);
         return new RepoStackResult(stack, evaluator.debugs, evaluator.errors);
     }

@@ -76,7 +76,7 @@ public class Main extends WebSocketServer {
             JsonParser.parseString(Files.readString(Path.of("data.jsonc"), StandardCharsets.UTF_8)).getAsJsonObject();
 
         var stackFile = Objects.requireNonNull(loader.getStackFile(lastModifiedItem));
-        var evaluator = stackFile.createEvaluator(instance.constants(), toValue(data), RepoConfig.DEFAULT);
+        var evaluator = stackFile.createEvaluator(instance.constants(), toValue(data), RepoConfig.DEFAULT, this.loader::getModule);
         var stack = stackFile.evaluateScript(evaluator);
 
         evaluator.errors.forEach(System.out::println);

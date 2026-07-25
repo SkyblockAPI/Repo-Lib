@@ -18,7 +18,31 @@ public record LambdaExpression(
     public LambdaExpression(List<LambdaArgument> arguments, Expression body, Value self) {
         this(
             arguments, body, FunctionValue.builder(builder -> {
-                builder.arity(arguments.size());
+                int min = 0;
+                int max = 0;
+                boolean hasEncounteredOptional = false;
+
+                for (var argument : arguments) {
+                    max++;
+
+                    if (argument.optional) {
+                        hasEncounteredOptional = true;
+                        continue;
+                    }
+
+                    if (hasEncounteredOptional) {
+                        throw new IllegalStateException("Optional before required argument!");
+                    }
+
+                    min++;
+                }
+
+                if (min != max) {
+                    builder.arity(min, max);
+                } else {
+                    builder.arity(min);
+                }
+
                 builder.execute((evaluator, values) -> evaluator.pushPop(
                     "lambda", () -> {
                         if (self != null) {
@@ -26,6 +50,7 @@ public record LambdaExpression(
                         }
 
                         for (var argument : arguments) {
+                            if (argument.optional() && argument.position() >= values.size()) continue;
                             evaluator.set(argument.name, values.get(argument.position));
                         }
 
@@ -45,5 +70,5 @@ public record LambdaExpression(
         return true;
     }
 
-    public record LambdaArgument(String name, int position) {}
+    public record LambdaArgument(String name, int position, boolean optional) {}
 }

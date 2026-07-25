@@ -1,5 +1,6 @@
 package tech.thatgravyboat.repolib.v2.expl;
 
+import java.util.function.Function;
 import org.jetbrains.annotations.Contract;
 import tech.thatgravyboat.repolib.v2.expl.expression.*;
 import tech.thatgravyboat.repolib.v2.expl.value.*;
@@ -17,6 +18,7 @@ public class Evaluator {
 
     public final KeyValue defaults;
     private final Scope scope;
+    private final Function<String, FunctionValue> fileFunction;
     public final List<ContentInfo> debugs = new ArrayList<>();
     public final LinkedList<String> fileStack = new LinkedList<>();
     public final LinkedList<String> stack = new LinkedList<>();
@@ -55,12 +57,13 @@ public class Evaluator {
         return stringBuilder.toString();
     }
 
-    public Evaluator(StructValue defaults) {
+    public Evaluator(StructValue defaults, Function<String, FunctionValue> fileFunction) {
+        this.fileFunction = fileFunction;
         this.defaults = defaults;
         scope = new Scope(defaults);
     }
 
-    public static final Evaluator CONSTANT = new Evaluator(ImmutableStructValue.EMPTY);
+    public static final Evaluator CONSTANT = new Evaluator(ImmutableStructValue.EMPTY, x -> null);
 
     public Value evaluate(Expression expression) {
         try {
@@ -115,6 +118,13 @@ public class Evaluator {
             return literal;
         }
         throw new Panic("Failed to convert " + value + " into a string");
+    }
+
+    public StructuredFunctionValue getStructuredFunctionOrThrow(Value value) {
+        if (value instanceof StructuredFunctionValue str) {
+            return str;
+        }
+        throw new Panic("Failed to convert " + value + " into a Structured Function");
     }
 
     public LambdaFunctionValue getLambdaOrThrow(Value value) {
@@ -180,18 +190,20 @@ public class Evaluator {
     public Value eval0(Expression expression) {
         try {
             return switch (expression) {
+                case FileAccessExpression access -> evalFileAccess(access);
                 case AccessExpression access -> evalAccess(access);
                 case AssignExpression assign -> evalAssign(assign);
+                case StructExpression struct -> evalStruct(struct);
+                case DebugExpression ignored -> pauseForDebug();
                 case BlockExpression block -> evalBlock(block);
+                case UnaryExpression unary -> evalUnary(unary);
                 case CallExpression call -> evalCall(call);
+                case BoolExpression bool -> BoolValue.wrap(bool.value());
+                case StrExpression str -> new StrValue(str.value());
+                case NumExpression num -> new NumValue(num.value());
+                case ForExpression aFor -> evalFor(aFor);
                 case IfExpression anIf -> evalIf(anIf);
                 case InExpression in -> evalIn(in);
-                case ForExpression aFor -> evalFor(aFor);
-                case NumExpression num -> new NumValue(num.value());
-                case StrExpression str -> new StrValue(str.value());
-                case BoolExpression bool -> BoolValue.wrap(bool.value());
-                case StructExpression struct -> evalStruct(struct);
-                case UnaryExpression unary -> evalUnary(unary);
                 case StatementExpression token -> {
                     switch (token.op()) {
                         case RETURN -> throw ExecutionExceptions.RETURN;
@@ -200,7 +212,6 @@ public class Evaluator {
                     }
                     throw new Panic("Unexpected statement expression " + token);
                 }
-                case DebugExpression ignored -> pauseForDebug();
                 case SelfEvaluatingExpression self -> self.evaluate(this);
                 case null -> Value.NIL;
             };
@@ -238,7 +249,7 @@ public class Evaluator {
         return this.eval0(expression);
     }
 
-    private Value evalStruct(StructExpression struct) {
+    public StructValue evalStruct(StructExpression struct) {
         var fields = new MutableStructValue(new HashMap<>());
 
         if (struct.spread() != null) {
@@ -383,6 +394,22 @@ public class Evaluator {
         }
 
         throw new Panic("Unable to access property " + expression.field() + " of non key/value " + lhs);
+    }
+
+    private Value evalFileAccess(FileAccessExpression expression) {
+        var list = new ArrayList<String>();
+
+        for (var expr : expression.path()) {
+            list.add(getStringOrThrow(this.eval0(expr)));
+        }
+
+        var result = this.fileFunction.apply(String.join("/", list));
+
+        if (result == null) {
+            throw new Panic("");
+        }
+
+        return result;
     }
 
     public static class Panic extends RuntimeException {

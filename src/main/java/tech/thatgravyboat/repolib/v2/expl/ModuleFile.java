@@ -1,20 +1,24 @@
 package tech.thatgravyboat.repolib.v2.expl;
 
+import java.util.List;
 import tech.thatgravyboat.repolib.v2.RepoLoader;
 import tech.thatgravyboat.repolib.v2.expl.expression.Expression;
 import tech.thatgravyboat.repolib.v2.expl.expression.SelfEvaluatingExpression;
 import tech.thatgravyboat.repolib.v2.expl.expression.StructExpression;
+import tech.thatgravyboat.repolib.v2.expl.value.FunctionValue;
 import tech.thatgravyboat.repolib.v2.expl.value.ImmutableStructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.KeyValue;
 import tech.thatgravyboat.repolib.v2.expl.value.StructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
-public final class ModuleFile implements SelfEvaluatingExpression {
+public final class ModuleFile implements FunctionValue {
+    private final String name;
     private final RepoLoader loader;
     private final Expression script;
     private final KeyValue staticData;
 
-    public ModuleFile(RepoLoader loader, StructExpression staticData, Expression script) {
+    public ModuleFile(String name, RepoLoader loader, StructExpression staticData, Expression script) {
+        this.name = name;
         this.loader = loader;
         this.script = script;
         if (staticData == null) {
@@ -34,13 +38,18 @@ public final class ModuleFile implements SelfEvaluatingExpression {
     }
 
     @Override
-    public Value evaluate(Evaluator evaluator) {
-        return evaluator.eval0(script);
+    public boolean canReturnValueBeReturned() {
+        return this.script.canReturnValueBeReturned();
     }
 
     @Override
-    public boolean canReturnValueBeReturned() {
-        return this.script.canReturnValueBeReturned();
+    public Value apply(Evaluator evaluator, List<Value> args) {
+        if (args.size() == 1) {
+            var scope = evaluator.getMutableStructOrThrow(args.getFirst());
+            return evaluator.pushPop(name, scope, () -> evaluator.evaluate(script));
+        } else {
+            return evaluator.pushPop(name, () -> evaluator.evaluate(script));
+        }
     }
 }
 

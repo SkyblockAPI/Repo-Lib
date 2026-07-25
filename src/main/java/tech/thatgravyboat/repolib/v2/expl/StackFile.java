@@ -1,5 +1,6 @@
 package tech.thatgravyboat.repolib.v2.expl;
 
+import java.util.function.Function;
 import tech.thatgravyboat.repolib.v2.RepoConfig;
 import tech.thatgravyboat.repolib.v2.RepoConstants;
 import tech.thatgravyboat.repolib.v2.RepoLoader;
@@ -7,8 +8,10 @@ import tech.thatgravyboat.repolib.v2.builtin.Constants;
 import tech.thatgravyboat.repolib.v2.expl.expression.Expression;
 import tech.thatgravyboat.repolib.v2.expl.expression.SelfEvaluatingExpression;
 import tech.thatgravyboat.repolib.v2.expl.value.ArrayValue;
+import tech.thatgravyboat.repolib.v2.expl.value.FunctionValue;
 import tech.thatgravyboat.repolib.v2.expl.value.ImmutableStructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.KeyValue;
+import tech.thatgravyboat.repolib.v2.expl.value.LambdaFunctionValue;
 import tech.thatgravyboat.repolib.v2.expl.value.LayeredStructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.MutableArrayValue;
 import tech.thatgravyboat.repolib.v2.expl.value.MutableStructValue;
@@ -62,10 +65,14 @@ public final class StackFile implements SelfEvaluatingExpression {
                         if (requested == null) {
                             return evaluator.panic("Requested include " + value + " doesn't exist!");
                         }
-                        return requested.getStaticData();
+                        if (requested instanceof ModuleFile module) {
+                            return module.getStaticData();
+                        }
+
+                        return evaluator.panic("Can't access static data of non module file!");
                     });
                 }));
-        var evaluator = new Evaluator(new LayeredStructValue(struct, constants));
+        var evaluator = new Evaluator(new LayeredStructValue(struct, constants), loader::getModule);
         evaluator.evaluate(this.metaScript);
         struct.fields().remove("include");
         this.meta = struct.toFullyImmutable();
@@ -81,15 +88,15 @@ public final class StackFile implements SelfEvaluatingExpression {
         return meta;
     }
 
-    public Evaluator createEvaluator(StructValue overrides) {
-        return createEvaluator(overrides, ImmutableStructValue.EMPTY, RepoConfig.DEFAULT);
+    public Evaluator createEvaluator(StructValue overrides, Function<String, FunctionValue> lookup) {
+        return createEvaluator(overrides, ImmutableStructValue.EMPTY, RepoConfig.DEFAULT, lookup);
     }
 
-    public Evaluator createEvaluator(StructValue overrides, StructValue data) {
-        return createEvaluator(overrides, data, RepoConfig.DEFAULT);
+    public Evaluator createEvaluator(StructValue overrides, StructValue data, Function<String, FunctionValue> lookup) {
+        return createEvaluator(overrides, data, RepoConfig.DEFAULT, lookup);
     }
 
-    public Evaluator createEvaluator(StructValue overrides, StructValue data, RepoConfig config) {
+    public Evaluator createEvaluator(StructValue overrides, StructValue data, RepoConfig config, Function<String, FunctionValue> lookup) {
         var inputs = new MutableStructValue();
 
         for (var entry : overrides) {
@@ -154,7 +161,7 @@ public final class StackFile implements SelfEvaluatingExpression {
         inputs.set("data", data);
         inputs.set("meta", this.meta);
 
-        return new Evaluator(inputs);
+        return new Evaluator(inputs, lookup);
     }
 
     public StructValue evaluateScript(Evaluator evaluator) {
@@ -163,7 +170,7 @@ public final class StackFile implements SelfEvaluatingExpression {
         return evaluator.defaults.get("stack") instanceof StructValue value ? value : ImmutableStructValue.EMPTY;
     }
 
-    public KeyValue evaluate(StructValue overrides) {
-        return evaluateScript(createEvaluator(overrides));
+    public KeyValue evaluate(StructValue overrides, Function<String, FunctionValue> lookup) {
+        return evaluateScript(createEvaluator(overrides, lookup));
     }
 }

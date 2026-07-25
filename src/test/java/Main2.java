@@ -57,7 +57,7 @@ public class Main2 extends WebSocketServer {
         long sum = 0;
         for (int i = 0; i < 1000; i++) {
 
-            var evaluator = stackFile.createEvaluator(instance.constants(), ImmutableStructValue.EMPTY, RepoConfig.DEFAULT);
+            var evaluator = stackFile.createEvaluator(instance.constants(), ImmutableStructValue.EMPTY, RepoConfig.DEFAULT, loader::getModule);
             long start = System.nanoTime();
             var stack = stackFile.evaluateScript(evaluator);
             sum += System.nanoTime() - start;

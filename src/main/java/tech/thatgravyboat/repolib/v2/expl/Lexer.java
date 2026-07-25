@@ -172,7 +172,13 @@ public final class Lexer {
             }
             case '!' -> Token.NOT;
             case '?' -> Token.QUESTION;
-            case ':' -> Token.COLON;
+            case ':' -> {
+                if (match(':')) {
+                    yield Token.DOUBLE_COLON;
+                }
+
+                yield Token.COLON;
+            }
             case ';' -> Token.SEMICOLON;
             default -> unexpected(c);
         };
@@ -322,6 +328,7 @@ public final class Lexer {
 
         QUESTION,
         COLON,
+        DOUBLE_COLON,
         SEMICOLON,
 
         NOT,
