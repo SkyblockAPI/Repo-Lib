@@ -19,7 +19,7 @@ public final class PetsAPI {
     private final Map<String, Data> pets = new HashMap<>();
     private final Map<String, Map<String, DoubleUnaryOperator>> petItems = new HashMap<>();
 
-    private static final DecimalFormat loreFormatter = new DecimalFormat("0.##");
+    private static final DecimalFormat loreFormatter = new DecimalFormat("0.####");
 
     void load(JsonElement json, JsonObject constants) {
         if (json instanceof JsonObject object) {
@@ -101,7 +101,7 @@ public final class PetsAPI {
                 var operators = RepoAPI.pets().getPetItemStats(heldItem);
                 var variable = this.variables.get(key);
                 var stat = variable.first() + (Math.clamp(level - variablesOffset, 0, 100) / 100.0) * (variable.second() - variable.first());
-                var value = Math.floor(stat * 10.0) / 10.0; // round to 1 decimal place
+                var value = Math.floor(stat * 10000.0) / 10000.0; // round to 4 decimal place
                 return operators.getOrDefault(key, x -> x).applyAsDouble(value);
             }
 
