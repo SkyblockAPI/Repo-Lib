@@ -39,39 +39,39 @@ public final class StackFile implements SelfEvaluatingExpression {
     public void init(RepoConstants constants) {
         var struct = new MutableStructValue();
         struct.set(
-                "include", Constants.Builder.FunctionBuilder.create(function -> {
-                    function.arity(1);
-                    function.execute((evaluator, args) -> {
-                        var value = evaluator.getStringOrThrow(args.getFirst());
-                        var requested = loader.getModule(value);
-                        if (requested == null) {
-                            return evaluator.panic("Requested include " + value + " doesn't exist!");
-                        }
-                        evaluator.pushPop(
-                                value, () -> {
-                                    evaluator.evaluate(requested);
-                                    return Value.NIL;
-                                });
+            "include", Constants.Builder.FunctionBuilder.create(function -> {
+                function.arity(1);
+                function.execute((evaluator, args) -> {
+                    var value = evaluator.getStringOrThrow(args.getFirst());
+                    var requested = loader.getModule(value);
+                    if (requested == null) {
+                        return evaluator.panic("Requested include " + value + " doesn't exist!");
+                    }
+                    evaluator.pushPop(
+                        value, () -> {
+                            evaluator.evaluate(requested);
+                            return Value.NIL;
+                        });
 
-                        return Value.NIL;
-                    });
-                }));
+                    return Value.NIL;
+                });
+            }));
         struct.set(
-                "static", Constants.Builder.FunctionBuilder.create(function -> {
-                    function.arity(1);
-                    function.execute((evaluator, args) -> {
-                        var value = evaluator.getStringOrThrow(args.getFirst());
-                        var requested = loader.getModule(value);
-                        if (requested == null) {
-                            return evaluator.panic("Requested include " + value + " doesn't exist!");
-                        }
-                        if (requested instanceof ModuleFile module) {
-                            return module.getStaticData();
-                        }
+            "static", Constants.Builder.FunctionBuilder.create(function -> {
+                function.arity(1);
+                function.execute((evaluator, args) -> {
+                    var value = evaluator.getStringOrThrow(args.getFirst());
+                    var requested = loader.getModule(value);
+                    if (requested == null) {
+                        return evaluator.panic("Requested include " + value + " doesn't exist!");
+                    }
+                    if (requested instanceof ModuleFile module) {
+                        return module.getStaticData();
+                    }
 
-                        return evaluator.panic("Can't access static data of non module file!");
-                    });
-                }));
+                    return evaluator.panic("Can't access static data of non module file!");
+                });
+            }));
         var evaluator = new Evaluator(new LayeredStructValue(struct, constants), loader::getModule);
         evaluator.evaluate(this.metaScript);
         struct.fields().remove("include");
@@ -96,7 +96,20 @@ public final class StackFile implements SelfEvaluatingExpression {
         return createEvaluator(overrides, data, RepoConfig.DEFAULT, lookup);
     }
 
-    public Evaluator createEvaluator(StructValue overrides, StructValue data, RepoConfig config, Function<String, FunctionValue> lookup) {
+    public Evaluator createEvaluator(
+        StructValue overrides,
+        StructValue data,
+        RepoConfig config,
+        Function<String, FunctionValue> lookup) {
+        return this.createEvaluator(overrides, data, ImmutableStructValue.EMPTY, config, lookup);
+    }
+
+    public Evaluator createEvaluator(
+        StructValue overrides,
+        StructValue data,
+        StructValue profile,
+        RepoConfig config,
+        Function<String, FunctionValue> lookup) {
         var inputs = new MutableStructValue();
 
         for (var entry : overrides) {
@@ -106,59 +119,60 @@ public final class StackFile implements SelfEvaluatingExpression {
         inputs.set("config", config);
 
         inputs.set(
-                "stack", Constants.mutable((builder) -> {
-                    builder.field(
-                            "lore", MutableArrayValue.create(entries -> new Constants(lore -> {
-                                var section = new AtomicBoolean();
+            "stack", Constants.mutable((builder) -> {
+                builder.field(
+                    "lore", MutableArrayValue.create(entries -> new Constants(lore -> {
+                        var section = new AtomicBoolean();
 
-                                lore.function(
-                                        "empty", (function) -> {
-                                            function.vararg(true);
-                                            function.execute(((evaluator, values) -> {
-                                                entries.add(ImmutableStructValue.EMPTY);
+                        lore.function(
+                            "empty", (function) -> {
+                                function.vararg(true);
+                                function.execute(((evaluator, values) -> {
+                                    entries.add(ImmutableStructValue.EMPTY);
 
-                                                return Value.NIL;
-                                            }));
-                                        });
-                                lore.function(
-                                        "beginSection", (function) -> function.runs(() -> {
-                                            if (section.get()) {
-                                                entries.add(ImmutableStructValue.EMPTY);
-                                            }
-                                            section.set(false);
-                                        }));
-                                lore.function(
-                                        "endSection", (function) -> function.runs(() -> {
-                                            if (section.get()) {
-                                                entries.add(ImmutableStructValue.EMPTY);
-                                            }
-                                            section.set(false);
-                                        }));
-                                lore.function("clear", (function) -> function.runs(entries::clear));
-                                lore.function(
-                                        "add", function -> {
-                                            function.arity(1);
-                                            function.executeSimpleVoid(args -> {
-                                                section.set(true);
-                                                entries.add(args.getFirst());
-                                            });
-                                        });
-                                lore.function(
-                                        "addAll", function -> {
-                                            function.arity(1);
-                                            function.executeVoid((evaluator, args) -> {
-                                                var values = ArrayValue.flatten(args);
-                                                if (values.isEmpty()) {
-                                                    return;
-                                                }
-                                                section.set(true);
-                                                entries.addAll(values);
-                                            });
-                                        });
+                                    return Value.NIL;
+                                }));
+                            });
+                        lore.function(
+                            "beginSection", (function) -> function.runs(() -> {
+                                if (section.get()) {
+                                    entries.add(ImmutableStructValue.EMPTY);
+                                }
+                                section.set(false);
+                            }));
+                        lore.function(
+                            "endSection", (function) -> function.runs(() -> {
+                                if (section.get()) {
+                                    entries.add(ImmutableStructValue.EMPTY);
+                                }
+                                section.set(false);
+                            }));
+                        lore.function("clear", (function) -> function.runs(entries::clear));
+                        lore.function(
+                            "add", function -> {
+                                function.arity(1);
+                                function.executeSimpleVoid(args -> {
+                                    section.set(true);
+                                    entries.add(args.getFirst());
+                                });
+                            });
+                        lore.function(
+                            "addAll", function -> {
+                                function.arity(1);
+                                function.executeVoid((evaluator, args) -> {
+                                    var values = ArrayValue.flatten(args);
+                                    if (values.isEmpty()) {
+                                        return;
+                                    }
+                                    section.set(true);
+                                    entries.addAll(values);
+                                });
+                            });
 
-                            })));
-                }).toMutable());
+                    })));
+            }).toMutable());
         inputs.set("data", data);
+        inputs.set("profile", profile);
         inputs.set("meta", this.meta);
 
         return new Evaluator(inputs, lookup);

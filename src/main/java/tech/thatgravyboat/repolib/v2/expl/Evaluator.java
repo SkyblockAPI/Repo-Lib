@@ -243,8 +243,8 @@ public class Evaluator {
     }
 
     private Value evalStructValue(MutableStructValue self, Expression expression) {
-        if (expression instanceof IdentityExpression identity) {
-            return identity.valueFunction().apply(self);
+        if (expression instanceof IdentityExpression(Function<Value, Value> valueFunction)) {
+            return valueFunction.apply(self);
         }
         return this.eval0(expression);
     }
