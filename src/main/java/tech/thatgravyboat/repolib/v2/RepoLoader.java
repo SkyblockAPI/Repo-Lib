@@ -3,6 +3,7 @@ package tech.thatgravyboat.repolib.v2;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import tech.thatgravyboat.repolib.v2.builtin.Constants;
+import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.ModuleFile;
 import tech.thatgravyboat.repolib.v2.expl.expression.Expression;
 import tech.thatgravyboat.repolib.v2.expl.StackFile;
@@ -19,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import tech.thatgravyboat.repolib.v2.expl.value.FunctionValue;
+import tech.thatgravyboat.repolib.v2.expl.value.MutableStructValue;
 
 public class RepoLoader implements FileVisitor<Path> {
 
@@ -44,8 +46,23 @@ public class RepoLoader implements FileVisitor<Path> {
 
         var constants = new RepoConstants(this);
 
+
         for (var entry : this.stackFiles.values()) {
             entry.init(constants);
+        }
+
+        Path root = path.resolve("root.srlm");
+        if (Files.isRegularFile(root) && Files.exists(root)) {
+            String file = Files.readString(root, StandardCharsets.UTF_8);
+
+            var rootFile = Expression.parseModuleOrThrow(
+                this,
+                "root",
+                file,
+                new Evaluator(new MutableStructValue(), this::getModule)
+            );
+            this.files.put("root", rootFile);
+            this.rootFile = rootFile;
         }
 
         if (rootList == null) {
@@ -121,9 +138,9 @@ public class RepoLoader implements FileVisitor<Path> {
                 var expression = Expression.parseFileOrThrow(this, content);
                 stackFiles.put(relativeName, expression);
             } else if (relativeFileName.equals("root.srlm")) {
-                rootFile = Expression.parse(content);
+                return FileVisitResult.CONTINUE;
             } else if (relativeFileName.endsWith(".srlm")) {
-                var expression = Expression.parseModuleOrThrow(this, relativeName, content);
+                var expression = Expression.parseModuleOrThrow(this, relativeName, content, null);
                 files.put(relativeName, expression);
             } else if (relativeFileName.endsWith(".srlf")) {
                 var expression = Expression.parseFunctionOrThrow(this, relativeName, content);

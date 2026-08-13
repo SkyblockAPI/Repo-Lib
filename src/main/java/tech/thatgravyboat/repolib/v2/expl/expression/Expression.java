@@ -2,6 +2,7 @@ package tech.thatgravyboat.repolib.v2.expl.expression;
 
 
 import tech.thatgravyboat.repolib.v2.RepoLoader;
+import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.FunctionFile;
 import tech.thatgravyboat.repolib.v2.expl.ModuleFile;
 import tech.thatgravyboat.repolib.v2.expl.Parser;
@@ -15,8 +16,8 @@ public sealed interface Expression
     static StackFile parseFileOrThrow(RepoLoader loader, String source) {
         return new Parser(source).parseFile(loader);
     }
-    static ModuleFile parseModuleOrThrow(RepoLoader loader, String name, String source) {
-        return new Parser(source).parseModuleFile(name, loader);
+    static ModuleFile parseModuleOrThrow(RepoLoader loader, String name, String source, Evaluator evaluator) {
+        return new Parser(source).parseModuleFile(name, loader, evaluator);
     }
 
     static FunctionFile parseFunctionOrThrow(RepoLoader loader, String name,  String source) {

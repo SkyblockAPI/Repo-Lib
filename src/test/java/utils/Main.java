@@ -95,7 +95,6 @@ public class Main extends WebSocketServer {
 
         this.connections.forEach(webSocket -> {
             webSocket.send("importFromJson(`%s`)".formatted(itemStack.toString().replaceAll("`", "\\`")));
-            webSocket.send("console.log(`%s`)".formatted(itemStack.toString().replaceAll("`", "\\`")));
         });
     }
 

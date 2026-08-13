@@ -46,6 +46,13 @@ public class Evaluator {
         }
     }
 
+    public void setInOverlay(String field, Value value) {
+        var scope = this.scope.get();
+        if (scope instanceof ScopeLayeredStructValue(StructValue ignored, StructValue.MutableStruct overlay)) {
+            overlay.set(field, value);
+        }
+    }
+
     private String stack() {
         var stringBuilder = new StringBuilder();
         for (var s : this.stack) {
@@ -60,7 +67,7 @@ public class Evaluator {
     public Evaluator(StructValue defaults, Function<String, FunctionValue> fileFunction) {
         this.fileFunction = fileFunction;
         this.defaults = defaults;
-        scope = new Scope(defaults);
+        scope = new Scope(defaults instanceof LayeredStructValue ? defaults : new LayeredStructValue(new MutableStructValue(), defaults));
     }
 
     public static final Evaluator CONSTANT = new Evaluator(ImmutableStructValue.EMPTY, x -> null);
@@ -227,12 +234,13 @@ public class Evaluator {
 
     private Value evalIn(InExpression in) {
         var holder = evalAccess(in.holder());
+        String field = this.getStringOrThrow(this.evaluate(in.field()));
         if (holder instanceof KeyValue keyValue) {
-            return BoolValue.wrap(keyValue.contains(in.field()));
+            return BoolValue.wrap(keyValue.contains(field));
         } else if (holder instanceof StrValue(String value)) {
-            return BoolValue.wrap(value.contains(in.field()));
+            return BoolValue.wrap(value.contains(field));
         }
-        throw new Panic("Can't check if '" + in.field() + "' is in non string or keyvalue type " + holder);
+        throw new Panic("Can't check if '" + in.field() + "/\\" + field + "' is in non string or keyvalue type " + holder);
     }
 
     private Value evalUnary(UnaryExpression unary) {

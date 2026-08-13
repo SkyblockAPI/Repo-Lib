@@ -170,7 +170,12 @@ public final class Lexer {
                 }
                 yield Token.AND;
             }
-            case '!' -> Token.NOT;
+            case '!' -> {
+                if (match("in")) {
+                    yield Token.NOT_IN;
+                }
+                yield Token.NOT;
+            }
             case '?' -> Token.QUESTION;
             case ':' -> {
                 if (match(':')) {
@@ -269,6 +274,22 @@ public final class Lexer {
         return source.charAt(cursor++);
     }
 
+    private boolean match(String string) {
+        var cursor = this.cursor;
+        StringBuilder buffer = new StringBuilder();
+        for (int i = 0; i < string.length(); i++) {
+            if (this.atEnd()) break;
+            buffer.append(this.advance());
+        }
+
+        if (buffer.toString().equals(string)) {
+            return true;
+        }
+
+        this.cursor = cursor;
+        return false;
+    }
+
     private boolean match(char c) {
         if (atEnd()) {
             return false;
@@ -307,6 +328,7 @@ public final class Lexer {
         DEBUG,
         ELSE,
         IN,
+        NOT_IN,
         FOR,
         RETURN,
         BREAK,
@@ -365,10 +387,11 @@ public final class Lexer {
         OR,
         ;
 
-        public static Token[] BINARY = new Token[]{
+        public static final Token[] BINARY = new Token[]{
                 PLUS,
                 MINUS,
                 MUL,
+                IN,
                 DIV,
                 POW,
                 MOD,

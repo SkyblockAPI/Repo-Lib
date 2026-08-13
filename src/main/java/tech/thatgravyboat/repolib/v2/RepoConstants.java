@@ -70,7 +70,12 @@ public final class RepoConstants implements StructValue.Forwarding {
         builder.function("static", function -> {
             function.arity(1);
             function.execute((evaluator, args) -> {
-                var value = evaluator.getStringOrThrow(args.getFirst());
+                var arg = args.getFirst();
+                if (arg instanceof ModuleFile file) {
+                    return file;
+                }
+
+                var value = evaluator.getStringOrThrow(arg);
                 var requested = loader.getModule(value);
                 if (requested == null) {
                     return evaluator.panic("Requested include " + value + " doesn't exist!");

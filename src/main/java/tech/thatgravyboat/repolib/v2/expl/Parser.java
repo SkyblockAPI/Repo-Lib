@@ -63,15 +63,21 @@ public final class Parser {
         return new StackFile(loader, meta.get(), script.get(StackFile.DEFAULT_SCRIPT));
     }
 
-    public ModuleFile parseModuleFile(String name, RepoLoader loader) {
-        Holder<StructExpression> struct = new Holder<>("static");
+    public ModuleFile parseModuleFile(String name, RepoLoader loader, Evaluator evaluator) {
+        Holder<Expression> struct = new Holder<>("static");
 
         if (lexer.peek() == Lexer.Token.IDENT && "static".equals(lexer.peekSpan())) {
             lexer.next();
             struct.update(() -> {
-                var expr = this.parseUntil(Lexer.Token.SEMICOLON);
-                if (expr instanceof StructExpression structExpression) {
-                    return structExpression;
+
+                if (lexer.peek() == Lexer.Token.IDENT && "eval".equals(lexer.peekSpan())) {
+                    this.lexer.next();
+                    return this.block();
+                } else {
+                    var expr = this.parseUntil(Lexer.Token.SEMICOLON);
+                    if (expr instanceof StructExpression structExpression) {
+                        return structExpression;
+                    }
                 }
 
                 throw new RuntimeException("Expected struct expression for static data");
@@ -79,7 +85,7 @@ public final class Parser {
             lexer.expect(Lexer.Token.SEMICOLON);
         }
 
-        return new ModuleFile(name, loader, struct.get(() -> null), parseExpression());
+        return new ModuleFile(name, loader, struct.get(() -> null), parseExpression(), evaluator);
     }
 
     public FunctionFile parseFunctionFile(String name, RepoLoader loader) {
@@ -136,6 +142,20 @@ public final class Parser {
                 var second = parseBinaryOrNormalUntil(end);
 
                 yield new RangeExpression(inclusiveStart, inclusiveEnd, first, second);
+            }
+            case IN, NOT_IN -> {
+                final var negate = this.lexer.peek() == Lexer.Token.NOT_IN;
+                if (negate) {
+                    this.lexer.expect(Lexer.Token.NOT_IN);
+                } else {
+                    this.lexer.expect(Lexer.Token.IN);
+                }
+
+                this.lexer.expect(Lexer.Token.IDENT);
+                var rightHandAccess = this.memberAccess(null);
+                var in = new InExpression(rightHandAccess, first);
+
+                yield negate ? new UnaryExpression(UnaryExpression.Op.NOT, in) : in;
             }
             case PLUS -> {
                 lexer.next();
@@ -293,18 +313,19 @@ public final class Parser {
             case FOR -> forExpr();
             case LITERAL_STR -> {
                 var span = lexer.span();
-                var negate = lexer.peek() == Lexer.Token.NOT;
 
-                if (negate || lexer.peek() == Lexer.Token.IN) {
+                if (lexer.peek() == Lexer.Token.NOT_IN || lexer.peek() == Lexer.Token.IN) {
+                    var negate = lexer.peek() == Lexer.Token.NOT_IN;
                     if (negate) {
-                        lexer.expect(Lexer.Token.NOT);
+                        lexer.expect(Lexer.Token.NOT_IN);
+                    } else {
+                        lexer.expect(Lexer.Token.IN);
                     }
-                    lexer.expect(Lexer.Token.IN);
                     lexer.expect(Lexer.Token.IDENT); // The first span must be expected as memberAccess checks for
                     // the span right away.
                     var access = memberAccess(null);
                     var field = span.substring(1, span.length() - 1);
-                    var inExpr = new InExpression(access, field);
+                    var inExpr = new InExpression(access, new StrExpression(field));
 
                     yield negate ? new UnaryExpression(UnaryExpression.Op.NOT, inExpr) : inExpr;
                 }

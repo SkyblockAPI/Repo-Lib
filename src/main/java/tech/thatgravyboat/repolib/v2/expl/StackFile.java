@@ -119,59 +119,58 @@ public final class StackFile implements SelfEvaluatingExpression {
         inputs.set("config", config);
 
         inputs.set(
-            "stack", Constants.mutable((builder) -> {
-                builder.field(
-                    "lore", MutableArrayValue.create(entries -> new Constants(lore -> {
-                        var section = new AtomicBoolean();
+            "stack", Constants.mutable((builder) -> builder.field(
+                "lore", MutableArrayValue.create(entries -> new Constants(lore -> {
+                    var section = new AtomicBoolean();
 
-                        lore.function(
-                            "empty", (function) -> {
-                                function.vararg(true);
-                                function.execute(((evaluator, values) -> {
-                                    entries.add(ImmutableStructValue.EMPTY);
+                    lore.function(
+                        "empty", (function) -> {
+                            function.vararg(true);
+                            function.execute(((evaluator, values) -> {
+                                entries.add(ImmutableStructValue.EMPTY);
 
-                                    return Value.NIL;
-                                }));
-                            });
-                        lore.function(
-                            "beginSection", (function) -> function.runs(() -> {
-                                if (section.get()) {
-                                    entries.add(ImmutableStructValue.EMPTY);
-                                }
-                                section.set(false);
+                                return Value.NIL;
                             }));
-                        lore.function(
-                            "endSection", (function) -> function.runs(() -> {
-                                if (section.get()) {
-                                    entries.add(ImmutableStructValue.EMPTY);
+                        });
+                    lore.function(
+                        "beginSection", (function) -> function.runs(() -> {
+                            if (section.get()) {
+                                entries.add(ImmutableStructValue.EMPTY);
+                            }
+                            section.set(false);
+                        }));
+                    lore.function(
+                        "endSection", (function) -> function.runs(() -> {
+                            if (section.get()) {
+                                entries.add(ImmutableStructValue.EMPTY);
+                            }
+                            section.set(false);
+                        }));
+                    lore.function("clear", (function) -> function.runs(entries::clear));
+                    lore.function(
+                        "add", function -> {
+                            function.arity(1);
+                            function.executeSimpleVoid(args -> {
+                                section.set(true);
+                                entries.add(args.getFirst());
+                            });
+                        });
+                    lore.function(
+                        "addAll", function -> {
+                            function.arity(1);
+                            function.executeVoid((evaluator, args) -> {
+                                var values = ArrayValue.flatten(args);
+                                if (values.isEmpty()) {
+                                    return;
                                 }
-                                section.set(false);
-                            }));
-                        lore.function("clear", (function) -> function.runs(entries::clear));
-                        lore.function(
-                            "add", function -> {
-                                function.arity(1);
-                                function.executeSimpleVoid(args -> {
-                                    section.set(true);
-                                    entries.add(args.getFirst());
-                                });
+                                section.set(true);
+                                entries.addAll(values);
                             });
-                        lore.function(
-                            "addAll", function -> {
-                                function.arity(1);
-                                function.executeVoid((evaluator, args) -> {
-                                    var values = ArrayValue.flatten(args);
-                                    if (values.isEmpty()) {
-                                        return;
-                                    }
-                                    section.set(true);
-                                    entries.addAll(values);
-                                });
-                            });
+                        });
 
-                    })));
-            }).toMutable());
+                })))).toMutable());
         inputs.set("data", data);
+        inputs.set("categories", MutableArrayValue.create());
         inputs.set("profile", profile);
         inputs.set("meta", this.meta);
 
