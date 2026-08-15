@@ -2,6 +2,7 @@ package tech.thatgravyboat.repolib.api;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
@@ -43,7 +44,7 @@ public class RunesAPI {
             @Deprecated String texture,
             @Deprecated String name,
             @Deprecated List<String> lore,
-            @Nullable JsonObject item
+            @NotNull JsonObject item
     ) {
         static Rune fromJson(String id, JsonObject json) {
             return new Rune(
