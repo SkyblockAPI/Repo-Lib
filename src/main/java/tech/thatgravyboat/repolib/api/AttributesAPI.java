@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 
 public final class AttributesAPI {
-
+    
     private final Map<String, Attribute> attributes = new HashMap<>();
 
     void load(JsonElement json) {
@@ -41,15 +41,16 @@ public final class AttributesAPI {
 
     public record Attribute(
             @NotNull String id,
-            @NotNull List<String> lore,
+            @Deprecated @NotNull List<String> lore,
             @NotNull String attributeId,
             @NotNull String shardName,
             @NotNull String shardId,
             @NotNull String name,
-            @NotNull String item,
-            @Nullable String texture,
+            @Deprecated @NotNull String item,
+            @Deprecated @Nullable String texture,
             @NotNull String rarity,
-            int max
+            int max,
+            @NotNull JsonObject itemStack
     ) {
         public static Attribute fromJson(JsonObject jsonObject) {
             return new Attribute(
@@ -62,7 +63,8 @@ public final class AttributesAPI {
                     jsonObject.get("item").getAsString(),
                     Optional.ofNullable(jsonObject.get("texture")).map(JsonElement::getAsString).orElse(null),
                     jsonObject.get("rarity").getAsString(),
-                    jsonObject.get("max").getAsInt()
+                    jsonObject.get("max").getAsInt(),
+                    jsonObject.getAsJsonObject("itemStack")
             );
         }
     }

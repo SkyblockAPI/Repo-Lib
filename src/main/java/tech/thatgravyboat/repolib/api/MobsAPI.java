@@ -24,6 +24,7 @@ public final class MobsAPI {
             for (var entry : object.entrySet()) {
                 String id = entry.getKey();
                 JsonObject mobObject = entry.getValue().getAsJsonObject();
+
                 this.mobs.put(id.toUpperCase(Locale.ROOT), new Mob(
                         JsonHelper.getStringOrNull(mobObject, "island"),
                         mobObject.has("position") ? Position.fromJson(mobObject.getAsJsonObject("position")) : null,
@@ -32,12 +33,13 @@ public final class MobsAPI {
                         mobObject.get("name").getAsString(),
                         JsonHelper.getStringOrNull(mobObject, "type"),
                         mobObject.has("lootTables") ?
-                        mobObject.getAsJsonArray("lootTables")
-                                .asList()
-                                .stream()
-                                .map(JsonElement::getAsJsonObject)
-                                .map(MobsAPI::loadLootTable)
-                                .collect(Collectors.toList()) : List.of()
+                                mobObject.getAsJsonArray("lootTables")
+                                        .asList()
+                                        .stream()
+                                        .map(JsonElement::getAsJsonObject)
+                                        .map(MobsAPI::loadLootTable)
+                                        .collect(Collectors.toList()) : List.of(),
+                        mobObject.getAsJsonObject("item")
                 ));
             }
         }

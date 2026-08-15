@@ -3,6 +3,7 @@ package tech.thatgravyboat.repolib.api;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import tech.thatgravyboat.repolib.api.types.DoubleDoublePair;
 import tech.thatgravyboat.repolib.api.types.Pair;
@@ -89,10 +90,11 @@ public final class PetsAPI {
         }
 
         public record Tier(
-                String texture,
-                List<String> lore,
+                @Deprecated String texture,
+                @Deprecated List<String> lore,
                 Map<String, DoubleDoublePair> variables,
-                int variablesOffset
+                int variablesOffset,
+                @NotNull JsonObject item
         ) {
 
             private static final Pattern VARIABLE_PATTERN = Pattern.compile("\\{(?<key>[a-zA-Z0-9_]+)}");
@@ -109,6 +111,7 @@ public final class PetsAPI {
                 return this.getStat(key, level, null);
             }
 
+            @Deprecated
             public List<String> getFormattedLore(int level, @Nullable String heldItem) {
                 return this.lore.stream()
                         .map(line -> VARIABLE_PATTERN.matcher(line).replaceAll(match -> {
@@ -119,6 +122,7 @@ public final class PetsAPI {
                         .toList();
             }
 
+            @Deprecated
             public List<String> getFormattedLore(int level) {
                 return getFormattedLore(level, null);
             }
@@ -137,7 +141,8 @@ public final class PetsAPI {
                                         new DoubleDoublePair(entry.getValue().getAsJsonArray().get(0).getAsDouble(), entry.getValue().getAsJsonArray().get(1).getAsDouble())
                                 ))
                                 .collect(Collectors.toMap(Pair::first, Pair::second)),
-                        Optional.ofNullable(json.get("variablesOffset")).map(JsonElement::getAsInt).orElse(0)
+                        Optional.ofNullable(json.get("variablesOffset")).map(JsonElement::getAsInt).orElse(0),
+                        json.getAsJsonObject("item")
                 );
             }
         }
