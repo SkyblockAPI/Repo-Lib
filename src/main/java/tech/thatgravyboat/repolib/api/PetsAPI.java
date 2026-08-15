@@ -9,7 +9,11 @@ import tech.thatgravyboat.repolib.api.types.DoubleDoublePair;
 import tech.thatgravyboat.repolib.api.types.Pair;
 
 import java.text.DecimalFormat;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.DoubleUnaryOperator;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -33,23 +37,23 @@ public final class PetsAPI {
                 var item = entry.getKey();
                 var stats = entry.getValue().getAsJsonObject().getAsJsonObject("pet_stats");
                 var operators = stats.entrySet().stream()
-                                .map(it -> {
-                                    var operator = it.getValue().getAsJsonArray();
-                                    var opcode = operator.get(0).getAsString();
-                                    var value = operator.get(1).getAsDouble();
-                                    return Pair.of(
-                                            it.getKey(),
-                                            switch (opcode) {
-                                                case "+" -> (DoubleUnaryOperator) (x -> x + value);
-                                                case "-" -> (DoubleUnaryOperator) (x -> x - value);
-                                                case "*" -> (DoubleUnaryOperator) (x -> x * value);
-                                                case "/" -> (DoubleUnaryOperator) (x -> x / value);
-                                                case "=" -> (DoubleUnaryOperator) (x -> value);
-                                                default -> throw new IllegalArgumentException("Unknown opcode: " + opcode);
-                                            }
-                                    );
-                                })
-                                .collect(Collectors.toMap(Pair::first, Pair::second));
+                        .map(it -> {
+                            var operator = it.getValue().getAsJsonArray();
+                            var opcode = operator.get(0).getAsString();
+                            var value = operator.get(1).getAsDouble();
+                            return Pair.of(
+                                    it.getKey(),
+                                    switch (opcode) {
+                                        case "+" -> (DoubleUnaryOperator) (x -> x + value);
+                                        case "-" -> (DoubleUnaryOperator) (x -> x - value);
+                                        case "*" -> (DoubleUnaryOperator) (x -> x * value);
+                                        case "/" -> (DoubleUnaryOperator) (x -> x / value);
+                                        case "=" -> (DoubleUnaryOperator) (x -> value);
+                                        default -> throw new IllegalArgumentException("Unknown opcode: " + opcode);
+                                    }
+                            );
+                        })
+                        .collect(Collectors.toMap(Pair::first, Pair::second));
                 this.petItems.put(item.toUpperCase(Locale.ROOT), operators);
             }
         }
@@ -102,7 +106,8 @@ public final class PetsAPI {
             public double getStat(String key, int level, @Nullable String heldItem) {
                 var operators = RepoAPI.pets().getPetItemStats(heldItem);
                 var variable = this.variables.get(key);
-                var stat = variable.first() + (Math.clamp(level - variablesOffset, 0, 100) / 100.0) * (variable.second() - variable.first());
+                var percentage = Math.clamp(level - 1 - this.variablesOffset, 0, 99) / 99.0F;
+                var stat = variable.first() + percentage * (variable.second() - variable.first());
                 var value = Math.floor(stat * 10000.0) / 10000.0; // round to 4 decimal place
                 return operators.getOrDefault(key, x -> x).applyAsDouble(value);
             }
