@@ -60,5 +60,37 @@ public interface RepoLibLogger {
 }
 
 class Holder {
-    static RepoLibLogger INSTANCE = null;
+    static RepoLibLogger INSTANCE = new RepoLibLogger() {
+        @Override
+        public void info0(String message) {
+            System.out.println("[Repo-Lib Info] " + message);
+        }
+
+        @Override
+        public void debug0(String message) {
+            //nop
+        }
+
+        @Override
+        public void trace0(String message) {
+            //nop
+        }
+
+        @Override
+        public void error0(String message) {
+            System.out.println("[Repo-Lib Error] " + message);
+        }
+
+        @Override
+        public void warn0(String message) {
+            System.out.println("[Repo-Lib Warn] " + message);
+        }
+
+        @Override
+        public void error0(String message, Throwable throwable) {
+            System.out.println("[Repo-Lib Error] " + message);
+            //noinspection CallToPrintStackTrace
+            throwable.printStackTrace();
+        }
+    };
 }
