@@ -41,6 +41,7 @@ public class Utils {
 
             return GSON.fromJson(response.body(), JsonElement.class);
         } catch (Throwable e) {
+            System.err.println("[Repo-Lib] Error fetching JSON from API path: " + path);
             e.printStackTrace();
         }
         return null;
