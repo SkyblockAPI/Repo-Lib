@@ -22,6 +22,7 @@ import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.function.Function;
+import tech.thatgravyboat.repolib.api.RepoLibLogger;
 
 @ApiStatus.Internal
 public class Utils {
@@ -46,8 +47,7 @@ public class Utils {
 
             return GSON.fromJson(response.body(), JsonElement.class);
         } catch (Throwable e) {
-            System.err.println("[Repo-Lib] Error fetching JSON from API path: " + path);
-            e.printStackTrace();
+            RepoLibLogger.error("Error fetching JSON from API path", e);
         }
         return null;
     }
