@@ -18,6 +18,7 @@ import java.util.function.DoubleUnaryOperator;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import tech.thatgravyboat.repolib.internal.Utils;
 
 public final class PetsAPI {
 
@@ -31,8 +32,11 @@ public final class PetsAPI {
             for (var entry : object.entrySet()) {
                 this.pets.put(entry.getKey(), Data.fromJson(entry.getValue().getAsJsonObject()));
             }
+        } else {
+            RepoLibLogger.warn("/Pets/ Failed to load pets, expected JsonObject but got " + Utils.typeName(constants));
         }
-        if (constants.get("PetItems") instanceof JsonObject object) {
+        var petItems = constants.get("PetItems");
+        if (petItems instanceof JsonObject object) {
             for (var entry : object.entrySet()) {
                 var item = entry.getKey();
                 var stats = entry.getValue().getAsJsonObject().getAsJsonObject("pet_stats");
@@ -56,6 +60,8 @@ public final class PetsAPI {
                         .collect(Collectors.toMap(Pair::first, Pair::second));
                 this.petItems.put(item.toUpperCase(Locale.ROOT), operators);
             }
+        } else {
+            RepoLibLogger.warn("/Pets/ Failed pet items from constants, expected JsonObject but got " + Utils.typeName(petItems));
         }
     }
 

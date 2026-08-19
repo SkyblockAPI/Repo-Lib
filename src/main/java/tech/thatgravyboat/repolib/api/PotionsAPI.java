@@ -12,6 +12,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import tech.thatgravyboat.repolib.internal.Utils;
 
 public final class PotionsAPI {
 
@@ -24,6 +25,8 @@ public final class PotionsAPI {
                     this.potions.put(key.toUpperCase(Locale.ROOT), Potion.fromJson(key, valueObject));
                 }
             });
+        } else {
+            RepoLibLogger.warn("/Potions/ Failed to load, expected JsonObject but got " + Utils.typeName(json));
         }
     }
 

@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
+import tech.thatgravyboat.repolib.internal.Utils;
 
 public final class ReforgeStonesAPI {
     private final Map<String, ReforgeData> reforgeStones = new HashMap<>();
@@ -18,6 +19,8 @@ public final class ReforgeStonesAPI {
                 ReforgeData data = ReforgeData.fromJson(entry.getValue().getAsJsonObject());
                 this.reforgeStones.put(id, data);
             }
+        } else {
+            RepoLibLogger.warn("/Reforge Stones/ Failed to load, expected JsonObject but got " + Utils.typeName(json));
         }
     }
 

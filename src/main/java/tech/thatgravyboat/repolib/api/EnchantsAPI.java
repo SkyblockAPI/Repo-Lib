@@ -11,6 +11,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import tech.thatgravyboat.repolib.internal.Utils;
 
 public final class EnchantsAPI {
 
@@ -23,6 +24,8 @@ public final class EnchantsAPI {
                     this.enchantments.put(key.toUpperCase(Locale.ROOT), Enchant.fromJson(valueObject));
                 }
             });
+        } else {
+            RepoLibLogger.warn("/Enchants/ Failed to load, expected JsonObject but got " + Utils.typeName(json));
         }
     }
 

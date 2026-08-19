@@ -9,6 +9,7 @@ import tech.thatgravyboat.repolib.internal.JsonHelper;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import tech.thatgravyboat.repolib.internal.Utils;
 
 public final class IdOverlaysAPI {
 
@@ -75,6 +76,8 @@ public final class IdOverlaysAPI {
                     }
                 }
             }
+        } else {
+            RepoLibLogger.warn("/Id Overlays/ Failed to load, expected JsonArray but got " + Utils.typeName(json));
         }
     }
 

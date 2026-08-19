@@ -7,6 +7,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import tech.thatgravyboat.repolib.internal.Utils;
 
 public final class AttributesAPI {
     
@@ -24,6 +25,8 @@ public final class AttributesAPI {
                 }
                 this.attributes.put(id.getAsString().toUpperCase(Locale.ROOT), Attribute.fromJson(object));
             });
+        } else {
+            RepoLibLogger.warn("/Attributes/ Failed to load, expected JsonArray but got " + Utils.typeName(json));
         }
     }
 

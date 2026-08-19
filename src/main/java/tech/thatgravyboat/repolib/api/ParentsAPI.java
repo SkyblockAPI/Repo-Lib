@@ -6,6 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import tech.thatgravyboat.repolib.internal.Utils;
 
 public final class ParentsAPI {
     private final Map<String, List<String>> parentToChildren = new HashMap<>();
@@ -23,6 +24,8 @@ public final class ParentsAPI {
                 }
                 this.parentToChildren.put(parent, children);
             }
+        } else {
+            RepoLibLogger.warn("/Parents/ Failed to load, expected JsonObject but got " + Utils.typeName(json));
         }
     }
 

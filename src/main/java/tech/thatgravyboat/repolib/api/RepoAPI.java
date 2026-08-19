@@ -48,6 +48,7 @@ public final class RepoAPI {
     }
 
     public static void setup(RepoVersion version, Consumer<RepoStatus> listener) {
+        RepoLibLogger.info("Initializing with version " + version.version());
         assertVersion(version);
         if (RepoAPI.status != null) {
             listener.accept(RepoAPI.status);
@@ -70,17 +71,18 @@ public final class RepoAPI {
 
     private static void setup() {
         if (RepoAPI.setup) return;
+        RepoLibLogger.debug("Setting up repo lib!");
         RepoAPI.setup = true;
         CompletableFuture.runAsync(() -> {
             try {
                 load();
                 RepoAPI.status = RepoStatus.SUCCESS;
             } catch (Throwable e) {
-                System.err.println("[Repo-Lib] Failed to load data from the repo.");
-                e.printStackTrace();
+                RepoLibLogger.error("[Repo-Lib] Failed to load data from the repo.", e);
                 RepoAPI.status = RepoStatus.FAILED;
             }
 
+            RepoLibLogger.debug("Dispatching listeners with status = " + RepoAPI.status);
             for (var listener : RepoAPI.listeners) {
                 listener.accept(RepoAPI.status);
             }
@@ -88,16 +90,19 @@ public final class RepoAPI {
         });
     }
 
-    private static @NotNull JsonElement tryVersionedLoad(@Nullable JsonObject remote, @Nullable JsonElement local, String key, String path) throws Exception {
+    private static @NotNull JsonElement tryVersionedLoad(@Nullable JsonObject remote, @Nullable JsonObject local, String key, String path) throws Exception {
         JsonObject remoteVersioned = remote != null ? remote.getAsJsonObject(RepoAPI.version.version()) : null;
-        JsonElement localVersioned = local instanceof JsonObject obj ? obj.getAsJsonObject(RepoAPI.version.version()) : null;
+        JsonObject localVersioned = local != null ? local.getAsJsonObject(RepoAPI.version.version()) : null;
+        RepoLibLogger.debug("Trying to load versioned " + RepoAPI.version.version() + "/" + key);
         return tryLoad(remoteVersioned, localVersioned, key, String.format("%s/%s", RepoAPI.version.version(), path));
     }
 
-    private static @NotNull JsonElement tryLoad(@Nullable JsonObject remote, @Nullable JsonElement local, String key, String urlpath) throws Exception {
+    private static @NotNull JsonElement tryLoad(@Nullable JsonObject remote, @Nullable JsonObject local, String key, String urlpath) throws Exception {
+        RepoLibLogger.debug("Trying to load " + key);
         var loc = impl.getRepoPath().resolve(key + ".min.json");
-        var shasMatch = local instanceof JsonObject obj && remote != null && Objects.equals(obj.get(key), remote.get(key));
+        var shasMatch = local != null && remote != null && Objects.equals(local.get(key), remote.get(key));
         if (!shasMatch || !Files.exists(loc)) {
+            RepoLibLogger.trace("Downloading " + key + " from remote!");
             JsonElement element = Utils.getJsonFromApi(urlpath);
             if (element != null) {
                 Files.writeString(loc, element.toString());
@@ -105,17 +110,30 @@ public final class RepoAPI {
             }
         }
 
+        RepoLibLogger.trace("Loading " + key + " from local cache!");
         var localElement = Utils.getJsonFromFile(loc);
         if (localElement != null) return localElement;
+        RepoLibLogger.debug("Loading " + key + " from backup repo!");
         return Utils.getJsonFromResources(urlpath);
     }
 
     @Blocking
     private static void load() throws Exception {
         Files.createDirectories(impl.getRepoPath());
+        RepoLibLogger.debug("Loading repo with path " + impl.getRepoPath().toString());
 
         JsonObject shas = Utils.mapNotNull(Utils.getJsonFromApi("shas.json"), JsonElement::getAsJsonObject);
-        JsonElement localShas = Utils.getJsonFromFile(impl.getShasFile());
+        if (shas == null) {
+            RepoLibLogger.warn("Unable to retrieve shas.json from remote!");
+        }
+        JsonObject localShas = Utils.mapNotNull(Utils.getJsonFromFile(impl.getShasFile()), JsonElement::getAsJsonObject);
+        if (localShas == null) {
+            RepoLibLogger.info("Unable to read shas.json from local cache!");
+        }
+        if (shas == null && localShas == null) {
+            RepoLibLogger.warn("Both local and remote index are null!");
+        }
+
         JsonObject constants = tryLoad(shas, localShas, "constants", "constants.min.json").getAsJsonObject();
 
         RepoAPI.pets.load(tryVersionedLoad(shas, localShas, "pets", "pets.min.json"), constants);
@@ -133,6 +151,7 @@ public final class RepoAPI {
         RepoAPI.parents.load(tryLoad(shas, localShas, "parents", "constants/parents.min.json"));
 
         if (shas != null) {
+            RepoLibLogger.debug("Writing current index file!");
             Files.writeString(impl.getShasFile(), shas.toString());
         }
     }

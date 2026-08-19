@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import tech.thatgravyboat.repolib.internal.Utils;
 
 public final class RecipesAPI {
 
@@ -21,6 +22,8 @@ public final class RecipesAPI {
                 if (recipe == null) continue;
                 recipes.computeIfAbsent(recipe.type(), k -> new ArrayList<>()).add(recipe);
             }
+        } else {
+            RepoLibLogger.warn("/Recipes/ Failed to load, expected JsonArray but got " + Utils.typeName(json));
         }
         recipes.forEach((type, list) -> this.recipes.put(type, List.copyOf(list)));
     }

@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
+import tech.thatgravyboat.repolib.internal.Utils;
 
 public final class MobsAPI {
 
@@ -42,6 +43,8 @@ public final class MobsAPI {
                         mobObject.getAsJsonObject("item")
                 ));
             }
+        } else {
+            RepoLibLogger.warn("/Mobs/ Failed to load, expected JsonObject but got " + Utils.typeName(json));
         }
     }
 
