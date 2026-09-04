@@ -46,6 +46,13 @@ public final class IdOverlaysAPI {
     private final Map<String, OverlayData> attributes = new HashMap<>();
 
     void load(JsonElement json) {
+        items.clear();
+        potions.clear();
+        runes.clear();
+        pets.clear();
+        mobs.clear();
+        enchantments.clear();
+        attributes.clear();
         if (json instanceof JsonArray array) {
             for (JsonElement element : array) {
                 if (element instanceof JsonObject obj) {

@@ -15,6 +15,7 @@ public final class ItemsAPI {
     private final Map<String, JsonObject> items = new HashMap<>();
 
     void load(JsonElement json) {
+        items.clear();
         if (json instanceof JsonArray array) {
             for (var element : array) {
                 JsonObject object = element.getAsJsonObject();

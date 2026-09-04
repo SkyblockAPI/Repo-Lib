@@ -67,7 +67,7 @@ public final class RepoAPI {
 
     //endregion
 
-    //region Loading
+    //region (Re)Loading
 
     private static void setup() {
         if (RepoAPI.setup) return;
@@ -154,6 +154,27 @@ public final class RepoAPI {
             RepoLibLogger.debug("Writing current index file!");
             Files.writeString(impl.getShasFile(), shas.toString());
         }
+    }
+
+    public static void reload(Consumer<RepoStatus> listener) {
+        if (RepoAPI.version == null) {
+            throw new IllegalStateException("RepoAPI has not been setup yet.");
+        }
+        RepoAPI.listeners.add(listener);
+        forceReload();
+    }
+
+    public static void reload() {
+        if (RepoAPI.version == null) {
+            throw new IllegalStateException("RepoAPI has not been setup yet.");
+        }
+        forceReload();
+    }
+
+    private static void forceReload() {
+        RepoAPI.setup = false;
+        RepoAPI.status = null;
+        setup();
     }
 
     //endregion

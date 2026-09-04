@@ -19,6 +19,7 @@ public final class PotionsAPI {
     private final Map<String, Potion> potions = new HashMap<>();
 
     void load(JsonElement json) {
+        potions.clear();
         if (json instanceof JsonObject object) {
             object.asMap().forEach((key, value) -> {
                 if (value instanceof JsonObject valueObject) {

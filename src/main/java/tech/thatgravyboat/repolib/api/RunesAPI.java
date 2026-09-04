@@ -27,6 +27,7 @@ public class RunesAPI {
     }
 
     void load(JsonObject json) {
+        runes.clear();
         for (var entry : json.entrySet()) {
             String id = entry.getKey().toUpperCase(Locale.ROOT);
             List<Rune> data = entry.getValue().getAsJsonArray().asList().stream()

@@ -28,6 +28,8 @@ public final class PetsAPI {
     private static final DecimalFormat loreFormatter = new DecimalFormat("0.####");
 
     void load(JsonElement json, JsonObject constants) {
+        pets.clear();
+        petItems.clear();
         if (json instanceof JsonObject object) {
             for (var entry : object.entrySet()) {
                 this.pets.put(entry.getKey(), Data.fromJson(entry.getValue().getAsJsonObject()));

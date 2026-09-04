@@ -13,6 +13,7 @@ public final class ReforgeStonesAPI {
     private final Map<String, ReforgeData> reforgeStones = new HashMap<>();
 
     void load(JsonElement json) {
+        reforgeStones.clear();
         if (json instanceof JsonObject object) {
             for (var entry : object.entrySet()) {
                 String id = entry.getKey().toUpperCase(Locale.ROOT);

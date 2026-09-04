@@ -15,6 +15,7 @@ public final class RecipesAPI {
     private final Map<Recipe.Type<?>, List<Recipe<?>>> recipes = new HashMap<>();
 
     void load(JsonElement json) {
+        recipes.clear();
         Map<Recipe.Type<?>, List<Recipe<?>>> recipes = new HashMap<>();
         if (json instanceof JsonArray array) {
             for (var element : array) {

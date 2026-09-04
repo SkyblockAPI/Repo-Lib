@@ -14,6 +14,7 @@ public final class AttributesAPI {
     private final Map<String, Attribute> attributes = new HashMap<>();
 
     void load(JsonElement json) {
+        attributes.clear();
         if (json instanceof JsonArray array) {
             array.forEach((element) -> {
                 if (!(element instanceof JsonObject object)) {

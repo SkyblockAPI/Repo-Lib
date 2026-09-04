@@ -18,6 +18,7 @@ public final class EnchantsAPI {
     private final Map<String, Enchant> enchantments = new HashMap<>();
 
     void load(JsonElement json) {
+        enchantments.clear();
         if (json instanceof JsonObject object) {
             object.asMap().forEach((key, value) -> {
                 if (value instanceof JsonObject valueObject) {

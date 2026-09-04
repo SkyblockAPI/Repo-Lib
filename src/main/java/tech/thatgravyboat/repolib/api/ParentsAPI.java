@@ -13,6 +13,8 @@ public final class ParentsAPI {
     private final Map<String, String> childToParent = new HashMap<>();
 
     void load(JsonElement json) {
+        parentToChildren.clear();
+        childToParent.clear();
         if (json instanceof JsonObject object) {
             for (var entry : object.entrySet()) {
                 String parent = entry.getKey().toUpperCase(Locale.ROOT);

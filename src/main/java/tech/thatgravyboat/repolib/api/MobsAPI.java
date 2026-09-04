@@ -21,6 +21,7 @@ public final class MobsAPI {
     private final Map<String, Mob> mobs = new HashMap<>();
 
     void load(JsonElement json) {
+        mobs.clear();
         if (json instanceof JsonObject object) {
             for (var entry : object.entrySet()) {
                 String id = entry.getKey();
