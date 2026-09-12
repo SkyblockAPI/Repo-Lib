@@ -107,4 +107,27 @@ public class Utils {
             default -> "Unknown";
         };
     }
+
+    public static String toTitleCase(@Nullable String text) {
+        if (text == null || text.isEmpty()) {
+            return text;
+        }
+
+        StringBuilder stringBuilder = new StringBuilder(text.length());
+        boolean capitalizeNext = true;
+
+        for (char c : text.toCharArray()) {
+            if (Character.isSpaceChar(c) || c == '_' || c == '-') {
+                capitalizeNext = true;
+                stringBuilder.append(c == '_' ? ' ' : c);
+            } else if (capitalizeNext) {
+                stringBuilder.append(Character.toTitleCase(c));
+                capitalizeNext = false;
+            } else {
+                stringBuilder.append(Character.toLowerCase(c));
+            }
+        }
+
+        return stringBuilder.toString();
+    }
 }
