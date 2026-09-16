@@ -5,6 +5,10 @@ import tech.thatgravyboat.repolib.v2.expl.expression.*;
 import tech.thatgravyboat.repolib.v2.expl.value.FunctionValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
+import java.io.BufferedOutputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.classfile.ClassBuilder;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeBuilder;
@@ -13,6 +17,8 @@ import java.lang.constant.*;
 import java.lang.invoke.MethodHandles;
 import java.util.*;
 import java.util.stream.Gatherers;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import static java.lang.constant.ConstantDescs.*;
 
@@ -72,7 +78,7 @@ public class ModuleCompiler {
         public void pushStack(CodeBuilder cb, String name) {
             depth += 1;
             cb.aload(1);
-            cb.loadConstant(name.hashCode() + "");
+            cb.loadConstant("");
             cb.invokevirtual(CD_Evaluator, "push", MethodTypeDesc.of(CD_void, CD_String));
         }
 
@@ -148,13 +154,6 @@ public class ModuleCompiler {
         cb.invokevirtual(ClassDesc.of("java.io.PrintStream"), "println", MethodTypeDesc.of(CD_void, CD_String));
     }
 
-    public static String byteArrayToHex(byte[] a) {
-        StringBuilder sb = new StringBuilder(a.length * 2);
-        for (byte b : a)
-            sb.append(String.format("%02x", b));
-        return sb.toString();
-    }
-
     private static void loadStrValue(CodeBuilder cb, String value) {
         cb.new_(CD_StrValue);
         cb.dup();
@@ -164,10 +163,6 @@ public class ModuleCompiler {
 
     private static void loadBoolValue(CodeBuilder cb, boolean value) {
         cb.getstatic(CD_BoolValue, value ? "TRUE" : "FALSE", CD_Value);
-    }
-
-    private static void boolToBoolValue(CodeBuilder cb) {
-//        cb.ifne
     }
 
     private static void loadNumValue(CodeBuilder cb, double value) {
@@ -185,13 +180,13 @@ public class ModuleCompiler {
         cb.athrow();
     }
 
-    private static void pathStringConcat(CodeBuilder cb, int length, String separator) {
+    private static void pathStringConcat(CodeBuilder cb, int length) {
         ClassDesc[] classDescs = new ClassDesc[length];
         Arrays.fill(classDescs, CD_String);
-        StringBuilder separated = new StringBuilder(length * (separator.length() + 1) - 1);
+        StringBuilder separated = new StringBuilder(length * 2 - 1);
         for (int index = 0; index < length; index++) {
             separated.append("\u0001");
-            if (index != length - 1) separated.append(separator);
+            if (index != length - 1) separated.append("/");
         }
         stringConcat(cb, separated.toString(), classDescs);
     }
@@ -264,7 +259,7 @@ public class ModuleCompiler {
                             return;
                         }
                     }
-                    Enum.EnumDesc<BinaryExpression.Op> meow = op.describeConstable().get();
+                    Enum.EnumDesc<BinaryExpression.Op> meow = op.describeConstable().orElseThrow();
                     cb.loadConstant(meow);
                     cb.aload(1);
                     compileExpression(cb, first, lc);
@@ -359,22 +354,20 @@ public class ModuleCompiler {
                 for (var fieldChunks : chunkedEntries) {
                     String methodName = "generated$" + lc.uniqueId();
                     lc.ownBuilder()
-                            .withMethod(methodName, MethodTypeDesc.of(CD_void, CD_Evaluator, CD_MutableStructValue), ClassFile.ACC_PRIVATE, methodBuilder -> {
-                                methodBuilder.withCode(subCodeBuilder -> {
-                                    for (var entry : fieldChunks) {
+                            .withMethod(methodName, MethodTypeDesc.of(CD_void, CD_Evaluator, CD_MutableStructValue), ClassFile.ACC_PRIVATE, methodBuilder -> methodBuilder.withCode(subCodeBuilder -> {
+                                for (var entry : fieldChunks) {
+                                    subCodeBuilder.aload(2);
+                                    subCodeBuilder.loadConstant(entry.getKey());
+                                    if (entry.getValue() instanceof LambdaIdentityFunction lif) {
                                         subCodeBuilder.aload(2);
-                                        subCodeBuilder.loadConstant(entry.getKey());
-                                        if (entry.getValue() instanceof LambdaIdentityFunction lif) {
-                                            subCodeBuilder.aload(2);
-                                            compileIdentityExpression(cb, lif, lc);
-                                        } else {
-                                            compileExpression(subCodeBuilder, entry.getValue(), lc);
-                                        }
-                                        subCodeBuilder.invokevirtual(CD_MutableStructValue, "set", MethodTypeDesc.of(CD_void, CD_String, CD_Value));
+                                        compileIdentityExpression(cb, lif, lc);
+                                    } else {
+                                        compileExpression(subCodeBuilder, entry.getValue(), lc);
                                     }
-                                    subCodeBuilder.return_();
-                                });
-                            });
+                                    subCodeBuilder.invokevirtual(CD_MutableStructValue, "set", MethodTypeDesc.of(CD_void, CD_String, CD_Value));
+                                }
+                                subCodeBuilder.return_();
+                            }));
                     cb.aload(0);
                     cb.aload(1);
                     cb.aload(structSlot);
@@ -409,7 +402,7 @@ public class ModuleCompiler {
             for (MatchExpression.MatchBranch branch : branches) {
                 Label endLabel = cb.newLabel();
                 if (branch.check() != null) {
-                    Enum.EnumDesc<MatchExpression.MatchCondition> meow = branch.condition().describeConstable().get();
+                    Enum.EnumDesc<MatchExpression.MatchCondition> meow = branch.condition().describeConstable().orElseThrow();
                     cb.loadConstant(meow);
                     cb.aload(1);
                     cb.aload(localSlot);
@@ -496,11 +489,6 @@ public class ModuleCompiler {
                 cb.istore(localSlot);
 
                 cb.labelBinding(checkLabel);
-                cb.iload(localSlot);
-                cb.iload(maxSlot);
-                stringConcat(cb, "\u0001 \u0001", CD_int, CD_int);
-                debugLog(cb);
-
                 cb.iload(maxSlot);
                 cb.iload(localSlot);
                 if (inclusiveEnd) {
@@ -566,10 +554,6 @@ public class ModuleCompiler {
 
     private static void compileForExpression(CodeBuilder cb, Expression expression, MetaCodeInfo lc) {
         if (expression instanceof ForExpression(Expression init, Expression cond, Expression incr, Expression body)) {
-//            init ; cond; incr {
-//                body
-//            }
-
             Label endLoopLabel = cb.newLabel();
             Label loopLabel = cb.newLabel();
             Label checkLabel = cb.newLabel();
@@ -627,11 +611,6 @@ public class ModuleCompiler {
             Label meow = cb.newLabel();
             cb.dup();
             compileExpression(cb, access.lhs(), lc);
-            cb.dup();
-            cb.instanceOf(CD_MutableKV);
-            cb.ifne(meow);
-            throwPanic(cb, "Unable to set a property on a non mutable object");
-            cb.labelBinding(meow);
             cb.checkcast(CD_MutableKV);
             cb.swap();
             if (access.field() instanceof StrExpression(String string)) {
@@ -670,7 +649,7 @@ public class ModuleCompiler {
                         cb.invokevirtual(CD_Evaluator, "getStringOrThrow", MethodTypeDesc.of(CD_String, CD_Value));
                     }
                 }
-                pathStringConcat(cb, path.size(), "/");
+                pathStringConcat(cb, path.size());
                 cb.invokevirtual(CD_Evaluator, "getFileAccess", MethodTypeDesc.of(CD_FunctionValue, CD_String));
             }
             case BlockExpression(List<Expression> exprs) -> {
@@ -786,22 +765,10 @@ public class ModuleCompiler {
                 cb.goto_(endLabel);
 
                 cb.labelBinding(isNotKv);
-                cb.dup();
-                cb.instanceOf(CD_StrValue);
-                cb.ifeq(isNotStr);
-
                 cb.checkcast(CD_StrValue);
                 cb.invokevirtual(CD_StrValue, "value", MethodTypeDesc.of(CD_String));
                 cb.swap();
                 cb.invokevirtual(CD_String, "contains", MethodTypeDesc.of(CD_boolean, ClassDesc.of("java.lang.CharSequence")));
-                cb.goto_(endLabel);
-
-                cb.labelBinding(isNotStr);
-
-                stringConcat(cb, "Was: \u0001", CD_Object);
-                debugLog(cb);
-                throwPanic(cb, "meow :c " + lc.ownClass);
-
 
                 cb.labelBinding(endLabel);
                 Label trueCase = cb.newLabel();
@@ -818,26 +785,19 @@ public class ModuleCompiler {
             case StatementExpression(StatementExpression.Op op) -> {
                 switch (op) {
                     case RETURN -> {
-//                        cb.pop();
                         pushNil(cb);
                         lc.popAll(cb);
                         cb.areturn();
                     }
-                    case BREAK -> {
-                        cb.goto_(lc.getBreakLabel());
-                    }
-                    case CONTINUE -> {
-                        cb.goto_(lc.getContinueLabel());
-                    }
+                    case BREAK -> cb.goto_(lc.getBreakLabel());
+                    case CONTINUE -> cb.goto_(lc.getContinueLabel());
                     default -> {
                         throwPanic(cb, "didnt know how to compile " + op);
                         throw new Evaluator.Panic(":c");
                     }
                 }
             }
-            case LambdaExpression lambdaExpression -> {
-                compileLambdaExpression(cb, lambdaExpression, lc);
-            }
+            case LambdaExpression lambdaExpression -> compileLambdaExpression(cb, lambdaExpression, lc);
             case ArrayExpression(List<Expression> list) -> {
                 ClassDesc arrayList = ClassDesc.of("java.util.ArrayList");
                 cb.new_(arrayList);
@@ -870,10 +830,11 @@ public class ModuleCompiler {
         return identityLambdas.size() - 1;
     }
 
+    @SuppressWarnings("unused")
     public static FunctionValue getLambda(int name) {
         return lambdas.get(name);
     }
-
+    @SuppressWarnings("unused")
     static Class<IdentityLambdaFunction> getLambdaClass(int name) {
         return identityLambdas.get(name);
     }
@@ -885,7 +846,7 @@ public class ModuleCompiler {
     private static void compileIdentityExpression(CodeBuilder cb, LambdaIdentityFunction expression, MetaCodeInfo lc) {
         try {
             String lambdaKey = "" + lambdas.size();
-            Class<IdentityLambdaFunction> lambdaClass = compileLambda(expression.expression(), lambdaKey, true);
+            Class<IdentityLambdaFunction> lambdaClass = compileLambda(expression.expression(), lc.getCodeName() + "$" + lambdaKey + "$special", true);
             cb.loadConstant(addLambdaClass(lambdaClass));
             cb.invokestatic(ClassDesc.of("tech.thatgravyboat.repolib.v2.expl.compiler.ModuleCompiler"), "getLambdaClass", MethodTypeDesc.of(CD_Class, CD_int));
             cb.invokevirtual(CD_Class, "newInstance", MethodTypeDesc.of(CD_Object));
@@ -901,7 +862,7 @@ public class ModuleCompiler {
     private static void compileLambdaExpression(CodeBuilder cb, LambdaExpression expression, MetaCodeInfo lc) {
         try {
             String lambdaKey = "" + lambdas.size();
-            Class<IdentityLambdaFunction> lambdaClass = compileLambda(expression, lambdaKey, false);
+            Class<IdentityLambdaFunction> lambdaClass = compileLambda(expression, lc.getCodeName() + "$" + lambdaKey, false);
             cb.loadConstant(addLambda(lambdaClass.newInstance()));
             cb.invokestatic(ClassDesc.of("tech.thatgravyboat.repolib.v2.expl.compiler.ModuleCompiler"), "getLambda", MethodTypeDesc.of(CD_FunctionValue, CD_int));
         } catch (IllegalAccessException | InstantiationException e) {
@@ -930,7 +891,7 @@ public class ModuleCompiler {
             min++;
         }
 
-        ClassDesc lambdaClass = ClassDesc.of("tech.thatgravyboat.repolib.v2.expl.compiler.generated$" + name.replaceAll("[\\\\/]", "#") + "$lambda$");
+        ClassDesc lambdaClass = ClassDesc.of("tech.thatgravyboat.repolib.v2.expl.compiler.generated$" + name + "$lambda");
         int finalMin = min;
         int finalMax = max;
         ClassDesc CD_LambdaFunctionValue = ClassDesc.of("tech.thatgravyboat.repolib.v2.expl.value.LambdaFunctionValue");
@@ -986,7 +947,7 @@ public class ModuleCompiler {
                     builder.withMethod("apply", MethodTypeDesc.of(CD_Value, CD_Evaluator, CD_List), ClassFile.ACC_PUBLIC, mb -> {
                         mb.withCode(cb -> {
                             MetaCodeInfo lc = new MetaCodeInfo(lambdaClass, builder);
-                            lc.setCodeName(lambdaClass.descriptorString());
+                            lc.setCodeName(name + "$lambda");
                             lc.mark(2);
                             cb.aload(1);
                             if (identity) {
@@ -1096,29 +1057,4 @@ public class ModuleCompiler {
             throw e;
         }
     }
-
-//    private static FunctionValue createFunctionValue(Expression expression) throws IllegalAccessException, InstantiationException {
-//        byte[] classBytes = ClassFile.of()
-//                .build(ClassDesc.of("tech.thatgravyboat.repolib.v2.expl.compiler.generated"), (builder) -> {
-//                    builder.withInterfaces(builder.constantPool()
-//                            .classEntry(ClassDesc.of("tech.thatgravyboat.repolib.v2.expl.value.FunctionValue")));
-//                    builder.withMethod("<init>", MethodTypeDesc.of(CD_void), ClassFile.ACC_PUBLIC, methodBuilder -> {
-//                        methodBuilder.withCode(codeBuilder -> {
-//                            codeBuilder.aload(0);
-//                            codeBuilder.invokespecial(CD_Object, "<init>", MTD_void);
-//                            codeBuilder.return_();
-//                        });
-//                    });
-//                    builder.withMethod("apply", MethodTypeDesc.of(CD_Value, CD_Evaluator, CD_List), ClassFile.ACC_PUBLIC, mb -> {
-//                        mb.withCode(cb -> {
-//                            MetaCodeInfo lc = new MetaCodeInfo();
-//                            if (!compileExpression(cb, expression, lc)) {
-//                                lc.popAll(cb);
-//                                cb.areturn();
-//                            }
-//                        });
-//                    });
-//                });
-//        return (FunctionValue) MethodHandles.lookup().defineHiddenClass(classBytes, true).lookupClass().newInstance();
-//    }
 }
