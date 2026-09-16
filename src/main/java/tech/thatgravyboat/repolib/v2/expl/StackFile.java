@@ -36,6 +36,10 @@ public final class StackFile implements SelfEvaluatingExpression {
         this.metaScript = meta;
     }
 
+    public boolean hasInitialized() {
+        return meta != null;
+    }
+
     public void init(RepoConstants constants) {
         var struct = new MutableStructValue();
         struct.set(
@@ -72,6 +76,7 @@ public final class StackFile implements SelfEvaluatingExpression {
                     return evaluator.panic("Can't access static data of non module file!");
                 });
             }));
+        struct.set("categories", MutableArrayValue.create());
         var evaluator = new Evaluator(new LayeredStructValue(struct, constants), loader::getModule);
         evaluator.evaluate(this.metaScript);
         struct.fields().remove("include");

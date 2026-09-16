@@ -1,15 +1,11 @@
 package tech.thatgravyboat.repolib.v2.expl;
 
-import java.util.function.Function;
 import org.jetbrains.annotations.Contract;
 import tech.thatgravyboat.repolib.v2.expl.expression.*;
 import tech.thatgravyboat.repolib.v2.expl.value.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class Evaluator {
@@ -23,6 +19,21 @@ public class Evaluator {
     public final LinkedList<String> fileStack = new LinkedList<>();
     public final LinkedList<String> stack = new LinkedList<>();
     public final List<ContentInfo> errors = new ArrayList<>();
+
+    public void push(String stack) {
+        this.scope.push();
+        this.stack.addLast(stack);
+    }
+
+    public void push(StructValue.MutableStruct scope, String stack) {
+        this.scope.pushWithScope(scope);
+        this.stack.addLast(stack);
+    }
+
+    public void pop() {
+        this.scope.pop();
+        this.stack.removeLast();
+    }
 
     public Value pushPop(String stack, StructValue.MutableStruct scope, Supplier<Value> supplier) {
         try {
@@ -67,7 +78,9 @@ public class Evaluator {
     public Evaluator(StructValue defaults, Function<String, FunctionValue> fileFunction) {
         this.fileFunction = fileFunction;
         this.defaults = defaults;
-        scope = new Scope(defaults instanceof LayeredStructValue ? defaults : new LayeredStructValue(new MutableStructValue(), defaults));
+        scope = new Scope(defaults instanceof LayeredStructValue ?
+                defaults :
+                new LayeredStructValue(new MutableStructValue(), defaults));
     }
 
     public static final Evaluator CONSTANT = new Evaluator(ImmutableStructValue.EMPTY, x -> null);
@@ -111,6 +124,13 @@ public class Evaluator {
 
     public Value getField(String field) {
         return scope.get().get(field);
+    }
+
+    public void setField(String field, Value value) {
+        KeyValue currentScope = scope.get();
+        if (currentScope instanceof KeyValue.Mutable mutable) {
+            mutable.set(field, value);
+        }
     }
 
     public String getStringOrNull(Value value) {
@@ -224,8 +244,9 @@ public class Evaluator {
             };
         } catch (Panic e) {
             error(e.getMessage());
+            throw e;
         }
-        return Value.NIL;
+//        return Value.NIL;
     }
 
     private Value pauseForDebug() {
@@ -234,7 +255,7 @@ public class Evaluator {
 
     private Value evalIn(InExpression in) {
         var holder = evalAccess(in.holder());
-        String field = this.getStringOrThrow(this.evaluate(in.field()));
+        String field = this.getStringOrThrow(this.eval0(in.field()));
         if (holder instanceof KeyValue keyValue) {
             return BoolValue.wrap(keyValue.contains(field));
         } else if (holder instanceof StrValue(String value)) {
@@ -251,8 +272,12 @@ public class Evaluator {
     }
 
     private Value evalStructValue(MutableStructValue self, Expression expression) {
-        if (expression instanceof IdentityExpression(Function<Value, Value> valueFunction)) {
-            return valueFunction.apply(self);
+        if (expression instanceof LambdaIdentityFunction(LambdaExpression lambdaExpression)) {
+            return new LambdaExpression(
+                lambdaExpression.arguments(),
+                lambdaExpression.body(),
+                self
+            ).function();
         }
         return this.eval0(expression);
     }
@@ -270,7 +295,7 @@ public class Evaluator {
         return fields;
     }
 
-    private boolean asBool(Value value) {
+    public boolean asBool(Value value) {
         return switch (value) {
             case NilValue ignored -> false;
             case BoolValue bool -> bool.value();
@@ -356,13 +381,12 @@ public class Evaluator {
         return last;
     }
 
-    public void set(String fieldName, Expression value) {
+    public void set(String fieldName, Value value) {
         set(scope.get(), fieldName, value);
     }
 
-    Value set(Value value, String fieldName, Expression valueSupplier) {
+    public Value set(Value value, String fieldName, Value val) {
         if (value instanceof KeyValue.Mutable keyValue) {
-            var val = eval0(valueSupplier);
             keyValue.set(fieldName, val);
             return val;
         } else if (value instanceof KeyValue) {
@@ -381,7 +405,7 @@ public class Evaluator {
             field = eval0(access.lhs());
         }
 
-        return set(field, getStringOrThrow(eval0(access.field())), assign.value());
+        return set(field, getStringOrThrow(eval0(access.field())), eval0(assign.value()));
     }
 
 
@@ -404,6 +428,12 @@ public class Evaluator {
         throw new Panic("Unable to access property " + expression.field() + " of non key/value " + lhs);
     }
 
+    public FunctionValue getFileAccess(String name) {
+        var file = fileFunction.apply(name);
+        if (file == null) throw new Panic("requested include " + name + " not found!");
+        return file;
+    }
+
     private Value evalFileAccess(FileAccessExpression expression) {
         var list = new ArrayList<String>();
 
@@ -414,7 +444,7 @@ public class Evaluator {
         var result = this.fileFunction.apply(String.join("/", list));
 
         if (result == null) {
-            throw new Panic("");
+            throw new Panic("failed to find " + String.join("/", list));
         }
 
         return result;
@@ -430,19 +460,24 @@ public class Evaluator {
     private static class Scope {
         StructValue defaults;
         LinkedList<StructValue> scopes = new LinkedList<>();
+
         public Scope(StructValue defaults) {
             this.defaults = defaults;
             scopes.add(defaults);
         }
+
         public KeyValue get() {
             return scopes.getLast();
         }
+
         public void push() {
             scopes.add(new ScopeLayeredStructValue(scopes.getLast(), new MutableStructValue()));
         }
+
         public void pushWithScope(StructValue.MutableStruct newScope) {
             scopes.add(new ScopeLayeredStructValue(defaults, newScope));
         }
+
         public void pop() {
             if (scopes.size() == 1) throw new IllegalStateException("Cannot pop base scope");
             scopes.removeLast();

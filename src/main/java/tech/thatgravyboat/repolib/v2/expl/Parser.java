@@ -48,15 +48,15 @@ public final class Parser {
         }
     }
 
-    public StackFile parseFile(RepoLoader loader) {
+    public StackFile parseFile(RepoLoader loader, String name) {
         Holder<Expression> meta = new Holder<>("meta");
         Holder<Expression> script = new Holder<>("script");
 
         while (lexer.peek() == Lexer.Token.IDENT) {
             lexer.next();
             switch (lexer.span()) {
-                case "meta" -> meta.update(this::block);
-                case "script" -> script.update(this::block);
+                case "meta" -> meta.update(() -> loader.transform(this.block(), name + ":meta"));
+                case "script" -> script.update(() -> loader.transform(this.block(), name + ":script"));
             }
         }
 
@@ -85,7 +85,7 @@ public final class Parser {
             lexer.expect(Lexer.Token.SEMICOLON);
         }
 
-        return new ModuleFile(name, loader, struct.get(() -> null), parseExpression(), evaluator);
+        return new ModuleFile(name, loader, struct.get(() -> null), loader.transform(parseExpression(), name), evaluator);
     }
 
     public FunctionFile parseFunctionFile(String name, RepoLoader loader) {
@@ -98,7 +98,7 @@ public final class Parser {
             lexer.expect(Lexer.Token.OR);
         }
 
-        return new FunctionFile(loader, name, arguments, parseExpression());
+        return new FunctionFile(loader, name, arguments, loader.transform(parseExpression(), name));
     }
 
     public Expression parseExpression() {
@@ -449,10 +449,7 @@ public final class Parser {
                 if (expr instanceof LambdaExpression lambda) {
                     fields.put(
                         field,
-                        new IdentityExpression((self) -> new LambdaExpression(
-                            lambda.arguments(),
-                            lambda.body(),
-                            self).function()));
+                        new LambdaIdentityFunction(lambda));
                 } else {
                     fields.put(field, expr);
                 }
@@ -634,6 +631,7 @@ public final class Parser {
         Lexer.Token next;
         loop:
         while ((next = lexer.peek()) != null) {
+//            System.out.println()
             switch (next) {
                 case Lexer.Token.IDENT -> {
                     lexer.next();
@@ -642,7 +640,7 @@ public final class Parser {
                 }
                 case Lexer.Token.LT -> {
                     lexer.next();
-                    var field = parseBinaryOrNormalUntil(false, Lexer.Token.GT);
+                    var field = parseUntil(Lexer.Token.GT);
                     lexer.expect(Lexer.Token.GT);
                     path.addLast(field);
                     lexer.expect(Lexer.Token.DOUBLE_COLON);

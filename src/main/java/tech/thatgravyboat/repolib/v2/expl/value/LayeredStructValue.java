@@ -2,15 +2,11 @@ package tech.thatgravyboat.repolib.v2.expl.value;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 
 public record LayeredStructValue(StructValue.MutableStruct base, KeyValue overlay) implements StructValue, KeyValue.Mutable {
-    @Override
-    public @NotNull Iterator<Map.Entry<String, Value>> iterator() {
-        return base.iterator();
-    }
-
     @Override
     public Value get(String field) {
         if (overlay.contains(field)) {
@@ -48,5 +44,33 @@ public record LayeredStructValue(StructValue.MutableStruct base, KeyValue overla
     @Override
     public boolean isEmpty() {
         return overlay.isEmpty() && base.isEmpty();
+    }
+
+    @Override
+    public @NotNull Iterator<Map.Entry<String, Value>> iterator() {
+        var keys = new HashSet<String>();
+        if (overlay instanceof Iterable<?> iterable) {
+            iterable.forEach(e -> {
+                if (e instanceof Map.Entry entry) {
+                    keys.add((String) entry.getKey());
+                }
+            });
+        }
+        base.forEach(e -> keys.add(e.getKey()));
+
+        var parent = keys.iterator();
+
+        return new Iterator<>() {
+            @Override
+            public boolean hasNext() {
+                return parent.hasNext();
+            }
+
+            @Override
+            public Map.Entry<String, Value> next() {
+                String key = parent.next();
+                return Map.entry(key, get(key));
+            }
+        };
     }
 }

@@ -13,8 +13,8 @@ public sealed interface Expression
     FileAccessExpression, ForExpression, IfExpression, InExpression, NumExpression, SelfEvaluatingExpression,
     StatementExpression, StrExpression, StructExpression, UnaryExpression {
 
-    static StackFile parseFileOrThrow(RepoLoader loader, String source) {
-        return new Parser(source).parseFile(loader);
+    static StackFile parseFileOrThrow(RepoLoader loader, String source, String name) {
+        return new Parser(source).parseFile(loader, name);
     }
     static ModuleFile parseModuleOrThrow(RepoLoader loader, String name, String source, Evaluator evaluator) {
         return new Parser(source).parseModuleFile(name, loader, evaluator);

@@ -2,11 +2,12 @@ package tech.thatgravyboat.repolib.v2;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import tech.thatgravyboat.repolib.v2.builtin.Constants;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
-import tech.thatgravyboat.repolib.v2.expl.ModuleFile;
-import tech.thatgravyboat.repolib.v2.expl.expression.Expression;
 import tech.thatgravyboat.repolib.v2.expl.StackFile;
+import tech.thatgravyboat.repolib.v2.expl.expression.Expression;
+import tech.thatgravyboat.repolib.v2.expl.value.FunctionValue;
+import tech.thatgravyboat.repolib.v2.expl.value.LayeredStructValue;
+import tech.thatgravyboat.repolib.v2.expl.value.MutableStructValue;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -15,14 +16,13 @@ import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import tech.thatgravyboat.repolib.v2.expl.value.FunctionValue;
-import tech.thatgravyboat.repolib.v2.expl.value.MutableStructValue;
+import java.util.*;
+import java.util.function.Function;
 
 public class RepoLoader implements FileVisitor<Path> {
+    public interface Transformer {
+        Expression accept(Expression original, String name);
+    }
 
     public final Path path;
     private final Map<String, FunctionValue> files = new HashMap<>();
@@ -30,9 +30,19 @@ public class RepoLoader implements FileVisitor<Path> {
     private Expression rootFile = null;
     private final Map<String, StackFile> stackFiles = new HashMap<>();
     private final List<LoadingErrors> errors = new ArrayList<>();
+    private Transformer expressionTransformer = (a, n) -> a;
+    private final RepoConstants constants = new RepoConstants(this);
 
     public RepoLoader(Path path) {
         this.path = path;
+    }
+
+    public void registerTransform(Transformer transformer) {
+        this.expressionTransformer = transformer;
+    }
+
+    public Expression transform(Expression original, String name) {
+        return expressionTransformer.accept(original, name);
     }
 
     public List<LoadingErrors> load() throws IOException {
@@ -46,6 +56,7 @@ public class RepoLoader implements FileVisitor<Path> {
 
         var constants = new RepoConstants(this);
 
+        System.out.println("meow!");
 
         for (var entry : this.stackFiles.values()) {
             entry.init(constants);
@@ -56,10 +67,10 @@ public class RepoLoader implements FileVisitor<Path> {
             String file = Files.readString(root, StandardCharsets.UTF_8);
 
             var rootFile = Expression.parseModuleOrThrow(
-                this,
-                "root",
-                file,
-                new Evaluator(new MutableStructValue(), this::getModule)
+                    this,
+                    "root",
+                    file,
+                    new Evaluator(new MutableStructValue(), this::getModule)
             );
             this.files.put("root", rootFile);
             this.rootFile = rootFile;
@@ -75,8 +86,23 @@ public class RepoLoader implements FileVisitor<Path> {
         return errors;
     }
 
+    public Evaluator createEvaluator() {
+        return new Evaluator(new LayeredStructValue(
+                new MutableStructValue(),
+                constants
+        ), this::getModule);
+    }
+
+    public Collection<String> modules() {
+        return files.keySet();
+    }
+
     public FunctionValue getModule(String name) {
-        return files.get(name);
+        FunctionValue module = files.get(name);
+        if (module != null && module.needsInitialization()) {
+            module.initialize(createEvaluator());
+        }
+        return module;
     }
 
     public StackFile getStackFile(String fileName) {
@@ -135,7 +161,7 @@ public class RepoLoader implements FileVisitor<Path> {
 
             var content = Files.readString(file, StandardCharsets.UTF_8);
             if (relativeFileName.endsWith(".srls")) {
-                var expression = Expression.parseFileOrThrow(this, content);
+                var expression = Expression.parseFileOrThrow(this, content, relativeName);
                 stackFiles.put(relativeName, expression);
             } else if (relativeFileName.equals("root.srlm")) {
                 return FileVisitResult.CONTINUE;
@@ -148,7 +174,7 @@ public class RepoLoader implements FileVisitor<Path> {
             } else if (relativeFileName.equals("root.srll")) {
                 rootList = Expression.parse(content);
             } else {
-                errors.add(new LoadingErrors(file, "Not a valid script file"));
+//                errors.add(new LoadingErrors(file, "Not a valid script file"));
             }
         } catch (Exception exception) {
             errors.add(new LoadingErrors(file, exception));

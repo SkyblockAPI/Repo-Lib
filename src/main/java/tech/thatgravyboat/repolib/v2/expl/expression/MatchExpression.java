@@ -29,19 +29,19 @@ public record MatchExpression(Expression value, List<MatchBranch> branches) impl
     public enum MatchCondition {
         EQUALS {
             @Override
-            boolean compare(Evaluator evaluator, Value value, Value testValue) {
+            public boolean compare(Evaluator evaluator, Value value, Value testValue) {
                 return value.equals(testValue);
             }
         },
         ELSE {
             @Override
-            boolean compare(Evaluator evaluator, Value value, Value testValue) {
+            public boolean compare(Evaluator evaluator, Value value, Value testValue) {
                 return true;
             }
         },
         LT {
             @Override
-            boolean compare(Evaluator evaluator, Value value, Value testValue) {
+            public boolean compare(Evaluator evaluator, Value value, Value testValue) {
                 var first = evaluator.getNumberOrThrow(value);
                 var second = evaluator.getNumberOrThrow(testValue);
                 return first < second;
@@ -49,7 +49,7 @@ public record MatchExpression(Expression value, List<MatchBranch> branches) impl
         },
         GT {
             @Override
-            boolean compare(Evaluator evaluator, Value value, Value testValue) {
+            public boolean compare(Evaluator evaluator, Value value, Value testValue) {
                 var first = evaluator.getNumberOrThrow(value);
                 var second = evaluator.getNumberOrThrow(testValue);
                 return first > second;
@@ -57,7 +57,7 @@ public record MatchExpression(Expression value, List<MatchBranch> branches) impl
         },
         LTE {
             @Override
-            boolean compare(Evaluator evaluator, Value value, Value testValue) {
+            public boolean compare(Evaluator evaluator, Value value, Value testValue) {
                 var first = evaluator.getNumberOrThrow(value);
                 var second = evaluator.getNumberOrThrow(testValue);
                 return first <= second;
@@ -65,7 +65,7 @@ public record MatchExpression(Expression value, List<MatchBranch> branches) impl
         },
         GTE {
             @Override
-            boolean compare(Evaluator evaluator, Value value, Value testValue) {
+            public boolean compare(Evaluator evaluator, Value value, Value testValue) {
                 var first = evaluator.getNumberOrThrow(value);
                 var second = evaluator.getNumberOrThrow(testValue);
                 return first >= second;
@@ -73,6 +73,6 @@ public record MatchExpression(Expression value, List<MatchBranch> branches) impl
         },
         ;
 
-        abstract boolean compare(Evaluator evaluator, Value value, Value testValue);
+         public abstract boolean compare(Evaluator evaluator, Value value, Value testValue);
     }
 }

@@ -3,6 +3,9 @@ package tech.thatgravyboat.repolib.v2.expl;
 import java.util.List;
 import java.util.Objects;
 import tech.thatgravyboat.repolib.v2.RepoLoader;
+import tech.thatgravyboat.repolib.v2.binary.BinaryFileTypeRegistry;
+import tech.thatgravyboat.repolib.v2.binary.ByteBuffer;
+import tech.thatgravyboat.repolib.v2.binary.Encodable;
 import tech.thatgravyboat.repolib.v2.expl.expression.Expression;
 import tech.thatgravyboat.repolib.v2.expl.expression.SelfEvaluatingExpression;
 import tech.thatgravyboat.repolib.v2.expl.expression.StructExpression;
@@ -12,25 +15,38 @@ import tech.thatgravyboat.repolib.v2.expl.value.KeyValue;
 import tech.thatgravyboat.repolib.v2.expl.value.StructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
-public final class ModuleFile implements FunctionValue {
+public final class ModuleFile implements FunctionValue, BinaryFileTypeRegistry.FileType<ModuleFile>, Encodable {
     private final String name;
     private final RepoLoader loader;
     private final Expression script;
-    private final KeyValue staticData;
+    private KeyValue staticData;
+    private final Expression staticDataExpression;
+    private boolean hasInitialized = false;
 
     public ModuleFile(String name, RepoLoader loader, Expression staticData, Expression script, Evaluator evaluator) {
         this.name = name;
         this.loader = loader;
         this.script = script;
+        staticDataExpression = staticData;
         if (staticData == null) {
             this.staticData = ImmutableStructValue.EMPTY;
+            hasInitialized = true;
+        }
+    }
+
+    @Override
+    public boolean needsInitialization() {
+        return !hasInitialized;
+    }
+
+    @Override
+    public void initialize(Evaluator evaluator) {
+        if (hasInitialized) return;
+        var data =  ((StructValue) Objects.requireNonNullElse(evaluator, Evaluator.CONSTANT).eval0(staticDataExpression));
+        if (data instanceof KeyValue.Mutable mutable) {
+            this.staticData = mutable.toFullyImmutable();
         } else {
-            var data =  ((StructValue) Objects.requireNonNullElse(evaluator, Evaluator.CONSTANT).eval0(staticData));
-            if (data instanceof KeyValue.Mutable mutable) {
-                this.staticData = mutable.toFullyImmutable();
-            } else {
-                this.staticData = data;
-            }
+            this.staticData = data;
         }
     }
 
@@ -62,6 +78,20 @@ public final class ModuleFile implements FunctionValue {
         } else {
             return evaluator.pushPop(name, () -> this.evaluate0(evaluator));
         }
+    }
+
+    public static ModuleFile decode(ByteBuffer byteBuffer) {
+        return null;
+    }
+
+    @Override
+    public void encode(ByteBuffer buffer) {
+
+    }
+
+    @Override
+    public BinaryFileTypeRegistry.Type<ModuleFile> fileType() {
+        return BinaryFileTypeRegistry.MODULE;
     }
 }
 

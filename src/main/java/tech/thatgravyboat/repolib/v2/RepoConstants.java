@@ -9,6 +9,8 @@ import tech.thatgravyboat.repolib.v2.builtin.BuiltinRarities;
 import tech.thatgravyboat.repolib.v2.builtin.BuiltinString;
 import tech.thatgravyboat.repolib.v2.builtin.Constants;
 import tech.thatgravyboat.repolib.v2.expl.ModuleFile;
+import tech.thatgravyboat.repolib.v2.expl.value.MutableArrayValue;
+import tech.thatgravyboat.repolib.v2.expl.value.StrValue;
 import tech.thatgravyboat.repolib.v2.expl.value.StructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
@@ -85,6 +87,41 @@ public final class RepoConstants implements StructValue.Forwarding {
                 }
 
                 return evaluator.panic("Can't access static data of non module file!");
+            });
+        });
+
+        builder.function("list", function -> {
+            function.arity(1);
+            function.execute((evaluator, args) -> {
+                var arg = args.getFirst();
+                var prefix = evaluator.getStringOrThrow(arg);
+                var allModules = loader.modules();
+                var resultList = MutableArrayValue.create();
+                for (String module : allModules) {
+                    if (module.startsWith(prefix) && module.lastIndexOf('/') < prefix.length()) {
+                        resultList.add(new StrValue(module.substring(prefix.length())));
+                    }
+                }
+                return resultList;
+            });
+        });
+
+        builder.function("dirs", function -> {
+            function.arity(1);
+            function.execute((evaluator, args) -> {
+                var arg = args.getFirst();
+                var prefix = evaluator.getStringOrThrow(arg);
+                var allModules = loader.modules();
+                var resultList = MutableArrayValue.create();
+                for (String module : allModules) {
+                    if (module.startsWith(prefix)) {
+                        int lastSlash = module.lastIndexOf('/');
+                        if (lastSlash > prefix.length()) {
+                            resultList.add(new StrValue(module.substring(prefix.length(), lastSlash)));
+                        }
+                    }
+                }
+                return resultList;
             });
         });
 
