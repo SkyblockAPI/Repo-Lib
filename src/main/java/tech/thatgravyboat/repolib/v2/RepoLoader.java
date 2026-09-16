@@ -33,7 +33,7 @@ public class RepoLoader implements FileVisitor<Path> {
     private Expression rootFile = null;
     private final Map<String, StackFile> stackFiles = new HashMap<>();
     private final List<LoadingErrors> errors = new ArrayList<>();
-    private Transformer expressionTransformer = (a, n) -> a;
+    private Transformer expressionTransformer = null;
     private final RepoConstants constants = new RepoConstants(this);
 
     public RepoLoader(Path path) {
@@ -45,6 +45,7 @@ public class RepoLoader implements FileVisitor<Path> {
     }
 
     public Expression transform(Expression original, String name) {
+        if (expressionTransformer == null) return original;
         return expressionTransformer.accept(original, name);
     }
 
@@ -201,6 +202,7 @@ public class RepoLoader implements FileVisitor<Path> {
     }
 
     private void dumpBytes(String name, TypedFile<?> file) {
+        if (expressionTransformer != null) return;
         var path = Path.of("output").resolve(name + ".srlb");
         try {
             Files.createDirectories(path.getParent());

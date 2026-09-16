@@ -857,7 +857,7 @@ public class ModuleCompiler {
     }
 
     private static Class<IdentityLambdaFunction> compileLambda(LambdaExpression expression, String name, boolean identity) throws IllegalAccessException, InstantiationException {
-        List<LambdaExpression.LambdaArgument> arguments = expression.arguments();
+        Collection<LambdaExpression.LambdaArgument> arguments = expression.arguments();
         int min = 0;
         int max = 0;
         boolean hasEncounteredOptional = false;

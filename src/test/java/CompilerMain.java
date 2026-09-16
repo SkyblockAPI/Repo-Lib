@@ -26,6 +26,7 @@ public class CompilerMain {
                         slice = 77;
                     }
                     print(slice);
+                    5;
                     """).parseModuleFile("test", repoLoader);
 //            meow.init(constants);
 //            System.out.println(meow.meta());
