@@ -1,5 +1,7 @@
 package tech.thatgravyboat.repolib.v2.expl.value;
 
+import tech.thatgravyboat.repolib.v2.binary.ByteBuffer;
+import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
 import tech.thatgravyboat.repolib.v2.builtin.Constants;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 

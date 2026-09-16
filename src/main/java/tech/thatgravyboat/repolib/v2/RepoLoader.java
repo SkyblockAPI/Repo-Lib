@@ -2,6 +2,8 @@ package tech.thatgravyboat.repolib.v2;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import tech.thatgravyboat.repolib.v2.binary.RepoBinaryUtils;
+import tech.thatgravyboat.repolib.v2.binary.TypedFile;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.StackFile;
 import tech.thatgravyboat.repolib.v2.expl.expression.Expression;
@@ -15,6 +17,7 @@ import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.function.Function;
@@ -59,7 +62,7 @@ public class RepoLoader implements FileVisitor<Path> {
         System.out.println("meow!");
 
         for (var entry : this.stackFiles.values()) {
-            entry.init(constants);
+            entry.init(this, constants);
         }
 
         Path root = path.resolve("root.srlm");
@@ -72,6 +75,7 @@ public class RepoLoader implements FileVisitor<Path> {
                     file,
                     new Evaluator(new MutableStructValue(), this::getModule)
             );
+            dumpBytes("root", rootFile);
             this.files.put("root", rootFile);
             this.rootFile = rootFile;
         }
@@ -162,14 +166,17 @@ public class RepoLoader implements FileVisitor<Path> {
             var content = Files.readString(file, StandardCharsets.UTF_8);
             if (relativeFileName.endsWith(".srls")) {
                 var expression = Expression.parseFileOrThrow(this, content, relativeName);
+                dumpBytes(relativeName, expression);
                 stackFiles.put(relativeName, expression);
             } else if (relativeFileName.equals("root.srlm")) {
                 return FileVisitResult.CONTINUE;
             } else if (relativeFileName.endsWith(".srlm")) {
                 var expression = Expression.parseModuleOrThrow(this, relativeName, content, null);
+                dumpBytes(relativeName, expression);
                 files.put(relativeName, expression);
             } else if (relativeFileName.endsWith(".srlf")) {
                 var expression = Expression.parseFunctionOrThrow(this, relativeName, content);
+                dumpBytes(relativeName, expression);
                 files.put(relativeName, expression);
             } else if (relativeFileName.equals("root.srll")) {
                 rootList = Expression.parse(content);
@@ -191,5 +198,15 @@ public class RepoLoader implements FileVisitor<Path> {
     @Override
     public @NotNull FileVisitResult postVisitDirectory(Path dir, @Nullable IOException exc) {
         return FileVisitResult.CONTINUE;
+    }
+
+    private void dumpBytes(String name, TypedFile<?> file) {
+        var path = Path.of("output").resolve(name + ".srlb");
+        try {
+            Files.createDirectories(path.getParent());
+            Files.write(path, RepoBinaryUtils.encode(file), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

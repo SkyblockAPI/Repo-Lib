@@ -47,26 +47,6 @@ public class Main2 extends WebSocketServer {
         var instance = loader.create();
 
         var errors = loader.load();
-        errors.forEach(System.out::println);
-
-        var data =
-            JsonParser.parseString(Files.readString(Path.of("data.jsonc"), StandardCharsets.UTF_8)).getAsJsonObject();
-
-        var stackFile = Objects.requireNonNull(loader.getStackFile("items/aspect_of_the_void"));
-
-        long sum = 0;
-        for (int i = 0; i < 1000; i++) {
-
-            var evaluator = stackFile.createEvaluator(instance.constants(), ImmutableStructValue.EMPTY, RepoConfig.DEFAULT, loader::getModule);
-            long start = System.nanoTime();
-            var stack = stackFile.evaluateScript(evaluator);
-            sum += System.nanoTime() - start;
-            evaluator.errors.forEach(System.out::println);
-            evaluator.debugs.forEach(System.out::println);
-        }
-
-        System.out.println("Took " + (sum / 1000_000000.0) + "ms");
-
     }
 
     private static StructValue toValue(JsonObject data) {

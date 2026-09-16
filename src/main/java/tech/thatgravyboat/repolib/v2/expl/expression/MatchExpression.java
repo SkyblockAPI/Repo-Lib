@@ -1,11 +1,19 @@
 package tech.thatgravyboat.repolib.v2.expl.expression;
 
+import tech.thatgravyboat.repolib.v2.binary.ByteBuffer;
+import tech.thatgravyboat.repolib.v2.binary.Encodable;
+import tech.thatgravyboat.repolib.v2.binary.EnumCodec;
+import tech.thatgravyboat.repolib.v2.binary.ExpressionCodec;
+import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
+import tech.thatgravyboat.repolib.v2.binary.ExpressionTypes;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
+import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 
-public record MatchExpression(Expression value, List<MatchBranch> branches) implements SelfEvaluatingExpression {
+public record MatchExpression(Expression value, Collection<MatchBranch> branches) implements SelfEvaluatingExpression {
     @Override
     public Value evaluate(Evaluator evaluator) {
         var value = evaluator.eval0(this.value);
@@ -24,7 +32,40 @@ public record MatchExpression(Expression value, List<MatchBranch> branches) impl
         return false;
     }
 
-    public record MatchBranch(MatchCondition condition, Expression check, Expression branch) {}
+    @Override
+    public ExpressionTypeRegistry.Type<?> expressionId() {
+        return ExpressionTypes.MATCH;
+    }
+
+    @Override
+    public void encode(ByteBuffer buffer) {
+        ExpressionCodec.write(this.value, buffer);
+        buffer.writeCollection(this.branches, MatchBranch::encode);
+    }
+
+    public static MatchExpression decode(ByteBuffer buffer) throws IOException {
+        return new MatchExpression(
+                ExpressionCodec.read(buffer),
+                buffer.readCollection(MatchBranch::decode)
+        );
+    }
+
+    public record MatchBranch(MatchCondition condition, Expression check, Expression branch) implements Encodable{
+        @Override
+        public void encode(ByteBuffer buffer) {
+            EnumCodec.encode(this.condition, buffer);
+            ExpressionCodec.writeNullable(this.check, buffer);
+            ExpressionCodec.write(this.branch, buffer);
+        }
+
+        public static MatchBranch decode(ByteBuffer buffer) throws IOException {
+            return new MatchBranch(
+                    MatchCondition.CODEC.decode(buffer),
+                    ExpressionCodec.readNullable(buffer),
+                    ExpressionCodec.read(buffer)
+            );
+        }
+    }
 
     public enum MatchCondition {
         EQUALS {
@@ -73,6 +114,9 @@ public record MatchExpression(Expression value, List<MatchBranch> branches) impl
         },
         ;
 
-         public abstract boolean compare(Evaluator evaluator, Value value, Value testValue);
+        public static final EnumCodec<MatchCondition> CODEC = new EnumCodec<>(values());
+
+
+        public abstract boolean compare(Evaluator evaluator, Value value, Value testValue);
     }
 }

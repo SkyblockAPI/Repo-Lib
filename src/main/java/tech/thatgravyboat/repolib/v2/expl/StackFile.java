@@ -1,9 +1,18 @@
 package tech.thatgravyboat.repolib.v2.expl;
 
+import java.io.IOException;
+import java.util.Objects;
 import java.util.function.Function;
 import tech.thatgravyboat.repolib.v2.RepoConfig;
 import tech.thatgravyboat.repolib.v2.RepoConstants;
 import tech.thatgravyboat.repolib.v2.RepoLoader;
+import tech.thatgravyboat.repolib.v2.binary.BinaryFileTypeRegistry;
+import tech.thatgravyboat.repolib.v2.binary.ByteBuffer;
+import tech.thatgravyboat.repolib.v2.binary.ExpressionCodec;
+import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
+import tech.thatgravyboat.repolib.v2.binary.ExpressionTypes;
+import tech.thatgravyboat.repolib.v2.binary.FileTypes;
+import tech.thatgravyboat.repolib.v2.binary.TypedFile;
 import tech.thatgravyboat.repolib.v2.builtin.Constants;
 import tech.thatgravyboat.repolib.v2.expl.expression.Expression;
 import tech.thatgravyboat.repolib.v2.expl.expression.SelfEvaluatingExpression;
@@ -21,17 +30,15 @@ import tech.thatgravyboat.repolib.v2.expl.value.Value;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
-public final class StackFile implements SelfEvaluatingExpression {
+public final class StackFile implements SelfEvaluatingExpression, TypedFile<StackFile> {
 
     private static final Expression SCRIPT = Expression.parse("include(\"item\");");
     public static final Supplier<Expression> DEFAULT_SCRIPT = () -> SCRIPT;
-    private final RepoLoader loader;
     private final Expression script;
     private final Expression metaScript;
     private KeyValue meta;
 
-    public StackFile(RepoLoader loader, Expression meta, Expression script) {
-        this.loader = loader;
+    public StackFile(Expression meta, Expression script) {
         this.script = script;
         this.metaScript = meta;
     }
@@ -40,7 +47,7 @@ public final class StackFile implements SelfEvaluatingExpression {
         return meta != null;
     }
 
-    public void init(RepoConstants constants) {
+    public void init(RepoLoader loader, RepoConstants constants) {
         var struct = new MutableStructValue();
         struct.set(
             "include", Constants.Builder.FunctionBuilder.create(function -> {
@@ -190,5 +197,31 @@ public final class StackFile implements SelfEvaluatingExpression {
 
     public KeyValue evaluate(StructValue overrides, Function<String, FunctionValue> lookup) {
         return evaluateScript(createEvaluator(overrides, lookup));
+    }
+
+    public static StackFile decode(ByteBuffer buffer) throws IOException {
+        Expression meta = ExpressionCodec.read(buffer);
+        Expression script = ExpressionCodec.readNullable(buffer);
+
+        return new StackFile(meta, Objects.requireNonNullElseGet(script, DEFAULT_SCRIPT));
+    }
+
+    @Override
+    public void encode(ByteBuffer buffer) {
+        ExpressionCodec.writeNullable(this.meta, buffer);
+        buffer.writeBoolean(this.script != SCRIPT);
+        if (this.script != SCRIPT) {
+            ExpressionCodec.write(this.script, buffer);
+        }
+    }
+
+    @Override
+    public BinaryFileTypeRegistry.Type<StackFile> fileId() {
+        return FileTypes.STACK;
+    }
+
+    @Override
+    public ExpressionTypeRegistry.Type<StackFile> expressionId() {
+        throw new UnsupportedOperationException();
     }
 }

@@ -3,6 +3,9 @@ package tech.thatgravyboat.repolib.v2.expl.value;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Locale;
+
+import tech.thatgravyboat.repolib.v2.binary.ByteBuffer;
+import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.expression.SelfEvaluatingExpression;
 
@@ -37,5 +40,16 @@ public sealed interface Value extends Comparable<Value>, SelfEvaluatingExpressio
     @Override
     default Value evaluate(Evaluator evaluator) {
         return this;
+    }
+
+
+    @Override
+    default void encode(ByteBuffer buffer) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    default ExpressionTypeRegistry.Type<?> expressionId() {
+        throw new UnsupportedOperationException();
     }
 }

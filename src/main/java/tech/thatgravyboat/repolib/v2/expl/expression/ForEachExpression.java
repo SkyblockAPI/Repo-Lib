@@ -1,10 +1,16 @@
 package tech.thatgravyboat.repolib.v2.expl.expression;
 
 import org.jetbrains.annotations.NotNull;
+import tech.thatgravyboat.repolib.v2.binary.ByteBuffer;
+import tech.thatgravyboat.repolib.v2.binary.ExpressionCodec;
+import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
+import tech.thatgravyboat.repolib.v2.binary.ExpressionTypes;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.ExecutionExceptions;
 import tech.thatgravyboat.repolib.v2.expl.value.NilValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
+
+import java.io.IOException;
 
 public record ForEachExpression(AccessExpression field, Expression array, Expression body) implements SelfEvaluatingExpression {
     @Override
@@ -15,7 +21,7 @@ public record ForEachExpression(AccessExpression field, Expression array, Expres
             values.forEach(value -> {
                 try {
                     evaluator.pushPop(this.toString(), () -> {
-                        evaluator.eval0(new AssignExpression(field, new ValueExpression(value)));
+                        evaluator.eval0(new AssignExpression(field, value));
                         return evaluator.eval0(body);
                     });
                 } catch (ExecutionExceptions.Continue ignored) {}
@@ -35,5 +41,25 @@ public record ForEachExpression(AccessExpression field, Expression array, Expres
     @Override
     public boolean requiresSemicolon() {
         return false;
+    }
+
+    @Override
+    public ExpressionTypeRegistry.Type<?> expressionId() {
+        return ExpressionTypes.FOR_EACH;
+    }
+
+    @Override
+    public void encode(ByteBuffer buffer) {
+        ExpressionCodec.writeUntyped(this.field, buffer);
+        ExpressionCodec.write(this.array, buffer);
+        ExpressionCodec.write(this.body, buffer);
+    }
+
+    public static ForEachExpression decode(ByteBuffer buffer) throws IOException {
+        return new ForEachExpression(
+                ExpressionCodec.readUntyped(ExpressionTypes.ACCESS, buffer),
+                ExpressionCodec.read(buffer),
+                ExpressionCodec.read(buffer)
+        );
     }
 }

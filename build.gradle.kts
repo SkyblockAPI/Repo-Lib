@@ -26,8 +26,8 @@ val neoforge: SourceSet by sourceSets.creating {
 dependencies {
     implementation("org.jetbrains:annotations:24.1.0")
     implementation("com.google.code.gson:gson:2.10")
+    implementation("it.unimi.dsi:fastutil:8.5.16")
     testImplementation("org.java-websocket:Java-WebSocket:1.6.0")
-
     "fabricImplementation"("net.fabricmc:fabric-loader:0.15.0") { isTransitive = false}
 
     "neoforgeImplementation"("net.neoforged.fancymodloader:loader:3.0.13") { isTransitive = false}

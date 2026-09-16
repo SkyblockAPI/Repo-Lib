@@ -1,8 +1,19 @@
 package tech.thatgravyboat.repolib.v2.expl.expression;
 
+import tech.thatgravyboat.repolib.v2.binary.ByteBuffer;
+import tech.thatgravyboat.repolib.v2.binary.Encodable;
+import tech.thatgravyboat.repolib.v2.binary.EnumCodec;
+import tech.thatgravyboat.repolib.v2.binary.ExpressionCodec;
+import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
+import tech.thatgravyboat.repolib.v2.binary.ExpressionTypes;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
-import tech.thatgravyboat.repolib.v2.expl.value.*;
+import tech.thatgravyboat.repolib.v2.expl.value.BoolValue;
+import tech.thatgravyboat.repolib.v2.expl.value.MutableArrayValue;
+import tech.thatgravyboat.repolib.v2.expl.value.NumValue;
+import tech.thatgravyboat.repolib.v2.expl.value.StrValue;
+import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
+import java.io.IOException;
 import java.util.Objects;
 
 public record BinaryExpression(Op op, Expression first, Expression second) implements SelfEvaluatingExpression {
@@ -10,6 +21,26 @@ public record BinaryExpression(Op op, Expression first, Expression second) imple
     @Override
     public Value evaluate(Evaluator evaluator) {
         return op.perform(evaluator, first, second);
+    }
+
+    @Override
+    public ExpressionTypeRegistry.Type<?> expressionId() {
+        return ExpressionTypes.BINARY;
+    }
+
+    @Override
+    public void encode(ByteBuffer buffer) {
+        EnumCodec.encode(this.op, buffer);
+        ExpressionCodec.write(this.first, buffer);
+        ExpressionCodec.write(this.second, buffer);
+    }
+
+    public static BinaryExpression decode(ByteBuffer buffer) throws IOException {
+        return new BinaryExpression(
+                Op.CODEC.decode(buffer),
+                ExpressionCodec.read(buffer),
+                ExpressionCodec.read(buffer)
+        );
     }
 
     public enum Op {
@@ -68,6 +99,7 @@ public record BinaryExpression(Op op, Expression first, Expression second) imple
             public Value perform(Evaluator evaluator, Value first, Value second) {
                 return BoolValue.wrap(evaluator.getBooleanOrThrow(first) && evaluator.getBooleanOrThrow(second));
             }
+
             @Override
             public Value perform(Evaluator evaluator, Expression first, Expression second) {
                 return BoolValue.wrap(evaluator.getBooleanOrThrow(evaluator.eval0(first)) && evaluator.getBooleanOrThrow(
@@ -78,6 +110,7 @@ public record BinaryExpression(Op op, Expression first, Expression second) imple
             public Value perform(Evaluator evaluator, Value first, Value second) {
                 return BoolValue.wrap(evaluator.getBooleanOrThrow(first) || evaluator.getBooleanOrThrow(second));
             }
+
             @Override
             public Value perform(Evaluator evaluator, Expression first, Expression second) {
                 return BoolValue.wrap(evaluator.getBooleanOrThrow(evaluator.eval0(first)) || evaluator.getBooleanOrThrow(
@@ -118,9 +151,12 @@ public record BinaryExpression(Op op, Expression first, Expression second) imple
             }
         };
 
-         public abstract Value perform(Evaluator evaluator, Value first, Value second);
-         public Value perform(Evaluator evaluator, Expression first, Expression second) {
-             return perform(evaluator, evaluator.eval0(first), evaluator.eval0(second));
-         }
+        public static final EnumCodec<Op> CODEC = new EnumCodec<>(values());
+
+        public abstract Value perform(Evaluator evaluator, Value first, Value second);
+
+        public Value perform(Evaluator evaluator, Expression first, Expression second) {
+            return perform(evaluator, evaluator.eval0(first), evaluator.eval0(second));
+        }
     }
 }

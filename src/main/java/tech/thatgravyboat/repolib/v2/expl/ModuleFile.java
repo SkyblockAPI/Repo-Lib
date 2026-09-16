@@ -1,31 +1,32 @@
 package tech.thatgravyboat.repolib.v2.expl;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
-import tech.thatgravyboat.repolib.v2.RepoLoader;
+
 import tech.thatgravyboat.repolib.v2.binary.BinaryFileTypeRegistry;
 import tech.thatgravyboat.repolib.v2.binary.ByteBuffer;
 import tech.thatgravyboat.repolib.v2.binary.Encodable;
+import tech.thatgravyboat.repolib.v2.binary.ExpressionCodec;
+import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
+import tech.thatgravyboat.repolib.v2.binary.FileTypes;
+import tech.thatgravyboat.repolib.v2.binary.TypedFile;
 import tech.thatgravyboat.repolib.v2.expl.expression.Expression;
-import tech.thatgravyboat.repolib.v2.expl.expression.SelfEvaluatingExpression;
-import tech.thatgravyboat.repolib.v2.expl.expression.StructExpression;
 import tech.thatgravyboat.repolib.v2.expl.value.FunctionValue;
 import tech.thatgravyboat.repolib.v2.expl.value.ImmutableStructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.KeyValue;
 import tech.thatgravyboat.repolib.v2.expl.value.StructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
-public final class ModuleFile implements FunctionValue, BinaryFileTypeRegistry.FileType<ModuleFile>, Encodable {
+public final class ModuleFile implements FunctionValue, TypedFile<ModuleFile>, Encodable {
     private final String name;
-    private final RepoLoader loader;
     private final Expression script;
     private KeyValue staticData;
     private final Expression staticDataExpression;
     private boolean hasInitialized = false;
 
-    public ModuleFile(String name, RepoLoader loader, Expression staticData, Expression script, Evaluator evaluator) {
+    public ModuleFile(String name, Expression staticData, Expression script) {
         this.name = name;
-        this.loader = loader;
         this.script = script;
         staticDataExpression = staticData;
         if (staticData == null) {
@@ -80,18 +81,24 @@ public final class ModuleFile implements FunctionValue, BinaryFileTypeRegistry.F
         }
     }
 
-    public static ModuleFile decode(ByteBuffer byteBuffer) {
-        return null;
+    public static ModuleFile decode(ByteBuffer buffer) throws IOException {
+        return new ModuleFile(
+                buffer.readString(),
+                ExpressionCodec.readNullable(buffer),
+                ExpressionCodec.read(buffer)
+        );
     }
 
     @Override
     public void encode(ByteBuffer buffer) {
-
+        buffer.writeString(this.name);
+        ExpressionCodec.writeNullable(this.staticDataExpression, buffer);
+        ExpressionCodec.write(this.script, buffer);
     }
 
     @Override
-    public BinaryFileTypeRegistry.Type<ModuleFile> fileType() {
-        return BinaryFileTypeRegistry.MODULE;
+    public BinaryFileTypeRegistry.Type<ModuleFile> fileId() {
+        return FileTypes.MODULE;
     }
 }
 

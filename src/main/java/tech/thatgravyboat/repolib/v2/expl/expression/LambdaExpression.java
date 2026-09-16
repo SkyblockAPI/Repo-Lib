@@ -1,21 +1,27 @@
 package tech.thatgravyboat.repolib.v2.expl.expression;
 
+import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import org.jetbrains.annotations.Nullable;
+import tech.thatgravyboat.repolib.v2.binary.ByteBuffer;
+import tech.thatgravyboat.repolib.v2.binary.Encodable;
+import tech.thatgravyboat.repolib.v2.binary.ExpressionCodec;
+import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
+import tech.thatgravyboat.repolib.v2.binary.ExpressionTypes;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.value.FunctionValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
 public record LambdaExpression(
-    List<LambdaArgument> arguments, Expression body, Value function, boolean requiresSemicolon
+        Collection<LambdaArgument> arguments, Expression body, Value function, boolean requiresSemicolon
 ) implements SelfEvaluatingExpression {
 
-
-    public LambdaExpression(List<LambdaArgument> arguments, Expression body) {
+    public LambdaExpression(Collection<LambdaArgument> arguments, Expression body) {
         this(arguments, body, null);
     }
 
-    public LambdaExpression(List<LambdaArgument> arguments, Expression body, Value self) {
+    public LambdaExpression(Collection<LambdaArgument> arguments, Expression body, Value self) {
         this(
             arguments, body, FunctionValue.builder(builder -> {
                 int min = 0;
@@ -70,5 +76,41 @@ public record LambdaExpression(
         return true;
     }
 
-    public record LambdaArgument(String name, int position, boolean optional) {}
+    @Override
+    public void encode(ByteBuffer buffer) {
+        buffer.writeCollection(this.arguments, LambdaArgument::encode);
+        ExpressionCodec.write(this.body, buffer);
+        buffer.writeBoolean(this.requiresSemicolon);
+    }
+
+    @Override
+    public ExpressionTypeRegistry.Type<?> expressionId() {
+        return ExpressionTypes.LAMBDA;
+    }
+
+    public static LambdaExpression decode(ByteBuffer buffer) throws IOException {
+        return new LambdaExpression(
+                buffer.readCollection(LambdaArgument::decode),
+                ExpressionCodec.read(buffer),
+                null,
+                buffer.readBoolean()
+        );
+    }
+
+    public record LambdaArgument(String name, int position, boolean optional) implements Encodable {
+        @Override
+        public void encode(ByteBuffer buffer) {
+            buffer.writeString(this.name);
+            buffer.writeInt(this.position);
+            buffer.writeBoolean(this.optional);
+        }
+
+        public static LambdaArgument decode(ByteBuffer buffer) throws IOException {
+            return new LambdaArgument(
+                    buffer.readString(),
+                    buffer.readInt(),
+                    buffer.readBoolean()
+            );
+        }
+    }
 }

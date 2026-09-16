@@ -1,7 +1,14 @@
 package tech.thatgravyboat.repolib.v2.expl;
 
+import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
-import tech.thatgravyboat.repolib.v2.RepoLoader;
+
+import tech.thatgravyboat.repolib.v2.binary.BinaryFileTypeRegistry;
+import tech.thatgravyboat.repolib.v2.binary.ByteBuffer;
+import tech.thatgravyboat.repolib.v2.binary.ExpressionCodec;
+import tech.thatgravyboat.repolib.v2.binary.FileTypes;
+import tech.thatgravyboat.repolib.v2.binary.TypedFile;
 import tech.thatgravyboat.repolib.v2.expl.expression.Expression;
 import tech.thatgravyboat.repolib.v2.expl.expression.LambdaExpression;
 import tech.thatgravyboat.repolib.v2.expl.value.LambdaValue;
@@ -9,7 +16,8 @@ import tech.thatgravyboat.repolib.v2.expl.value.StructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.StructuredFunctionValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
-public record FunctionFile(RepoLoader loader, String name, List<LambdaExpression.LambdaArgument> arguments, Expression body) implements LambdaValue, StructuredFunctionValue {
+public record FunctionFile(String name, Collection<LambdaExpression.LambdaArgument> arguments, Expression body) implements LambdaValue, StructuredFunctionValue,
+        TypedFile<FunctionFile> {
 
     @Override
     public Value apply(Evaluator evaluator, StructValue structValue) {
@@ -76,5 +84,25 @@ public record FunctionFile(RepoLoader loader, String name, List<LambdaExpression
     @Override
     public int arityMax() {
         return this.arguments.size();
+    }
+
+    @Override
+    public void encode(ByteBuffer buffer) {
+        buffer.writeString(this.name);
+        buffer.writeCollection(this.arguments, LambdaExpression.LambdaArgument::encode);
+        ExpressionCodec.write(this.body, buffer);
+    }
+
+    @Override
+    public BinaryFileTypeRegistry.Type<FunctionFile> fileId() {
+        return FileTypes.FUNCTION;
+    }
+
+    public static FunctionFile decode(ByteBuffer buffer) throws IOException {
+        return new FunctionFile(
+                buffer.readString(),
+                buffer.readCollection(LambdaExpression.LambdaArgument::decode),
+                ExpressionCodec.read(buffer)
+        );
     }
 }

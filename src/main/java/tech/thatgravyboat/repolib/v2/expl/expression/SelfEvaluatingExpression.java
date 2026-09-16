@@ -1,5 +1,7 @@
 package tech.thatgravyboat.repolib.v2.expl.expression;
 
+import tech.thatgravyboat.repolib.v2.binary.Encodable;
+import tech.thatgravyboat.repolib.v2.binary.TypedExpression;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
