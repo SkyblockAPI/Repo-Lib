@@ -5,21 +5,13 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
 
 public record ScopeLayeredStructValue(StructValue base, StructValue.MutableStruct overlay) implements StructValue.MutableStruct {
 
     @Override
     public void set(String field, Value value) {
-        if (base.contains(field)) {
-            if (base instanceof KeyValue.Mutable mutableBase) {
-                mutableBase.set(field, value);
-            }
-        } else {
-            overlay.set(field, value);
-        }
+        overlay.set(field, value);
     }
 
     @Override
@@ -49,7 +41,7 @@ public record ScopeLayeredStructValue(StructValue base, StructValue.MutableStruc
 
     @Override
     public boolean contains(String field) {
-        return overlay.contains(field) || base.contains(field);
+        return base.contains(field) || overlay.contains(field);
     }
 
     @Override
@@ -58,7 +50,7 @@ public record ScopeLayeredStructValue(StructValue base, StructValue.MutableStruc
             return this;
         }
 
-        if (!overlay.contains(field) && base.contains(field)) {
+        if (!overlay.contains(field)) {
             return base.get(field);
         }
         return overlay.get(field);

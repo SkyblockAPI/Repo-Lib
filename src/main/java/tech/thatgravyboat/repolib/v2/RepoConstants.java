@@ -74,7 +74,7 @@ public final class RepoConstants implements StructValue.Forwarding {
             function.execute((evaluator, args) -> {
                 var arg = args.getFirst();
                 if (arg instanceof ModuleFile file) {
-                    return file;
+                    return file.getStaticData();
                 }
 
                 var value = evaluator.getStringOrThrow(arg);

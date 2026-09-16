@@ -20,7 +20,7 @@ public sealed interface Expression extends Encodable
         return new Parser(source).parseFile(loader, name);
     }
     static ModuleFile parseModuleOrThrow(RepoLoader loader, String name, String source, Evaluator evaluator) {
-        return new Parser(source).parseModuleFile(name, loader, evaluator);
+        return new Parser(source).parseModuleFile(name, loader);
     }
 
     static FunctionFile parseFunctionOrThrow(RepoLoader loader, String name,  String source) {

@@ -5,20 +5,16 @@ import tech.thatgravyboat.repolib.v2.expl.expression.*;
 import tech.thatgravyboat.repolib.v2.expl.value.FunctionValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
-import java.io.BufferedOutputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.lang.classfile.ClassBuilder;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.Label;
 import java.lang.constant.*;
 import java.lang.invoke.MethodHandles;
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Gatherers;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 import static java.lang.constant.ConstantDescs.*;
 
@@ -40,15 +36,22 @@ public class ModuleCompiler {
 
     private static class MetaCodeInfo {
         private final Set<Integer> usedLocals = new HashSet<>();
-
-        {
-            usedLocals.add(0);
-            usedLocals.add(1);
-        }
+        private final List<Object> lambdas = new ArrayList<>();
 
         private MetaCodeInfo(ClassDesc ownClass, ClassBuilder ownBuilder) {
+            usedLocals.add(0);
+            usedLocals.add(1);
             this.ownClass = ownClass;
             this.ownBuilder = ownBuilder;
+        }
+
+        private int addLambda(FunctionValue functionValue) {
+            lambdas.add(functionValue);
+            return lambdas.size() - 1;
+        }
+        private int addLambda(Class<IdentityLambdaFunction> functionValue) {
+            lambdas.add(functionValue);
+            return lambdas.size() - 1;
         }
 
         public int getLowestUnused() {
@@ -817,27 +820,6 @@ public class ModuleCompiler {
     }
 
     private static int index = 0;
-    static List<FunctionValue> lambdas = new ArrayList<>();
-    static List<Class<IdentityLambdaFunction>> identityLambdas = new ArrayList<>();
-
-    static int addLambda(FunctionValue lambda) {
-        lambdas.add(lambda);
-        return lambdas.size() - 1;
-    }
-
-    static int addLambdaClass(Class<IdentityLambdaFunction> lambda) {
-        identityLambdas.add(lambda);
-        return identityLambdas.size() - 1;
-    }
-
-    @SuppressWarnings("unused")
-    public static FunctionValue getLambda(int name) {
-        return lambdas.get(name);
-    }
-    @SuppressWarnings("unused")
-    static Class<IdentityLambdaFunction> getLambdaClass(int name) {
-        return identityLambdas.get(name);
-    }
 
     interface IdentityLambdaFunction extends FunctionValue {
         Value setSelf(Value self);
@@ -845,12 +827,14 @@ public class ModuleCompiler {
 
     private static void compileIdentityExpression(CodeBuilder cb, LambdaIdentityFunction expression, MetaCodeInfo lc) {
         try {
-            String lambdaKey = "" + lambdas.size();
+            String lambdaKey = "" + index++;
             Class<IdentityLambdaFunction> lambdaClass = compileLambda(expression.expression(), lc.getCodeName() + "$" + lambdaKey + "$special", true);
-            cb.loadConstant(addLambdaClass(lambdaClass));
-            cb.invokestatic(ClassDesc.of("tech.thatgravyboat.repolib.v2.expl.compiler.ModuleCompiler"), "getLambdaClass", MethodTypeDesc.of(CD_Class, CD_int));
+            cb.getstatic(lc.ownClass(), "lambdas", CD_List);
+            cb.loadConstant(lc.addLambda(lambdaClass));
+            ClassDesc CD_IdentityLambdaFunction = ClassDesc.of("tech.thatgravyboat.repolib.v2.expl.compiler.ModuleCompiler$IdentityLambdaFunction");
+            cb.invokeinterface(CD_List, "get", MethodTypeDesc.of(CD_Object, CD_int));
+            cb.checkcast(CD_Class);
             cb.invokevirtual(CD_Class, "newInstance", MethodTypeDesc.of(CD_Object));
-            var CD_IdentityLambdaFunction = ClassDesc.of("tech.thatgravyboat.repolib.v2.expl.compiler.ModuleCompiler$IdentityLambdaFunction");
             cb.checkcast(CD_IdentityLambdaFunction);
             cb.swap();
             cb.invokeinterface(CD_IdentityLambdaFunction, "setSelf", MethodTypeDesc.of(CD_Value, CD_Value));
@@ -861,11 +845,13 @@ public class ModuleCompiler {
 
     private static void compileLambdaExpression(CodeBuilder cb, LambdaExpression expression, MetaCodeInfo lc) {
         try {
-            String lambdaKey = "" + lambdas.size();
+            String lambdaKey = "" + index++;
             Class<IdentityLambdaFunction> lambdaClass = compileLambda(expression, lc.getCodeName() + "$" + lambdaKey, false);
-            cb.loadConstant(addLambda(lambdaClass.newInstance()));
-            cb.invokestatic(ClassDesc.of("tech.thatgravyboat.repolib.v2.expl.compiler.ModuleCompiler"), "getLambda", MethodTypeDesc.of(CD_FunctionValue, CD_int));
-        } catch (IllegalAccessException | InstantiationException e) {
+            cb.getstatic(lc.ownClass(), "lambdas", CD_List);
+            cb.loadConstant(lc.addLambda(lambdaClass.getConstructor().newInstance()));
+            cb.invokeinterface(CD_List, "get", MethodTypeDesc.of(CD_Object, CD_int));
+            cb.checkcast(CD_FunctionValue);
+        } catch (IllegalAccessException | InstantiationException | InvocationTargetException | NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
     }
@@ -895,6 +881,7 @@ public class ModuleCompiler {
         int finalMin = min;
         int finalMax = max;
         ClassDesc CD_LambdaFunctionValue = ClassDesc.of("tech.thatgravyboat.repolib.v2.expl.value.LambdaFunctionValue");
+        AtomicReference<List<Object>> lambdas = new AtomicReference<>();
         byte[] classBytes = ClassFile.of()
                 .build(lambdaClass, (builder) -> {
                     builder.withSuperclass(CD_LambdaFunctionValue);
@@ -1005,30 +992,44 @@ public class ModuleCompiler {
                                 lc.popAll(cb);
                                 cb.areturn();
                             }
+
+                            lambdas.set(lc.lambdas);
                         });
                     });
+                    builder.withField("lambdas", CD_List, ClassFile.ACC_PUBLIC | ClassFile.ACC_STATIC);
                 });
-        //noinspection unchecked
-        return (Class<IdentityLambdaFunction>) MethodHandles.lookup()
+        Class<?> lambdaClassClass =  MethodHandles.lookup()
                 .defineHiddenClass(classBytes, true)
                 .lookupClass();
+
+        try {
+            lambdaClassClass.getField("lambdas").set(null, lambdas.get());
+        } catch (NoSuchFieldException e) {
+            throw new RuntimeException(e);
+        }
+
+        //noinspection unchecked
+        return (Class<IdentityLambdaFunction>) lambdaClassClass;
     }
 
-    public static SelfEvaluatingExpression createSelfEvaluatingExpression(Expression expression, String name) throws IllegalAccessException, InstantiationException {
+    public static SelfEvaluatingExpression createSelfEvaluatingExpression(Expression expression, String name) {
         try {
+            AtomicReference<List<Object>> lambdas = new AtomicReference<>();
             String cleanName = name.replaceAll("[\\\\/]", "#") + "$" + index++;
             ClassDesc classDesc = ClassDesc.of("tech.thatgravyboat.repolib.v2.expl.compiler.generated$" + cleanName);
             byte[] classBytes = ClassFile.of()
                     .build(classDesc, (builder) -> {
                         builder.withInterfaces(builder.constantPool()
                                 .classEntry(ClassDesc.of("tech.thatgravyboat.repolib.v2.expl.expression.SelfEvaluatingExpression")));
+
                         builder.withMethod("<init>", MethodTypeDesc.of(CD_void), ClassFile.ACC_PUBLIC, methodBuilder -> {
-                            methodBuilder.withCode(codeBuilder -> {
-                                codeBuilder.aload(0);
-                                codeBuilder.invokespecial(CD_Object, "<init>", MTD_void);
-                                codeBuilder.return_();
+                            methodBuilder.withCode(cb -> {
+                                cb.aload(0);
+                                cb.invokespecial(CD_Object, "<init>", MTD_void);
+                                cb.return_();
                             });
                         });
+                        builder.withField("lambdas", CD_List, ClassFile.ACC_PUBLIC | ClassFile.ACC_STATIC);
                         builder.withMethod("canReturnValueBeReturned", MethodTypeDesc.of(CD_boolean), ClassFile.ACC_PUBLIC, mb -> {
                             mb.withCode(cb -> {
                                 cb.iconst_1();
@@ -1043,18 +1044,25 @@ public class ModuleCompiler {
                                     lc.popAll(cb);
                                     cb.areturn();
                                 }
+                                lambdas.set(lc.lambdas);
                             });
                         });
                     });
-            return (SelfEvaluatingExpression) MethodHandles.lookup()
+
+            Class<?> sexClass = MethodHandles.lookup()
                     .defineHiddenClass(classBytes, true)
-                    .lookupClass()
-                    .newInstance();
+                    .lookupClass();
+
+            try {
+                sexClass.getField("lambdas").set(null, lambdas.get());
+            } catch (NoSuchFieldException e) {
+                throw new RuntimeException(e);
+            }
+
+            return (SelfEvaluatingExpression) sexClass.getConstructor().newInstance();
         } catch (Exception e) {
-            e.printStackTrace();
             System.out.println("[" + name + "] ");
-            System.exit(1);
-            throw e;
+            throw new RuntimeException(e);
         }
     }
 }

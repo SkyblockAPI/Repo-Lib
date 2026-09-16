@@ -1,6 +1,5 @@
 package tech.thatgravyboat.repolib.v2.expl;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 
@@ -57,7 +56,7 @@ public final class ModuleFile implements FunctionValue, TypedFile<ModuleFile>, E
 
     @Override
     public boolean canReturnValueBeReturned() {
-        return this.script.canReturnValueBeReturned();
+        return true;
     }
 
     @Override

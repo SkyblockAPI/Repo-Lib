@@ -63,7 +63,7 @@ public final class Parser {
         return new StackFile(meta.get(), script.get(StackFile.DEFAULT_SCRIPT));
     }
 
-    public ModuleFile parseModuleFile(String name, RepoLoader loader, Evaluator evaluator) {
+    public ModuleFile parseModuleFile(String name, RepoLoader loader) {
         Holder<Expression> struct = new Holder<>("static");
 
         if (lexer.peek() == Lexer.Token.IDENT && "static".equals(lexer.peekSpan())) {

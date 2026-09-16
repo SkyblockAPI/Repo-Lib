@@ -6,20 +6,13 @@ import tech.thatgravyboat.repolib.v2.expl.compiler.ModuleCompiler;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.List;
 
 public class CompilerMain {
 
     public static void main(String[] args) throws IOException {
         try {
             var repoLoader = new RepoLoader(Path.of("src/test/repo"));
-            repoLoader.registerTransform((e, n) -> {
-                try {
-                    return ModuleCompiler.createSelfEvaluatingExpression(e, n);
-                } catch (Exception ex) {
-                    throw new RuntimeException(ex);
-                }
-            });
+            repoLoader.registerTransform(ModuleCompiler::createSelfEvaluatingExpression);
             var errors = repoLoader.load();
             for (var error : errors) {
                 System.out.println("Failed to load file " + error.file() + " due to " + error.reason());
@@ -28,8 +21,12 @@ public class CompilerMain {
             var constants = new RepoConstants(repoLoader);
             var evaluator = new Evaluator(constants, repoLoader::getModule);
             var meow = new Parser("""
-                    print("meow");
-                    """).parseModuleFile("test", repoLoader, evaluator);
+                    slice = 5;
+                    if (true) {
+                        slice = 77;
+                    }
+                    print(slice);
+                    """).parseModuleFile("test", repoLoader);
 //            meow.init(constants);
 //            System.out.println(meow.meta());
             System.out.println(meow.evaluate(evaluator));

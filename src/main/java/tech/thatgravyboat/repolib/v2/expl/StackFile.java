@@ -20,7 +20,6 @@ import tech.thatgravyboat.repolib.v2.expl.value.ArrayValue;
 import tech.thatgravyboat.repolib.v2.expl.value.FunctionValue;
 import tech.thatgravyboat.repolib.v2.expl.value.ImmutableStructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.KeyValue;
-import tech.thatgravyboat.repolib.v2.expl.value.LambdaFunctionValue;
 import tech.thatgravyboat.repolib.v2.expl.value.LayeredStructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.MutableArrayValue;
 import tech.thatgravyboat.repolib.v2.expl.value.MutableStructValue;

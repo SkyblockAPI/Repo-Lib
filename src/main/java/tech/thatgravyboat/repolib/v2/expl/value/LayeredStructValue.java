@@ -23,7 +23,7 @@ public record LayeredStructValue(StructValue.MutableStruct base, KeyValue overla
 
     @Override
     public boolean contains(String field) {
-        return base.contains(field) || overlay.contains(field);
+        return overlay.contains(field) || base.contains(field) ;
     }
 
     @Override
