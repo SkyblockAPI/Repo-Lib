@@ -6,8 +6,17 @@ import tech.thatgravyboat.repolib.v2.binary.ByteBuffer;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionCodec;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypes;
+import tech.thatgravyboat.repolib.v2.jvm.compiler.CompilationTracker;
+import tech.thatgravyboat.repolib.v2.jvm.compiler.Snippets;
 
 import java.io.IOException;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.Label;
+import java.lang.constant.MethodTypeDesc;
+
+import static java.lang.constant.ConstantDescs.CD_boolean;
+import static tech.thatgravyboat.repolib.v2.jvm.compiler.ExplCD.CD_Evaluator;
+import static tech.thatgravyboat.repolib.v2.jvm.compiler.ExplCD.CD_Value;
 
 public record IfExpression(Expression cond, Expression thenExpr, @Nullable Expression elseExpr) implements Expression {
 
@@ -42,5 +51,26 @@ public record IfExpression(Expression cond, Expression thenExpr, @Nullable Expre
                 ExpressionCodec.read(buffer),
                 ExpressionCodec.readNullable(buffer)
         );
+    }
+
+    @Override
+    public boolean compile(CodeBuilder cb, CompilationTracker lc) {
+        cb.aload(1);
+        cond.compile(cb, lc);
+        Label endLabel = cb.newLabel();
+        Label endEndLabel = cb.newLabel();
+        cb.invokevirtual(CD_Evaluator, "asBool", MethodTypeDesc.of(CD_boolean, CD_Value));
+        cb.ifeq(endLabel);
+        thenExpr.compile(cb, lc);
+        cb.goto_(endEndLabel);
+        cb.labelBinding(endLabel);
+        if (elseExpr != null) {
+            elseExpr.compile(cb, lc);
+        } else {
+            Snippets.pushNil(cb);
+        }
+        cb.labelBinding(endEndLabel);
+        cb.nop();
+        return false;
     }
 }

@@ -5,8 +5,11 @@ import tech.thatgravyboat.repolib.v2.binary.ByteBuffer;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionCodec;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypes;
+import tech.thatgravyboat.repolib.v2.jvm.compiler.CompilationTracker;
+import tech.thatgravyboat.repolib.v2.jvm.compiler.Snippets;
 
 import java.io.IOException;
+import java.lang.classfile.CodeBuilder;
 
 public record AssignExpression(AccessExpression lhs, Expression value) implements Expression {
 
@@ -36,5 +39,12 @@ public record AssignExpression(AccessExpression lhs, Expression value) implement
                 ExpressionCodec.readUntyped(ExpressionTypes.ACCESS, buffer),
                 ExpressionCodec.read(buffer)
         );
+    }
+
+    @Override
+    public boolean compile(CodeBuilder cb, CompilationTracker lc) {
+        value.compile(cb, lc);
+        Snippets.assign(cb, lhs, lc);
+        return false;
     }
 }

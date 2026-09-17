@@ -5,6 +5,8 @@ import tech.thatgravyboat.repolib.v2.expl.value.KeyValue;
 import tech.thatgravyboat.repolib.v2.expl.value.NilValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
+import java.util.Set;
+
 public class RepoConfig implements KeyValue {
 
     private boolean romanNumerals = true;
@@ -20,6 +22,11 @@ public class RepoConfig implements KeyValue {
             case "roman_numerals" -> BoolValue.wrap(romanNumerals);
             default -> NIL;
         };
+    }
+
+    @Override
+    public Set<String> keySet() {
+        return Set.of("roman_numerals");
     }
 
     public RepoConfig withRomanNumerals(boolean romanNumerals) {

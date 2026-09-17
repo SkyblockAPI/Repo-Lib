@@ -13,10 +13,7 @@ import tech.thatgravyboat.repolib.v2.expl.value.StrValue;
 import tech.thatgravyboat.repolib.v2.expl.value.StructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -45,6 +42,11 @@ public record Constants(Map<String, Value> map) implements StructValue {
 
     public static KeyValue.Mutable mutable(Consumer<Builder> builder) {
         return new MutableStructValue(Builder.create(builder, MutableStructValue::new));
+    }
+
+    @Override
+    public Set<String> keySet() {
+        return map.keySet();
     }
 
     @Override

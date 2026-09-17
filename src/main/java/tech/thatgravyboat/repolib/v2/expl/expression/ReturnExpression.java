@@ -7,8 +7,11 @@ import tech.thatgravyboat.repolib.v2.binary.ExpressionTypes;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.ExecutionExceptions;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
+import tech.thatgravyboat.repolib.v2.jvm.compiler.CompilationTracker;
+import tech.thatgravyboat.repolib.v2.jvm.compiler.ModuleCompiler;
 
 import java.io.IOException;
+import java.lang.classfile.CodeBuilder;
 
 public record ReturnExpression(Expression retExpr) implements SelfEvaluatingExpression {
     @Override
@@ -28,5 +31,13 @@ public record ReturnExpression(Expression retExpr) implements SelfEvaluatingExpr
 
     public static ReturnExpression decode(ByteBuffer buffer) throws IOException {
         return new ReturnExpression(ExpressionCodec.read(buffer));
+    }
+
+    @Override
+    public boolean compile(CodeBuilder cb, CompilationTracker lc) {
+        retExpr.compile(cb, lc);
+        lc.popAll(cb);
+        cb.areturn();
+        return true;
     }
 }

@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 public interface StructValue extends KeyValue, Iterable<Map.Entry<String, Value>> {
 

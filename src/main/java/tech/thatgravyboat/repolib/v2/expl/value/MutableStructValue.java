@@ -2,13 +2,11 @@ package tech.thatgravyboat.repolib.v2.expl.value;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 public record MutableStructValue(Map<String, Value> fields) implements StructValue.MutableStruct {
     public MutableStructValue() {
-        this(new HashMap<>());
+        this(new LinkedHashMap<>());
     }
     public MutableStructValue(StructValue value) {
         this(asMap(value));
@@ -16,10 +14,10 @@ public record MutableStructValue(Map<String, Value> fields) implements StructVal
 
     private static HashMap<String, Value> asMap(StructValue value) {
         return switch (value) {
-            case MutableStructValue(Map<String, Value> fields) -> new HashMap<>(fields);
-            case ImmutableStructValue(Map<String, Value> fields) -> new HashMap<>(fields);
+            case MutableStructValue(Map<String, Value> fields) -> new LinkedHashMap<>(fields);
+            case ImmutableStructValue(Map<String, Value> fields) -> new LinkedHashMap<>(fields);
             default -> {
-                var map = new HashMap<String, Value>();
+                var map = new LinkedHashMap<String, Value>();
                 value.forEach(entry -> map.put(entry.getKey(), entry.getValue()));
                 yield map;
             }
@@ -68,6 +66,11 @@ public record MutableStructValue(Map<String, Value> fields) implements StructVal
     @Override
     public MutableStructValue toMutableStruct() {
         return new MutableStructValue(new HashMap<>(fields));
+    }
+
+    @Override
+    public Set<String> keySet() {
+        return fields.keySet();
     }
 
     @Override

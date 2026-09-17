@@ -34,6 +34,7 @@ import tech.thatgravyboat.repolib.v2.expl.value.NumValue;
 import tech.thatgravyboat.repolib.v2.expl.value.StrValue;
 import tech.thatgravyboat.repolib.v2.expl.value.StructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
+import tech.thatgravyboat.repolib.v2.jvm.compiler.ModuleCompiler;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class Main2 extends WebSocketServer {
@@ -43,10 +44,42 @@ public class Main2 extends WebSocketServer {
     boolean running = true;
 
     public static void main(String[] args) throws IOException {
-        RepoLoader loader = new RepoLoader(Path.of("Repo-Data").toRealPath().normalize().toAbsolutePath());
+        RepoLoader loader = new RepoLoader(Path.of("repo").toRealPath().normalize().toAbsolutePath());
         var instance = loader.create();
 
+        loader.registerTransform(ModuleCompiler::createSelfEvaluatingExpression);
+
         var errors = loader.load();
+
+        errors.forEach(System.out::println);
+
+        var data =
+                JsonParser.parseString(Files.readString(Path.of("data.jsonc"), StandardCharsets.UTF_8)).getAsJsonObject();
+
+        var stackFile = Objects.requireNonNull(loader.getStackFile("items/slayer/enderman/aspect_of_the_void"));
+
+        {
+
+            var evaluator = stackFile.createEvaluator(instance.constants(), ImmutableStructValue.EMPTY, RepoConfig.DEFAULT, loader::getModule);
+            var stack = stackFile.evaluateScript(evaluator);
+            evaluator.errors.forEach(System.out::println);
+            evaluator.debugs.forEach(System.out::println);
+            System.out.println(stack);
+        }
+
+        long sum = 0;
+        for (int i = 0; i < 10000; i++) {
+
+            var evaluator = stackFile.createEvaluator(instance.constants(), ImmutableStructValue.EMPTY, RepoConfig.DEFAULT, loader::getModule);
+            long start = System.nanoTime();
+            var stack = stackFile.evaluateScript(evaluator);
+            sum += System.nanoTime() - start;
+            evaluator.errors.forEach(System.out::println);
+            evaluator.debugs.forEach(System.out::println);
+        }
+
+        System.out.println("Took " + (sum / 10000_000000.0) + "ms");
+
     }
 
     private static StructValue toValue(JsonObject data) {

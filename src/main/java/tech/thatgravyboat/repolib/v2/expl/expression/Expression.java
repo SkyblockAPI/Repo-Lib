@@ -4,14 +4,18 @@ package tech.thatgravyboat.repolib.v2.expl.expression;
 import tech.thatgravyboat.repolib.v2.RepoLoader;
 import tech.thatgravyboat.repolib.v2.binary.Encodable;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
-import tech.thatgravyboat.repolib.v2.binary.TypedExpression;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.FunctionFile;
 import tech.thatgravyboat.repolib.v2.expl.ModuleFile;
 import tech.thatgravyboat.repolib.v2.expl.Parser;
 import tech.thatgravyboat.repolib.v2.expl.StackFile;
+import tech.thatgravyboat.repolib.v2.jvm.compiler.CompilableExpression;
+import tech.thatgravyboat.repolib.v2.jvm.compiler.CompilationTracker;
+import tech.thatgravyboat.repolib.v2.jvm.compiler.ModuleCompiler;
 
-public sealed interface Expression extends Encodable
+import java.lang.classfile.CodeBuilder;
+
+public sealed interface Expression extends Encodable, CompilableExpression
         permits AccessExpression, AssignExpression, BlockExpression, BoolExpression, CallExpression, DebugExpression,
     FileAccessExpression, ForExpression, IfExpression, InExpression, NumExpression, SelfEvaluatingExpression,
     StatementExpression, StrExpression, StructExpression, UnaryExpression {
@@ -36,6 +40,11 @@ public sealed interface Expression extends Encodable
     }
     default boolean canReturnValueBeReturned() {
         return false;
+    }
+
+    @Override
+    default boolean compile(CodeBuilder cb, CompilationTracker lc) {
+        throw new RuntimeException("Invalid type " + getClass().getSimpleName());
     }
 
     ExpressionTypeRegistry.Type<?> expressionId();

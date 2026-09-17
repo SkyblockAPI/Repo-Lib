@@ -1,10 +1,7 @@
 package tech.thatgravyboat.repolib.v2.expl.value;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
 import org.jetbrains.annotations.NotNull;
 
 public record ScopeLayeredStructValue(StructValue base, StructValue.MutableStruct overlay) implements StructValue.MutableStruct {
@@ -41,7 +38,14 @@ public record ScopeLayeredStructValue(StructValue base, StructValue.MutableStruc
 
     @Override
     public boolean contains(String field) {
-        return base.contains(field) || overlay.contains(field);
+        if (base.isEmpty()) {
+            if (overlay.isEmpty()) return false;
+            return overlay.contains(field);
+        }
+        if (overlay.isEmpty()) {
+            return base.contains(field);
+        }
+        return base.contains(field) || overlay.contains(field) ;
     }
 
     @Override
@@ -67,10 +71,22 @@ public record ScopeLayeredStructValue(StructValue base, StructValue.MutableStruc
     }
 
     @Override
+    public Set<String> keySet() {
+        Set<String> baseKeySet = base.keySet();
+        Set<String> overlayKeySet = overlay.keySet();
+
+        if (baseKeySet.isEmpty()) return overlayKeySet;
+        if (overlayKeySet.isEmpty()) return baseKeySet;
+
+        Set<String> set = new HashSet<>(baseKeySet.size() + overlayKeySet.size());
+        set.addAll(baseKeySet);
+        set.addAll(overlayKeySet);
+        return set;
+    }
+
+    @Override
     public @NotNull Iterator<Map.Entry<String, Value>> iterator() {
-        var keys = new HashSet<String>();
-        base.forEach(e -> keys.add(e.getKey()));
-        overlay.forEach(e -> keys.add(e.getKey()));
+        var keys = keySet();
 
         var parent = keys.iterator();
 

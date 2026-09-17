@@ -5,6 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 public record LayeredStructValue(StructValue.MutableStruct base, KeyValue overlay) implements StructValue, KeyValue.Mutable {
     @Override
@@ -23,6 +24,13 @@ public record LayeredStructValue(StructValue.MutableStruct base, KeyValue overla
 
     @Override
     public boolean contains(String field) {
+        if (overlay.isEmpty()) {
+            if (base.isEmpty()) return false;
+            return base.contains(field);
+        }
+        if (base.isEmpty()) {
+            return overlay.contains(field);
+        }
         return overlay.contains(field) || base.contains(field) ;
     }
 
@@ -47,16 +55,22 @@ public record LayeredStructValue(StructValue.MutableStruct base, KeyValue overla
     }
 
     @Override
+    public Set<String> keySet() {
+        Set<String> baseKeySet = base.keySet();
+        Set<String> overlayKeySet = overlay.keySet();
+
+        if (baseKeySet.isEmpty()) return overlayKeySet;
+        if (overlayKeySet.isEmpty()) return baseKeySet;
+
+        Set<String> set = new HashSet<>(baseKeySet.size() + overlayKeySet.size());
+        set.addAll(baseKeySet);
+        set.addAll(overlayKeySet);
+        return set;
+    }
+
+    @Override
     public @NotNull Iterator<Map.Entry<String, Value>> iterator() {
-        var keys = new HashSet<String>();
-        if (overlay instanceof Iterable<?> iterable) {
-            iterable.forEach(e -> {
-                if (e instanceof Map.Entry entry) {
-                    keys.add((String) entry.getKey());
-                }
-            });
-        }
-        base.forEach(e -> keys.add(e.getKey()));
+        var keys = keySet();
 
         var parent = keys.iterator();
 

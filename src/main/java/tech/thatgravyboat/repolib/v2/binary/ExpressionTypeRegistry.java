@@ -6,7 +6,6 @@ import tech.thatgravyboat.repolib.v2.expl.expression.Expression;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
 
 public class ExpressionTypeRegistry {
 

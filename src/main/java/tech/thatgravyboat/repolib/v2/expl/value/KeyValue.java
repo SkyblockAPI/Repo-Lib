@@ -1,5 +1,7 @@
 package tech.thatgravyboat.repolib.v2.expl.value;
 
+import java.util.Set;
+
 non-sealed public interface KeyValue extends Value {
     Value get(String field);
 
@@ -8,6 +10,8 @@ non-sealed public interface KeyValue extends Value {
     boolean contains(String field);
 
     boolean isEmpty();
+
+    Set<String> keySet();
 
     interface Forwarding extends KeyValue {
         KeyValue delegate();
@@ -30,6 +34,11 @@ non-sealed public interface KeyValue extends Value {
         @Override
         default boolean isEmpty() {
             return delegate().isEmpty();
+        }
+
+        @Override
+        default Set<String> keySet() {
+            return delegate().keySet();
         }
     }
 

@@ -1,6 +1,7 @@
 package tech.thatgravyboat.repolib.v2.expl.expression;
 
 import java.io.IOException;
+import java.lang.classfile.CodeBuilder;
 import java.util.Collection;
 import java.util.List;
 import org.jetbrains.annotations.Nullable;
@@ -12,6 +13,8 @@ import tech.thatgravyboat.repolib.v2.binary.ExpressionTypes;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.value.FunctionValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
+import tech.thatgravyboat.repolib.v2.jvm.compiler.CompilationTracker;
+import tech.thatgravyboat.repolib.v2.jvm.compiler.ModuleCompiler;
 
 public record LambdaExpression(
         Collection<LambdaArgument> arguments, Expression body, Value function, boolean requiresSemicolon
@@ -95,6 +98,12 @@ public record LambdaExpression(
                 null,
                 buffer.readBoolean()
         );
+    }
+
+    @Override
+    public boolean compile(CodeBuilder cb, CompilationTracker lc) {
+        ModuleCompiler.compileLambdaExpression(cb, this, lc);
+        return false;
     }
 
     public record LambdaArgument(String name, int position, boolean optional) implements Encodable {

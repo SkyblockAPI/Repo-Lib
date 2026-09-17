@@ -2,7 +2,7 @@ import tech.thatgravyboat.repolib.v2.RepoConstants;
 import tech.thatgravyboat.repolib.v2.RepoLoader;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.Parser;
-import tech.thatgravyboat.repolib.v2.expl.compiler.ModuleCompiler;
+import tech.thatgravyboat.repolib.v2.jvm.compiler.ModuleCompiler;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -25,6 +25,10 @@ public class CompilerMain {
                     if (true) {
                         slice = 77;
                     }
+                    print(match (slice) {
+                        5 -> "meow :c",
+                        77 -> "mroe :4",
+                    });
                     print(slice);
                     5;
                     """).parseModuleFile("test", repoLoader);
