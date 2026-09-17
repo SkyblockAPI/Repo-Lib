@@ -5,6 +5,7 @@ import tech.thatgravyboat.repolib.v2.binary.ExpressionCodec;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypes;
 import tech.thatgravyboat.repolib.v2.jvm.compiler.CompilationTracker;
+import tech.thatgravyboat.repolib.v2.jvm.compiler.Snippets;
 
 import java.io.IOException;
 import java.lang.classfile.CodeBuilder;
@@ -38,9 +39,8 @@ public record InExpression(AccessExpression holder, Expression field) implements
 
     @Override
     public boolean compile(CodeBuilder cb, CompilationTracker lc) {
-        cb.aload(1);
         field.compile(cb, lc);
-        cb.invokevirtual(CD_Evaluator, "getStringOrThrow", MethodTypeDesc.of(CD_String, CD_Value));
+        Snippets.getStringOrThrow(cb);
 
         Label isNotKv = cb.newLabel();
         Label isNotStr = cb.newLabel();

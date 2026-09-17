@@ -54,6 +54,15 @@ public class Snippets {
         cb.athrow();
     }
 
+    public static void getStringOrThrow(CodeBuilder cb) {
+        cb.checkcast(CD_StrValue);
+        cb.invokevirtual(CD_StrValue, "value", MethodTypeDesc.of(CD_String));
+    }
+    public static void getNumberOrThrow(CodeBuilder cb) {
+        cb.checkcast(CD_NumValue);
+        cb.invokevirtual(CD_NumValue, "value", MethodTypeDesc.of(CD_double));
+    }
+
     public static void pathStringConcat(CodeBuilder cb, int length) {
         ClassDesc[] classDescs = new ClassDesc[length];
         Arrays.fill(classDescs, CD_String);
@@ -63,6 +72,12 @@ public class Snippets {
             if (index != length - 1) separated.append("/");
         }
         stringConcat(cb, separated.toString(), classDescs);
+    }
+
+    public static void stringStringConcat(CodeBuilder cb, String template, int stringCount) {
+        ClassDesc[] classDescs = new ClassDesc[stringCount];
+        Arrays.fill(classDescs, CD_String);
+        stringConcat(cb, template, classDescs);
     }
 
     public static void stringConcat(CodeBuilder cb, String template, ClassDesc... args) {

@@ -7,6 +7,7 @@ import tech.thatgravyboat.repolib.v2.binary.ExpressionCodec;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypes;
 import tech.thatgravyboat.repolib.v2.jvm.compiler.CompilationTracker;
+import tech.thatgravyboat.repolib.v2.jvm.compiler.Snippets;
 
 import java.io.IOException;
 import java.lang.classfile.CodeBuilder;
@@ -48,9 +49,8 @@ public record AccessExpression(@Nullable Expression lhs, Expression field) imple
             if (field instanceof StrExpression(String value)) {
                 cb.loadConstant(value);
             } else {
-                cb.dup();
                 field.compile(cb, lc);
-                cb.invokevirtual(CD_Evaluator, "getStringOrThrow", MethodTypeDesc.of(CD_String, CD_Value));
+                Snippets.getStringOrThrow(cb);
             }
             cb.invokevirtual(CD_Evaluator, "getField", MethodTypeDesc.of(CD_Value, CD_String));
         } else {
@@ -64,16 +64,15 @@ public record AccessExpression(@Nullable Expression lhs, Expression field) imple
                 Label endLabel = cb.newLabel();
                 lhs.compile(cb, lc);
                 cb.checkcast(CD_KeyValue);
-                cb.aload(1);
                 field.compile(cb, lc);
                 cb.dup();
                 cb.instanceOf(CD_NumValue);
                 cb.ifne(arrayValLabel);
-                cb.invokevirtual(CD_Evaluator, "getStringOrThrow", MethodTypeDesc.of(CD_String, CD_Value));
+                Snippets.getStringOrThrow(cb);
                 cb.invokeinterface(CD_KeyValue, "get", MethodTypeDesc.of(CD_Value, CD_String));
                 cb.goto_(endLabel);
                 cb.labelBinding(arrayValLabel);
-                cb.invokevirtual(CD_Evaluator, "getNumberOrThrow", MethodTypeDesc.of(CD_double, CD_Value));
+                Snippets.getNumberOrThrow(cb);
                 cb.d2i();
                 cb.swap();
                 cb.checkcast(CD_ArrayValue);

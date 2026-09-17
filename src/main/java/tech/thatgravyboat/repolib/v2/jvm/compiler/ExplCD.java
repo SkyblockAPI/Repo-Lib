@@ -16,5 +16,6 @@ public final class ExplCD {
     public static ClassDesc CD_FunctionValue = ClassDesc.of("tech.thatgravyboat.repolib.v2.expl.value.FunctionValue");
     public static ClassDesc CD_MutableArrayValue = ClassDesc.of("tech.thatgravyboat.repolib.v2.expl.value.MutableArrayValue");
     public static ClassDesc CD_MutableStructValue = ClassDesc.of("tech.thatgravyboat.repolib.v2.expl.value.MutableStructValue");
+    public static ClassDesc CD_ModuleFile = ClassDesc.of("tech.thatgravyboat.repolib.v2.expl.ModuleFile");
     public static ClassDesc CD_StructuredFunctionValue = ClassDesc.of("tech.thatgravyboat.repolib.v2.expl.value.StructuredFunctionValue");
 }

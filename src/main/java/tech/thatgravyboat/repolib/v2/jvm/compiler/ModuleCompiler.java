@@ -11,11 +11,22 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 
 import static java.lang.constant.ConstantDescs.*;
 import static tech.thatgravyboat.repolib.v2.jvm.compiler.ExplCD.*;
 
 public class ModuleCompiler {
+    private static BiConsumer<String, byte[]> saveFunction = null;
+    private static void maybeSave(String name, byte[] clazzBytes) {
+        if (saveFunction == null) return;
+        saveFunction.accept(name, clazzBytes);
+    }
+    public static void registerSaver(BiConsumer<String, byte[]> saveFunction) {
+        ModuleCompiler.saveFunction = saveFunction;
+    }
+
     private static int index = 0;
 
     public static void compileIdentityExpression(CodeBuilder cb, LambdaIdentityFunction expression, CompilationTracker lc) {
@@ -68,7 +79,7 @@ public class ModuleCompiler {
             min++;
         }
 
-        ClassDesc lambdaClass = ClassDesc.of("tech.thatgravyboat.repolib.v2.jvm.compiler.generated$" + name + "$lambda");
+        ClassDesc lambdaClass = ClassDesc.of("tech.thatgravyboat.repolib.v2.jvm.compiler.generated$" + name.replaceAll("[\\\\/]", "#") + "$lambda");
         int finalMin = min;
         int finalMax = max;
         ClassDesc CD_LambdaFunctionValue = ClassDesc.of("tech.thatgravyboat.repolib.v2.expl.value.LambdaFunctionValue");
@@ -188,6 +199,8 @@ public class ModuleCompiler {
                     });
                     builder.withField("lambdas", CD_List, ClassFile.ACC_PUBLIC | ClassFile.ACC_STATIC);
                 });
+        maybeSave(name, classBytes);
+
         Class<?> lambdaClassClass =  MethodHandles.lookup()
                 .defineHiddenClass(classBytes, true)
                 .lookupClass();
@@ -229,7 +242,7 @@ public class ModuleCompiler {
                         builder.withMethod("evaluate", MethodTypeDesc.of(CD_Value, CD_Evaluator), ClassFile.ACC_PUBLIC, mb -> {
                             mb.withCode(cb -> {
                                 CompilationTracker lc = new CompilationTracker(classDesc, builder);
-                                lc.setCodeName(cleanName);
+                                lc.setCodeName(name);
                                 if (!expression.compile(cb, lc)) {
                                     lc.popAll(cb);
                                     cb.areturn();
@@ -239,11 +252,11 @@ public class ModuleCompiler {
                         });
                     });
 
-            Class<?> sexClass = MethodHandles.lookup()
-//                    .defineHiddenClass(classBytes, true)
-//                    .lookupClass();
-                    .defineClass(classBytes);
+            maybeSave(name, classBytes);
 
+            Class<?> sexClass = MethodHandles.lookup()
+                    .defineHiddenClass(classBytes, true)
+                    .lookupClass();
             try {
                 sexClass.getField("lambdas").set(null, lambdas.get());
             } catch (NoSuchFieldException e) {

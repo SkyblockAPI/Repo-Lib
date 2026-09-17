@@ -12,7 +12,6 @@ import java.lang.classfile.CodeBuilder;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.util.Collection;
-import java.util.List;
 import java.util.stream.Collectors;
 
 import static java.lang.constant.ConstantDescs.*;

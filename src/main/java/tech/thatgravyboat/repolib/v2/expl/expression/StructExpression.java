@@ -62,7 +62,12 @@ public record StructExpression(Map<String, Expression> fields, AccessExpression 
         cb.dup();
         cb.new_(hashMap);
         cb.dup();
-        cb.invokespecial(hashMap, "<init>", MTD_void);
+        if (spread == null) {
+            cb.loadConstant((int)(fields.size() * 1.34));
+            cb.invokespecial(hashMap, "<init>", MethodTypeDesc.of(CD_void, CD_int));
+        } else {
+            cb.invokespecial(hashMap, "<init>", MTD_void);
+        }
         cb.invokespecial(CD_MutableStructValue, "<init>", MethodTypeDesc.of(CD_void, CD_Map));
         int structSlot = lc.getLowestUnused();
         cb.astore(structSlot);

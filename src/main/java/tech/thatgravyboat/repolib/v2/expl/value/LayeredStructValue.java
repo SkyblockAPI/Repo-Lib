@@ -69,6 +69,8 @@ public record LayeredStructValue(StructValue.MutableStruct base, KeyValue overla
     public Map<String, KeyValue> sourceMap() {
         Map<String, KeyValue> overlayMap = overlay.sourceMap();
         Map<String, KeyValue> baseMap = base.sourceMap();
+        if (overlayMap.isEmpty()) return baseMap;
+        if (baseMap.isEmpty()) return overlayMap;
         Map<String, KeyValue> result = new HashMap<>((overlayMap.size() + baseMap.size()) * 2);
         result.putAll(baseMap);
         result.putAll(overlayMap);

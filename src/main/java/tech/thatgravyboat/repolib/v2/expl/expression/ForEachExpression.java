@@ -85,18 +85,16 @@ public record ForEachExpression(AccessExpression field, Expression array, Expres
             Label checkLabel = cb.newLabel();
             Label loopLabel = cb.newLabel();
             Label endLoopLabel = cb.newLabel();
-            cb.aload(1);
             from.compile(cb, lc);
-            cb.invokevirtual(CD_Evaluator, "getNumberOrThrow", MethodTypeDesc.of(CD_double, CD_Value));
+            Snippets.getNumberOrThrow(cb);
             cb.d2i();
             if (!inclusiveStart) {
                 cb.loadConstant(1);
                 cb.iadd();
             }
             cb.istore(localSlot);
-            cb.aload(1);
             v.compile(cb, lc);
-            cb.invokevirtual(CD_Evaluator, "getNumberOrThrow", MethodTypeDesc.of(CD_double, CD_Value));
+            Snippets.getNumberOrThrow(cb);
             cb.d2i();
             cb.istore(maxSlot);
 

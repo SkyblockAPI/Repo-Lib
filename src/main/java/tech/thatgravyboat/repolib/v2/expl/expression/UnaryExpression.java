@@ -7,6 +7,7 @@ import tech.thatgravyboat.repolib.v2.binary.ExpressionCodec;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypes;
 import tech.thatgravyboat.repolib.v2.jvm.compiler.CompilationTracker;
+import tech.thatgravyboat.repolib.v2.jvm.compiler.Snippets;
 
 import java.io.IOException;
 import java.lang.classfile.CodeBuilder;
@@ -61,9 +62,8 @@ public record UnaryExpression(Op op, Expression rhs) implements Expression {
                     cb.loadConstant(-value);
                 } else {
                     cb.dconst_0();
-                    cb.aload(1);
                     rhs.compile(cb, lc);
-                    cb.invokevirtual(CD_Evaluator, "getNumberOrThrow", MethodTypeDesc.of(CD_double, CD_Value));
+                    Snippets.getNumberOrThrow(cb);
                     cb.dsub();
                 }
                 cb.invokespecial(CD_NumValue, "<init>", MethodTypeDesc.of(CD_void, CD_double));

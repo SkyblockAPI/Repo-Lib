@@ -57,7 +57,8 @@ public record ArrayExpression(Collection<Expression> list) implements SelfEvalua
         ClassDesc arrayList = ClassDesc.of("java.util.ArrayList");
         cb.new_(arrayList);
         cb.dup();
-        cb.invokespecial(arrayList, "<init>", MTD_void);
+        cb.loadConstant(list.size());
+        cb.invokespecial(arrayList, "<init>", MethodTypeDesc.of(CD_void, CD_int));
         cb.invokestatic(CD_MutableArrayValue, "create", MethodTypeDesc.of(CD_MutableArrayValue, CD_List));
         for (Expression entry : list) {
             cb.dup();

@@ -4,6 +4,9 @@ import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
+
+import java.io.BufferedOutputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -19,6 +22,10 @@ import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
+
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
@@ -47,7 +54,20 @@ public class Main2 extends WebSocketServer {
         RepoLoader loader = new RepoLoader(Path.of("repo").toRealPath().normalize().toAbsolutePath());
         var instance = loader.create();
 
+        FileOutputStream fos = new FileOutputStream("test.jar");
+        BufferedOutputStream bos = new BufferedOutputStream(fos);
+        ZipOutputStream zis = new ZipOutputStream(bos);
+
         loader.registerTransform(ModuleCompiler::createSelfEvaluatingExpression);
+        ModuleCompiler.registerSaver((name, bytes) -> {
+            try {
+                zis.putNextEntry(new ZipEntry(name + ".class"));
+                zis.write(bytes);
+                zis.closeEntry();
+            } catch (IOException e) {
+                // ignore
+            }
+        });
 
         var errors = loader.load();
 
@@ -80,6 +100,7 @@ public class Main2 extends WebSocketServer {
 
         System.out.println("Took " + (sum / 10000_000000.0) + "ms");
 
+        zis.close();
     }
 
     private static StructValue toValue(JsonObject data) {

@@ -40,16 +40,30 @@ public record FileAccessExpression(Collection<Expression> path) implements Expre
     @Override
     public boolean compile(CodeBuilder cb, CompilationTracker lc) {
         cb.aload(1);
-        for (Expression pathSegment : path) {
+
+        StringBuilder constantSections = new StringBuilder();
+        int size = path.size();
+
+        Expression[] pathArray = path.toArray(new Expression[0]);
+        for (int i = 0; i < pathArray.length; i++) {
+            Expression pathSegment = pathArray[i];
             if (pathSegment instanceof StrExpression(String pathSegmentString)) {
-                cb.loadConstant(pathSegmentString);
+                constantSections.append(pathSegmentString);
+                size -= 1;
             } else {
-                cb.aload(1);
                 pathSegment.compile(cb, lc);
-                cb.invokevirtual(CD_Evaluator, "getStringOrThrow", MethodTypeDesc.of(CD_String, CD_Value));
+                Snippets.getStringOrThrow(cb);
+                constantSections.append("\u0001");
+            }
+            if (i != pathArray.length - 1) {
+                constantSections.append("/");
             }
         }
-        Snippets.pathStringConcat(cb, path.size());
+        if (size != 0) {
+            Snippets.stringStringConcat(cb, constantSections.toString(), size);
+        } else {
+            cb.loadConstant(constantSections.toString());
+        }
         cb.invokevirtual(CD_Evaluator, "getFileAccess", MethodTypeDesc.of(CD_FunctionValue, CD_String));
         return false;
     }
