@@ -1,5 +1,6 @@
 package tech.thatgravyboat.repolib.v2.jvm.compiler;
 
+import tech.thatgravyboat.repolib.v2.RepoLoader;
 import tech.thatgravyboat.repolib.v2.expl.expression.*;
 
 import java.lang.classfile.ClassFile;
@@ -16,6 +17,14 @@ import static java.lang.constant.ConstantDescs.*;
 import static tech.thatgravyboat.repolib.v2.jvm.compiler.ExplCD.*;
 
 public class ExpressionCompiler {
+    private static final MethodHandles.Lookup theLookup;
+    static {
+        try {
+            theLookup = MethodHandles.privateLookupIn(RepoLoader.class, MethodHandles.lookup());
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
     private static BiConsumer<String, byte[]> saveFunction = null;
     private static void maybeSave(String name, byte[] clazzBytes) {
         if (saveFunction == null) return;
@@ -25,6 +34,7 @@ public class ExpressionCompiler {
         ExpressionCompiler.saveFunction = saveFunction;
     }
 
+    private static int index = 0;
     public static Class<?> compileLambda(LambdaExpression expression, String name, boolean identity) throws IllegalAccessException, InstantiationException, NoSuchFieldException {
         Collection<LambdaExpression.LambdaArgument> arguments = expression.arguments();
         int min = 0;
@@ -46,7 +56,7 @@ public class ExpressionCompiler {
             min++;
         }
 
-        ClassDesc lambdaClass = ClassDesc.of("tech.thatgravyboat.repolib.v2.jvm.compiler.generated");
+        ClassDesc lambdaClass = ClassDesc.of("tech.thatgravyboat.repolib.v2.generated" + index++);
         int finalMin = min;
         int finalMax = max;
         ClassDesc CD_LambdaFunctionValue = ClassDesc.of("tech.thatgravyboat.repolib.v2.expl.value.LambdaFunctionValue");
@@ -161,7 +171,7 @@ public class ExpressionCompiler {
                 });
         maybeSave(name, classBytes);
 
-        Class<?> lambdaClassClass =  MethodHandles.lookup()
+        Class<?> lambdaClassClass =  theLookup
                 .defineHiddenClass(classBytes, true)
                 .lookupClass();
 
@@ -173,7 +183,7 @@ public class ExpressionCompiler {
     public static SelfEvaluatingExpression createSelfEvaluatingExpression(Expression expression, String name) {
         try {
             AtomicReference<List<Object>> lambdas = new AtomicReference<>();
-            ClassDesc classDesc = ClassDesc.of("tech.thatgravyboat.repolib.v2.jvm.compiler.generated");
+            ClassDesc classDesc = ClassDesc.of("tech.thatgravyboat.repolib.v2.generated" + index++);
             byte[] classBytes = ClassFile.of()
                     .build(classDesc, (builder) -> {
                         builder.withInterfaces(builder.constantPool()
@@ -202,7 +212,7 @@ public class ExpressionCompiler {
 
             maybeSave(name, classBytes);
 
-            Class<?> sexClass = MethodHandles.lookup()
+            Class<?> sexClass = theLookup
                     .defineHiddenClass(classBytes, true)
                     .lookupClass();
 

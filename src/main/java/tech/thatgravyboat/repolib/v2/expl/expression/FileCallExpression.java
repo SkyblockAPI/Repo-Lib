@@ -14,7 +14,6 @@ import java.io.IOException;
 import java.lang.classfile.CodeBuilder;
 import java.lang.constant.MethodTypeDesc;
 
-import static tech.thatgravyboat.repolib.v2.jvm.compiler.ExplCD.*;
 import static tech.thatgravyboat.repolib.v2.jvm.compiler.ExplCD.CD_Evaluator;
 import static tech.thatgravyboat.repolib.v2.jvm.compiler.ExplCD.CD_StructValue;
 import static tech.thatgravyboat.repolib.v2.jvm.compiler.ExplCD.CD_StructuredFunctionValue;
@@ -55,9 +54,8 @@ public record FileCallExpression(Expression access, StructExpression expr) imple
 
     @Override
     public boolean compile(CodeBuilder cb, CompilationTracker lc) {
-        cb.aload(1);
         access.compile(cb, lc);
-        cb.invokevirtual(CD_Evaluator, "getStructuredFunctionOrThrow", MethodTypeDesc.of(CD_StructuredFunctionValue, CD_Value));
+        cb.checkcast(CD_StructuredFunctionValue);
         cb.aload(1);
         expr.compile(cb, lc);
         cb.invokeinterface(CD_StructuredFunctionValue, "apply", MethodTypeDesc.of(CD_Value, CD_Evaluator, CD_StructValue));

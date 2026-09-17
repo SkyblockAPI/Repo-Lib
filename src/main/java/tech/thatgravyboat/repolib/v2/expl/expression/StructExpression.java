@@ -18,8 +18,6 @@ import java.util.stream.Gatherers;
 
 import static java.lang.constant.ConstantDescs.*;
 import static tech.thatgravyboat.repolib.v2.jvm.compiler.ExplCD.*;
-import static tech.thatgravyboat.repolib.v2.jvm.compiler.ExplCD.CD_Evaluator;
-import static tech.thatgravyboat.repolib.v2.jvm.compiler.ExplCD.CD_MutableStructValue;
 
 public record StructExpression(Map<String, Expression> fields, AccessExpression spread) implements Expression {
 
@@ -56,17 +54,13 @@ public record StructExpression(Map<String, Expression> fields, AccessExpression 
 
     @Override
     public boolean compile(CodeBuilder cb, CompilationTracker lc) {
-        ClassDesc hashMap = ClassDesc.of("java.util.LinkedHashMap");
+        ClassDesc hashMap = ClassDesc.of("java.util.HashMap");
         cb.new_(CD_MutableStructValue);
         cb.dup();
         cb.new_(hashMap);
         cb.dup();
-        if (spread == null) {
-            cb.loadConstant((int)(fields.size() * 1.34));
-            cb.invokespecial(hashMap, "<init>", MethodTypeDesc.of(CD_void, CD_int));
-        } else {
-            cb.invokespecial(hashMap, "<init>", MTD_void);
-        }
+        cb.loadConstant((int) Math.clamp(fields.size() * 1.34, 16, 128));
+        cb.invokespecial(hashMap, "<init>", MethodTypeDesc.of(CD_void, CD_int));
         cb.invokespecial(CD_MutableStructValue, "<init>", MethodTypeDesc.of(CD_void, CD_Map));
         int structSlot = lc.getLowestUnused();
         cb.astore(structSlot);
