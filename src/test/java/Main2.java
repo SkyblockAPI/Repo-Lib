@@ -2,10 +2,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -14,7 +12,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
@@ -23,11 +20,10 @@ import java.util.stream.StreamSupport;
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
-import tech.thatgravyboat.repolib.v2.RepoConfig;
-import tech.thatgravyboat.repolib.v2.RepoLoader;
+import tech.thatgravyboat.repolib.v2.BundleLoader;
+import tech.thatgravyboat.repolib.v2.FolderLoader;
 import tech.thatgravyboat.repolib.v2.expl.value.ArrayValue;
 import tech.thatgravyboat.repolib.v2.expl.value.BoolValue;
-import tech.thatgravyboat.repolib.v2.expl.value.ImmutableStructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.MutableArrayValue;
 import tech.thatgravyboat.repolib.v2.expl.value.MutableStructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.NilValue;
@@ -43,14 +39,16 @@ public class Main2 extends WebSocketServer {
 
     boolean running = true;
 
-    public static void main(String[] args) throws IOException {
-        RepoLoader loader = new RepoLoader(Path.of("Repo-Data").toRealPath().normalize().toAbsolutePath());
+    static void main(String[] args) throws IOException {
+        FolderLoader loader = new FolderLoader(Path.of("Repo-Data").toRealPath().normalize().toAbsolutePath());
         var instance = loader.create();
 
         var errors = loader.load();
 
+        var path = Path.of("bundle.srb");
         if (errors.isEmpty()) {
-            Files.write(Path.of("bundle.srb"), loader.buildRepoBundle(), StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE);
+            Files.write(path, loader.buildRepoBundle(), StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE);
+            new BundleLoader(path).load();
         }
     }
 

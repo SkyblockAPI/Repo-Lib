@@ -4,7 +4,6 @@ package tech.thatgravyboat.repolib.v2.expl.expression;
 import tech.thatgravyboat.repolib.v2.RepoLoader;
 import tech.thatgravyboat.repolib.v2.binary.Encodable;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
-import tech.thatgravyboat.repolib.v2.binary.TypedExpression;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.FunctionFile;
 import tech.thatgravyboat.repolib.v2.expl.ModuleFile;
@@ -23,7 +22,7 @@ public sealed interface Expression extends Encodable
         return new Parser(source).parseModuleFile(name, loader, evaluator);
     }
 
-    static FunctionFile parseFunctionOrThrow(RepoLoader loader, String name,  String source) {
+    static FunctionFile parseFunctionOrThrow(RepoLoader loader, String name, String source) {
         return new Parser(source).parseFunctionFile(name, loader);
     }
 

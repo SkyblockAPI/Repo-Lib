@@ -116,12 +116,11 @@ public record ByteBufferImpl(InputStream input, OutputStream output) implements 
 
     public byte[] readByteArray() throws IOException {
         var length = this.readInt();
-        var bytes = new byte[length];
-        var actual = this.input().read(bytes);
-        if (actual != length) {
+        var actual = this.input().readNBytes(length);
+        if (actual.length != length) {
             throw new IOException("Expected " + length + " bytes but only got " + actual);
         }
-        return bytes;
+        return actual;
     }
 
     public void writeString(String value) {

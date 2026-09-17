@@ -35,7 +35,7 @@ public record RepoInstance(
                     });
 
                 }));
-        var evaluator = new Evaluator(listConstants, this.loader::getModule);
+        var evaluator = new Evaluator(listConstants, this.loader::module);
         evaluator.evaluate(loader.rootList());
         return stacks;
     }
@@ -52,7 +52,7 @@ public record RepoInstance(
         var constants = this.constants.toMutableStruct();
         constants.set("data", data);
         constants.set("profile", Objects.requireNonNullElseGet(profile, this::getEmptyProfile));
-        var evaluator = new Evaluator(constants, this.loader::getModule);
+        var evaluator = new Evaluator(constants, this.loader::module);
         evaluator.evaluate(loader.rootFile());
         var file = evaluator.getStringOrNull(evaluator.getField("file"));
         if (file == null) {
@@ -67,14 +67,14 @@ public record RepoInstance(
     }
 
     public StructValue getMaxedProfile() {
-        var profile = this.loader.getModule("profile");
+        var profile = this.loader.module("profile");
         if (profile == null) {
             return getEmptyProfile();
         }
 
         var profileStruct = new MutableStructValue();
 
-        var evaluator = new Evaluator(new LayeredStructValue(profileStruct, this.constants), this.loader::getModule);
+        var evaluator = new Evaluator(new LayeredStructValue(profileStruct, this.constants), this.loader::module);
         evaluator.evaluate(profile);
         return new ImmutableStructValue(profileStruct.fields());
     }
@@ -87,8 +87,8 @@ public record RepoInstance(
     }
 
     public RepoStackResult createStack(String id, StructValue data, StructValue profile, RepoConfig repoConfig) {
-        var stackFile = loader.getStackFile(id);
-        var evaluator = stackFile.createEvaluator(constants, data, Objects.requireNonNullElseGet(profile, this::getEmptyProfile), repoConfig, this.loader::getModule);
+        var stackFile = loader.stackFile(id);
+        var evaluator = stackFile.createEvaluator(constants, data, Objects.requireNonNullElseGet(profile, this::getEmptyProfile), repoConfig, this.loader::module);
         var stack = stackFile.evaluateScript(evaluator);
         return new RepoStackResult(stack, evaluator.debugs, evaluator.errors);
     }

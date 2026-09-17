@@ -31,7 +31,7 @@ public final class RepoConstants implements StructValue.Forwarding {
             function.vararg(true);
             function.execute((evaluator, args) -> {
                 var value = evaluator.getStringOrThrow(args.getFirst());
-                var requested = loader.getModule(value);
+                var requested = loader.module(value);
                 if (requested == null) {
                     return evaluator.panic("Requested include " + value + " doesn't exist!");
                 }
@@ -56,7 +56,7 @@ public final class RepoConstants implements StructValue.Forwarding {
             function.vararg(true);
             function.execute((evaluator, args) -> {
                 var value = evaluator.getStringOrThrow(args.getFirst());
-                var requested = loader.getModule(value);
+                var requested = loader.module(value);
                 if (requested == null) {
                     return evaluator.panic("Requested include " + value + " doesn't exist!");
                 }
@@ -78,7 +78,7 @@ public final class RepoConstants implements StructValue.Forwarding {
                 }
 
                 var value = evaluator.getStringOrThrow(arg);
-                var requested = loader.getModule(value);
+                var requested = loader.module(value);
                 if (requested == null) {
                     return evaluator.panic("Requested include " + value + " doesn't exist!");
                 }

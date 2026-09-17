@@ -61,7 +61,7 @@ public final class StackFile implements SelfEvaluatingExpression, TypedFile<Stac
                     function.arity(1);
                     function.execute((evaluator, args) -> {
                         var value = evaluator.getStringOrThrow(args.getFirst());
-                        var requested = loader.getModule(value);
+                        var requested = loader.module(value);
                         if (requested == null) {
                             return evaluator.panic("Requested include " + value + " doesn't exist!");
                         }
@@ -79,7 +79,7 @@ public final class StackFile implements SelfEvaluatingExpression, TypedFile<Stac
                     function.arity(1);
                     function.execute((evaluator, args) -> {
                         var value = evaluator.getStringOrThrow(args.getFirst());
-                        var requested = loader.getModule(value);
+                        var requested = loader.module(value);
                         if (requested == null) {
                             return evaluator.panic("Requested include " + value + " doesn't exist!");
                         }
@@ -91,7 +91,7 @@ public final class StackFile implements SelfEvaluatingExpression, TypedFile<Stac
                     });
                 }));
         struct.set("categories", MutableArrayValue.create());
-        var evaluator = new Evaluator(new LayeredStructValue(struct, constants), loader::getModule);
+        var evaluator = new Evaluator(new LayeredStructValue(struct, constants), loader::module);
         evaluator.evaluate(this.metaScript);
         struct.fields().remove("include");
         this.meta = struct.toFullyImmutable();
