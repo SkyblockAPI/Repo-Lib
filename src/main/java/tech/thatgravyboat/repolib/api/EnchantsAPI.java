@@ -11,18 +11,22 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import tech.thatgravyboat.repolib.internal.Utils;
 
 public final class EnchantsAPI {
 
     private final Map<String, Enchant> enchantments = new HashMap<>();
 
     void load(JsonElement json) {
+        enchantments.clear();
         if (json instanceof JsonObject object) {
             object.asMap().forEach((key, value) -> {
                 if (value instanceof JsonObject valueObject) {
                     this.enchantments.put(key.toUpperCase(Locale.ROOT), Enchant.fromJson(valueObject));
                 }
             });
+        } else {
+            RepoLibLogger.warn("/Enchants/ Failed to load, expected JsonObject but got " + Utils.typeName(json));
         }
     }
 
@@ -66,13 +70,15 @@ public final class EnchantsAPI {
     public record EnchantLevel(
             int level,
             @NotNull String literalLevel,
-            @NotNull List<String> lore
+            @Deprecated @NotNull List<String> lore,
+            @NotNull JsonObject item
     ) {
         public static EnchantLevel fromJson(JsonObject object) {
             return new EnchantLevel(
                     object.get("level").getAsInt(),
                     object.get("literal_level").getAsString(),
-                    object.getAsJsonArray("lore").asList().stream().map(JsonElement::getAsString).toList()
+                    object.getAsJsonArray("lore").asList().stream().map(JsonElement::getAsString).toList(),
+                    object.getAsJsonObject("item")
             );
         }
     }

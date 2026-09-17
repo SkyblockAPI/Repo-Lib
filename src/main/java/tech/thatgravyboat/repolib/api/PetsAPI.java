@@ -3,54 +3,67 @@ package tech.thatgravyboat.repolib.api;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import tech.thatgravyboat.repolib.api.types.DoubleDoublePair;
 import tech.thatgravyboat.repolib.api.types.Pair;
 
 import java.text.DecimalFormat;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.DoubleUnaryOperator;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import tech.thatgravyboat.repolib.internal.Utils;
 
 public final class PetsAPI {
 
     private final Map<String, Data> pets = new HashMap<>();
     private final Map<String, Map<String, DoubleUnaryOperator>> petItems = new HashMap<>();
 
-    private static final DecimalFormat loreFormatter = new DecimalFormat("0.##");
+    private static final DecimalFormat loreFormatter = new DecimalFormat("0.####");
 
     void load(JsonElement json, JsonObject constants) {
+        pets.clear();
+        petItems.clear();
         if (json instanceof JsonObject object) {
             for (var entry : object.entrySet()) {
                 this.pets.put(entry.getKey(), Data.fromJson(entry.getValue().getAsJsonObject()));
             }
+        } else {
+            RepoLibLogger.warn("/Pets/ Failed to load pets, expected JsonObject but got " + Utils.typeName(constants));
         }
-        if (constants.get("PetItems") instanceof JsonObject object) {
+        var petItems = constants.get("PetItems");
+        if (petItems instanceof JsonObject object) {
             for (var entry : object.entrySet()) {
                 var item = entry.getKey();
                 var stats = entry.getValue().getAsJsonObject().getAsJsonObject("pet_stats");
                 var operators = stats.entrySet().stream()
-                                .map(it -> {
-                                    var operator = it.getValue().getAsJsonArray();
-                                    var opcode = operator.get(0).getAsString();
-                                    var value = operator.get(1).getAsDouble();
-                                    return Pair.of(
-                                            it.getKey(),
-                                            switch (opcode) {
-                                                case "+" -> (DoubleUnaryOperator) (x -> x + value);
-                                                case "-" -> (DoubleUnaryOperator) (x -> x - value);
-                                                case "*" -> (DoubleUnaryOperator) (x -> x * value);
-                                                case "/" -> (DoubleUnaryOperator) (x -> x / value);
-                                                case "=" -> (DoubleUnaryOperator) (x -> value);
-                                                default -> throw new IllegalArgumentException("Unknown opcode: " + opcode);
-                                            }
-                                    );
-                                })
-                                .collect(Collectors.toMap(Pair::first, Pair::second));
+                        .map(it -> {
+                            var operator = it.getValue().getAsJsonArray();
+                            var opcode = operator.get(0).getAsString();
+                            var value = operator.get(1).getAsDouble();
+                            return Pair.of(
+                                    it.getKey(),
+                                    switch (opcode) {
+                                        case "+" -> (DoubleUnaryOperator) (x -> x + value);
+                                        case "-" -> (DoubleUnaryOperator) (x -> x - value);
+                                        case "*" -> (DoubleUnaryOperator) (x -> x * value);
+                                        case "/" -> (DoubleUnaryOperator) (x -> x / value);
+                                        case "=" -> (DoubleUnaryOperator) (x -> value);
+                                        default -> throw new IllegalArgumentException("Unknown opcode: " + opcode);
+                                    }
+                            );
+                        })
+                        .collect(Collectors.toMap(Pair::first, Pair::second));
                 this.petItems.put(item.toUpperCase(Locale.ROOT), operators);
             }
+        } else {
+            RepoLibLogger.warn("/Pets/ Failed pet items from constants, expected JsonObject but got " + Utils.typeName(petItems));
         }
     }
 
@@ -89,10 +102,11 @@ public final class PetsAPI {
         }
 
         public record Tier(
-                String texture,
-                List<String> lore,
+                @Deprecated String texture,
+                @Deprecated List<String> lore,
                 Map<String, DoubleDoublePair> variables,
-                int variablesOffset
+                int variablesOffset,
+                @NotNull JsonObject item
         ) {
 
             private static final Pattern VARIABLE_PATTERN = Pattern.compile("\\{(?<key>[a-zA-Z0-9_]+)}");
@@ -100,8 +114,9 @@ public final class PetsAPI {
             public double getStat(String key, int level, @Nullable String heldItem) {
                 var operators = RepoAPI.pets().getPetItemStats(heldItem);
                 var variable = this.variables.get(key);
-                var stat = variable.first() + (Math.clamp(level - variablesOffset, 0, 100) / 100.0) * (variable.second() - variable.first());
-                var value = Math.floor(stat * 10.0) / 10.0; // round to 1 decimal place
+                var percentage = Math.clamp(level - 1 - this.variablesOffset, 0, 99) / 99.0F;
+                var stat = variable.first() + percentage * (variable.second() - variable.first());
+                var value = Math.floor(stat * 10000.0) / 10000.0; // round to 4 decimal place
                 return operators.getOrDefault(key, x -> x).applyAsDouble(value);
             }
 
@@ -109,6 +124,7 @@ public final class PetsAPI {
                 return this.getStat(key, level, null);
             }
 
+            @Deprecated
             public List<String> getFormattedLore(int level, @Nullable String heldItem) {
                 return this.lore.stream()
                         .map(line -> VARIABLE_PATTERN.matcher(line).replaceAll(match -> {
@@ -119,6 +135,7 @@ public final class PetsAPI {
                         .toList();
             }
 
+            @Deprecated
             public List<String> getFormattedLore(int level) {
                 return getFormattedLore(level, null);
             }
@@ -137,7 +154,8 @@ public final class PetsAPI {
                                         new DoubleDoublePair(entry.getValue().getAsJsonArray().get(0).getAsDouble(), entry.getValue().getAsJsonArray().get(1).getAsDouble())
                                 ))
                                 .collect(Collectors.toMap(Pair::first, Pair::second)),
-                        Optional.ofNullable(json.get("variablesOffset")).map(JsonElement::getAsInt).orElse(0)
+                        Optional.ofNullable(json.get("variablesOffset")).map(JsonElement::getAsInt).orElse(0),
+                        json.getAsJsonObject("item")
                 );
             }
         }

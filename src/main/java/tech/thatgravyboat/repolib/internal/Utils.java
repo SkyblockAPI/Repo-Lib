@@ -2,8 +2,13 @@ package tech.thatgravyboat.repolib.internal;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import com.google.gson.stream.JsonReader;
+import java.util.function.Supplier;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -17,6 +22,7 @@ import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.function.Function;
+import tech.thatgravyboat.repolib.api.RepoLibLogger;
 
 @ApiStatus.Internal
 public class Utils {
@@ -41,7 +47,7 @@ public class Utils {
 
             return GSON.fromJson(response.body(), JsonElement.class);
         } catch (Throwable e) {
-            e.printStackTrace();
+            RepoLibLogger.error("Error fetching JSON from API path", e);
         }
         return null;
     }
@@ -74,8 +80,54 @@ public class Utils {
         }
     }
 
-    public static <I, O> O mapNotNull(@Nullable I value, Function<I, O> mapper) {
+    public static <I, O> O mapNotNull(@Nullable I value, Function<@NotNull I, O> mapper) {
         if (value == null) return null;
         return mapper.apply(value);
+    }
+    public static <I, O> O mapNotNullOrDefault(@Nullable I value, Function<@NotNull I, O> mapper, Supplier<O> defaultSupplier) {
+        if (value == null) return defaultSupplier.get();
+        return mapper.apply(value);
+    }
+
+    public static String typeName(@Nullable JsonElement type) {
+        return switch (type) {
+            case JsonObject obj -> "JsonObject";
+            case JsonArray obj -> "JsonArray";
+            case JsonNull obj -> "JsonNull";
+            case JsonPrimitive primitive -> {
+                if (primitive.isBoolean()) {
+                    yield "Boolean";
+                } else if (primitive.isNumber()) {
+                    yield "Number";
+                } else {
+                    yield "String";
+                }
+            }
+            case null -> "null";
+            default -> "Unknown";
+        };
+    }
+
+    public static String toTitleCase(@Nullable String text) {
+        if (text == null || text.isEmpty()) {
+            return text;
+        }
+
+        StringBuilder stringBuilder = new StringBuilder(text.length());
+        boolean capitalizeNext = true;
+
+        for (char c : text.toCharArray()) {
+            if (Character.isSpaceChar(c) || c == '_' || c == '-') {
+                capitalizeNext = true;
+                stringBuilder.append(c == '_' ? ' ' : c);
+            } else if (capitalizeNext) {
+                stringBuilder.append(Character.toTitleCase(c));
+                capitalizeNext = false;
+            } else {
+                stringBuilder.append(Character.toLowerCase(c));
+            }
+        }
+
+        return stringBuilder.toString();
     }
 }

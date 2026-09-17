@@ -2,6 +2,7 @@ package tech.thatgravyboat.repolib.api;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
@@ -26,12 +27,14 @@ public class RunesAPI {
     }
 
     void load(JsonObject json) {
+        runes.clear();
         for (var entry : json.entrySet()) {
             String id = entry.getKey().toUpperCase(Locale.ROOT);
             List<Rune> data = entry.getValue().getAsJsonArray().asList().stream()
                     .map(JsonElement::getAsJsonObject)
                     .map($1 -> Rune.fromJson(id, $1))
                     .toList();
+
             this.runes.put(id, data);
         }
     }
@@ -39,9 +42,10 @@ public class RunesAPI {
     public record Rune(
             String id,
             int tier,
-            String texture,
-            String name,
-            List<String> lore
+            @Deprecated String texture,
+            @Deprecated String name,
+            @Deprecated List<String> lore,
+            @NotNull JsonObject item
     ) {
         static Rune fromJson(String id, JsonObject json) {
             return new Rune(
@@ -52,7 +56,8 @@ public class RunesAPI {
                     json.getAsJsonArray("lore").asList()
                             .stream()
                             .map(JsonElement::getAsString)
-                            .toList()
+                            .toList(),
+                    json.getAsJsonObject("item")
             );
         }
     }
