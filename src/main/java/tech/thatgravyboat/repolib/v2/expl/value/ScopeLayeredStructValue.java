@@ -8,7 +8,13 @@ public record ScopeLayeredStructValue(StructValue base, StructValue.MutableStruc
 
     @Override
     public void set(String field, Value value) {
-        overlay.set(field, value);
+        if (base.contains(field) && !overlay.contains(field)) {
+            if (base instanceof KeyValue.Mutable mutableBase) {
+                mutableBase.set(field, value);
+            }
+        } else {
+            overlay.set(field, value);
+        }
     }
 
     @Override
@@ -54,7 +60,7 @@ public record ScopeLayeredStructValue(StructValue base, StructValue.MutableStruc
             return this;
         }
 
-        if (!overlay.contains(field)) {
+        if (base.contains(field) && !overlay.contains(field)) {
             return base.get(field);
         }
         return overlay.get(field);
