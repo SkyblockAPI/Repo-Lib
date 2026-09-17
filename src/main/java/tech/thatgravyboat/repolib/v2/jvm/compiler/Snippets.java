@@ -103,9 +103,8 @@ public class Snippets {
             if (access.field() instanceof StrExpression(String fieldValue)) {
                 cb.loadConstant(fieldValue);
             } else {
-                cb.dup();
                 access.field().compile(cb, lc);
-                cb.invokevirtual(CD_Evaluator, "getStringOrThrow", MethodTypeDesc.of(CD_String, CD_Value));
+                getStringOrThrow(cb);
             }
             cb.swap();
             cb.invokevirtual(CD_Evaluator, "setField", MethodTypeDesc.of(CD_void, CD_String, CD_Value));
@@ -117,9 +116,8 @@ public class Snippets {
             if (access.field() instanceof StrExpression(String string)) {
                 cb.loadConstant(string);
             } else {
-                cb.aload(1);
                 access.field().compile(cb, lc);
-                cb.invokevirtual(CD_Evaluator, "getStringOrThrow", MethodTypeDesc.of(CD_String, CD_Value));
+                getStringOrThrow(cb);
             }
             cb.swap();
             cb.invokeinterface(CD_MutableKV, "set", MethodTypeDesc.of(CD_void, CD_String, CD_Value));

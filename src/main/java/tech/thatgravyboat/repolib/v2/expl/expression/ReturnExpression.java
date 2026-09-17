@@ -8,7 +8,6 @@ import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.ExecutionExceptions;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 import tech.thatgravyboat.repolib.v2.jvm.compiler.CompilationTracker;
-import tech.thatgravyboat.repolib.v2.jvm.compiler.ModuleCompiler;
 
 import java.io.IOException;
 import java.lang.classfile.CodeBuilder;

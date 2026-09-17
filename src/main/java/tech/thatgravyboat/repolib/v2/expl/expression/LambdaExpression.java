@@ -2,9 +2,9 @@ package tech.thatgravyboat.repolib.v2.expl.expression;
 
 import java.io.IOException;
 import java.lang.classfile.CodeBuilder;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
-import java.util.List;
-import org.jetbrains.annotations.Nullable;
+
 import tech.thatgravyboat.repolib.v2.binary.ByteBuffer;
 import tech.thatgravyboat.repolib.v2.binary.Encodable;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionCodec;
@@ -14,7 +14,9 @@ import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.value.FunctionValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 import tech.thatgravyboat.repolib.v2.jvm.compiler.CompilationTracker;
-import tech.thatgravyboat.repolib.v2.jvm.compiler.ModuleCompiler;
+import tech.thatgravyboat.repolib.v2.jvm.compiler.ExpressionCompiler;
+
+import static tech.thatgravyboat.repolib.v2.jvm.compiler.ExplCD.CD_FunctionValue;
 
 public record LambdaExpression(
         Collection<LambdaArgument> arguments, Expression body, Value function, boolean requiresSemicolon
@@ -102,7 +104,13 @@ public record LambdaExpression(
 
     @Override
     public boolean compile(CodeBuilder cb, CompilationTracker lc) {
-        ModuleCompiler.compileLambdaExpression(cb, this, lc);
+        try {
+            Class<?> lambdaClass = ExpressionCompiler.compileLambda(this, lc.getCodeName(), false);
+            lc.loadTrackedObject(cb, lc.addTrackedObject(lambdaClass.getConstructor().newInstance()));
+            cb.checkcast(CD_FunctionValue);
+        } catch (IllegalAccessException | InstantiationException | InvocationTargetException | NoSuchMethodException | NoSuchFieldException e) {
+            throw new RuntimeException(e);
+        }
         return false;
     }
 

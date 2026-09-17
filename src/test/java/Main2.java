@@ -40,7 +40,7 @@ import tech.thatgravyboat.repolib.v2.expl.value.NumValue;
 import tech.thatgravyboat.repolib.v2.expl.value.StrValue;
 import tech.thatgravyboat.repolib.v2.expl.value.StructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
-import tech.thatgravyboat.repolib.v2.jvm.compiler.ModuleCompiler;
+import tech.thatgravyboat.repolib.v2.jvm.compiler.ExpressionCompiler;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class Main2 extends WebSocketServer {
@@ -57,8 +57,8 @@ public class Main2 extends WebSocketServer {
         BufferedOutputStream bos = new BufferedOutputStream(fos);
         ZipOutputStream zis = new ZipOutputStream(bos);
 
-        loader.registerTransform(ModuleCompiler::createSelfEvaluatingExpression);
-        ModuleCompiler.registerSaver((name, bytes) -> {
+        loader.registerTransform(ExpressionCompiler::createSelfEvaluatingExpression);
+        ExpressionCompiler.registerSaver((name, bytes) -> {
             try {
                 zis.putNextEntry(new ZipEntry(name + ".class"));
                 zis.write(bytes);
