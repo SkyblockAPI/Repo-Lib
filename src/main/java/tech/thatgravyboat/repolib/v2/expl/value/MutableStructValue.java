@@ -74,6 +74,16 @@ public record MutableStructValue(Map<String, Value> fields) implements StructVal
     }
 
     @Override
+    public Map<String, KeyValue> sourceMap() {
+        if (fields.isEmpty()) return Map.of();
+        Map<String, KeyValue> result = new HashMap<>(fields.size() * 2);
+        for (String key : keySet()) {
+            result.put(key, this);
+        }
+        return result;
+    }
+
+    @Override
     public @NotNull Iterator<Map.Entry<String, Value>> iterator() {
         return fields.entrySet().iterator();
     }

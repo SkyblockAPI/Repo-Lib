@@ -50,6 +50,15 @@ public record Constants(Map<String, Value> map) implements StructValue {
     }
 
     @Override
+    public Map<String, KeyValue> sourceMap() {
+        Map<String, KeyValue> result = new HashMap<>(map.size());
+        for (String key : keySet()) {
+            result.put(key, this);
+        }
+        return result;
+    }
+
+    @Override
     public @NotNull Iterator<Map.Entry<String, Value>> iterator() {
         return map.entrySet().iterator();
     }

@@ -5,6 +5,7 @@ import tech.thatgravyboat.repolib.v2.expl.value.KeyValue;
 import tech.thatgravyboat.repolib.v2.expl.value.NilValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
+import java.util.Map;
 import java.util.Set;
 
 public class RepoConfig implements KeyValue {
@@ -27,6 +28,11 @@ public class RepoConfig implements KeyValue {
     @Override
     public Set<String> keySet() {
         return Set.of("roman_numerals");
+    }
+
+    @Override
+    public Map<String, KeyValue> sourceMap() {
+        return Map.of("roman_numerals", this);
     }
 
     public RepoConfig withRomanNumerals(boolean romanNumerals) {

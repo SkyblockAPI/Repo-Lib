@@ -1,5 +1,6 @@
 package tech.thatgravyboat.repolib.v2.expl.value;
 
+import java.util.Map;
 import java.util.Set;
 
 non-sealed public interface KeyValue extends Value {
@@ -12,6 +13,7 @@ non-sealed public interface KeyValue extends Value {
     boolean isEmpty();
 
     Set<String> keySet();
+    Map<String, KeyValue> sourceMap();
 
     interface Forwarding extends KeyValue {
         KeyValue delegate();
@@ -39,6 +41,11 @@ non-sealed public interface KeyValue extends Value {
         @Override
         default Set<String> keySet() {
             return delegate().keySet();
+        }
+
+        @Override
+        default Map<String, KeyValue> sourceMap() {
+            return delegate().sourceMap();
         }
     }
 
