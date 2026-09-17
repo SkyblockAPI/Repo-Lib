@@ -48,7 +48,7 @@ public final class EnchantsAPI {
             try {
                 return new Enchant(
                         object.get("id").getAsString(),
-                        object.get("name").getAsString(),
+                        object.get("names").getAsString(),
                         object.get("isUltimate").getAsBoolean(),
                         object.getAsJsonArray("levels")
                                 .asList()

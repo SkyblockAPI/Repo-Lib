@@ -5,9 +5,12 @@ import java.util.Collection;
 import java.util.List;
 
 import tech.thatgravyboat.repolib.v2.binary.BinaryFileTypeRegistry;
-import tech.thatgravyboat.repolib.v2.binary.ByteBuffer;
+import tech.thatgravyboat.repolib.v2.binary.ByteBufferImpl;
+import tech.thatgravyboat.repolib.v2.binary.DecoderContext;
+import tech.thatgravyboat.repolib.v2.binary.EncoderContext;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionCodec;
 import tech.thatgravyboat.repolib.v2.binary.FileTypes;
+import tech.thatgravyboat.repolib.v2.binary.NameTable;
 import tech.thatgravyboat.repolib.v2.binary.TypedFile;
 import tech.thatgravyboat.repolib.v2.expl.expression.Expression;
 import tech.thatgravyboat.repolib.v2.expl.expression.LambdaExpression;
@@ -17,7 +20,7 @@ import tech.thatgravyboat.repolib.v2.expl.value.StructuredFunctionValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
 public record FunctionFile(String name, Collection<LambdaExpression.LambdaArgument> arguments, Expression body) implements LambdaValue, StructuredFunctionValue,
-        TypedFile<FunctionFile> {
+        FunctionValueFile<FunctionFile> {
 
     @Override
     public Value apply(Evaluator evaluator, StructValue structValue) {
@@ -87,10 +90,19 @@ public record FunctionFile(String name, Collection<LambdaExpression.LambdaArgume
     }
 
     @Override
-    public void encode(ByteBuffer buffer) {
-        buffer.writeString(this.name);
+    public void encode(EncoderContext buffer) {
+        buffer.writeLiteral(this.name);
         buffer.writeCollection(this.arguments, LambdaExpression.LambdaArgument::encode);
         ExpressionCodec.write(this.body, buffer);
+    }
+
+    @Override
+    public void precode(NameTable table) {
+        table.insert(this.name);
+        for (var argument : this.arguments) {
+            argument.precode(table);
+        }
+        this.body.precode(table);
     }
 
     @Override
@@ -98,9 +110,9 @@ public record FunctionFile(String name, Collection<LambdaExpression.LambdaArgume
         return FileTypes.FUNCTION;
     }
 
-    public static FunctionFile decode(ByteBuffer buffer) throws IOException {
+    public static FunctionFile decode(DecoderContext buffer) throws IOException {
         return new FunctionFile(
-                buffer.readString(),
+                buffer.readLiteral(),
                 buffer.readCollection(LambdaExpression.LambdaArgument::decode),
                 ExpressionCodec.read(buffer)
         );

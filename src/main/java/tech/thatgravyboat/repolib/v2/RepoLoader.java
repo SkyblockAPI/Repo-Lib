@@ -5,6 +5,8 @@ import org.jetbrains.annotations.Nullable;
 import tech.thatgravyboat.repolib.v2.binary.RepoBinaryUtils;
 import tech.thatgravyboat.repolib.v2.binary.TypedFile;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
+import tech.thatgravyboat.repolib.v2.expl.FunctionValueFile;
+import tech.thatgravyboat.repolib.v2.expl.ModuleFile;
 import tech.thatgravyboat.repolib.v2.expl.StackFile;
 import tech.thatgravyboat.repolib.v2.expl.expression.Expression;
 import tech.thatgravyboat.repolib.v2.expl.value.FunctionValue;
@@ -20,7 +22,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
-import java.util.function.Function;
 
 public class RepoLoader implements FileVisitor<Path> {
     public interface Transformer {
@@ -28,9 +29,9 @@ public class RepoLoader implements FileVisitor<Path> {
     }
 
     public final Path path;
-    private final Map<String, FunctionValue> files = new HashMap<>();
+    private final Map<String, FunctionValueFile<?>> files = new HashMap<>();
     private Expression rootList = null;
-    private Expression rootFile = null;
+    private ModuleFile rootFile = null;
     private final Map<String, StackFile> stackFiles = new HashMap<>();
     private final List<LoadingErrors> errors = new ArrayList<>();
     private Transformer expressionTransformer = (a, n) -> a;
@@ -121,7 +122,7 @@ public class RepoLoader implements FileVisitor<Path> {
         return rootList;
     }
 
-    public Expression rootFile() {
+    public ModuleFile rootFile() {
         return rootFile;
     }
 
@@ -198,6 +199,14 @@ public class RepoLoader implements FileVisitor<Path> {
     @Override
     public @NotNull FileVisitResult postVisitDirectory(Path dir, @Nullable IOException exc) {
         return FileVisitResult.CONTINUE;
+    }
+
+    public byte[] buildRepoBundle() {
+        return RepoBinaryUtils.bundle(this);
+    }
+
+    public Map<String, FunctionValueFile<?>> files() {
+        return files;
     }
 
     private void dumpBytes(String name, TypedFile<?> file) {

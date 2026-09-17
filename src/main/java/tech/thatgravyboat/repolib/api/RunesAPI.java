@@ -48,7 +48,7 @@ public class RunesAPI {
                     id,
                     json.get("tier").getAsInt(),
                     json.get("texture").getAsString(),
-                    json.get("name").getAsString(),
+                    json.get("names").getAsString(),
                     json.getAsJsonArray("lore").asList()
                             .stream()
                             .map(JsonElement::getAsString)

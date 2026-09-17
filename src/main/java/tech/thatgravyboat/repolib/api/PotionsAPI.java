@@ -60,7 +60,7 @@ public final class PotionsAPI {
                                 .map(JsonElement::getAsJsonObject)
                                 .map(PotionLevel::fromJson)
                                 .collect(Collectors.toMap(PotionLevel::level, Function.identity())),
-                        object.get("name").getAsString(),
+                        object.get("names").getAsString(),
                         JsonHelper.getString(object, "type", null),
                         JsonHelper.getString(object, "internal_potion", null),
                         object.get("vanilla_effect").getAsString()

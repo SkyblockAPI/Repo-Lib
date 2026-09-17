@@ -85,7 +85,7 @@ public class Main extends WebSocketServer {
         evaluator.debugs.forEach(System.out::println);
 
         var item = new JsonObject();
-        item.add("minecraft:custom_name", asComponent(stack.get("name")));
+        item.add("minecraft:custom_name", asComponent(stack.get("names")));
         //noinspection RedundantCast
         item.add("minecraft:lore", asComponent((ArrayValue) stack.get("lore")).get("extra"));
         item.add("minecraft:custom_data", data);

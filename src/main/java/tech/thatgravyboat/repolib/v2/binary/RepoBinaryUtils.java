@@ -1,29 +1,84 @@
 package tech.thatgravyboat.repolib.v2.binary;
 
+import tech.thatgravyboat.repolib.v2.RepoLoader;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 public class RepoBinaryUtils {
 
     public static final short BINARY_VERSION = 0;
+    static byte[] MAGIC_NUMBER = new byte[]{'S', 'R', 'B'};
 
-    public static byte[] encode(TypedFile<?> file) {
+    public static byte[] bundle(RepoLoader loader) {
         var outputStream = new ByteArrayOutputStream();
-        try (outputStream) {
-            var buffer = new ByteBuffer(outputStream);
+        try (outputStream; var gzipOutputStream = new GZIPOutputStream(outputStream)) {
+            var buffer = new ByteBufferImpl(gzipOutputStream);
+            buffer.writeByteArray(MAGIC_NUMBER);
             buffer.writeShort(BINARY_VERSION);
-            BinaryFileTypeRegistry.write(buffer, file);
-            return outputStream.toByteArray();
+            var nameTable = NameTable.builder();
+
+            nameTable.insert(loader.rootFile());
+            nameTable.insert(loader.rootList());
+
+            loader.stackFiles().forEach((key, value) -> {
+                nameTable.insert(key);
+                nameTable.insert(value);
+            });
+
+            loader.files().forEach((name, file) -> {
+                nameTable.insert(name);
+                nameTable.insert(file);
+            });
+
+            nameTable.encode(buffer);
+
+            var context = new EncoderContext(nameTable.freezeForEncode(), buffer);
+
+            buffer.writeBoolean(loader.rootFile() != null);
+            if (loader.rootFile() != null) {
+                BinaryFileTypeRegistry.write(context, loader.rootFile());
+            }
+
+            ExpressionCodec.writeNullable(loader.rootList(), context);
+
+            context.writeCollection(loader.stackFiles().entrySet(), (entry, _) -> {
+                context.writeLiteral(entry.getKey());
+                BinaryFileTypeRegistry.writeUntyped(context, entry.getValue());
+            });
+
+            context.writeCollection(loader.files().entrySet(), (entry, _) -> {
+                context.writeLiteral(entry.getKey());
+                BinaryFileTypeRegistry.write(context, entry.getValue());
+            });
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        return outputStream.toByteArray();
+    }
+
+    public static byte[] encode(TypedFile<?> file) {
+        var outputStream = new ByteArrayOutputStream();
+        try (outputStream; var gzipOutputStream = new GZIPOutputStream(outputStream)) {
+            var buffer = new ByteBufferImpl(gzipOutputStream);
+            buffer.writeShort(BINARY_VERSION);
+            var nameTable = NameTable.builder();
+            file.precode(nameTable);
+            nameTable.encode(buffer);
+            BinaryFileTypeRegistry.write(new EncoderContext(nameTable.freezeForEncode(), buffer), file);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return outputStream.toByteArray();
     }
 
     public static TypedFile<?> decode(byte[] bytes) {
         var inputStream = new ByteArrayInputStream(bytes);
-        try (inputStream) {
-            var buffer = new ByteBuffer(inputStream);
+        try (inputStream; var gzipInputStream = new GZIPInputStream(inputStream)) {
+            var buffer = new ByteBufferImpl(gzipInputStream);
             var fileVersion = buffer.readShort();
             if (fileVersion != BINARY_VERSION) {
                 if (fileVersion < BINARY_VERSION) {
@@ -32,7 +87,9 @@ public class RepoBinaryUtils {
                 throw new UnsupportedOperationException("File was compiled by a newer version!");
             }
 
-            return BinaryFileTypeRegistry.read(buffer);
+            var nameTable = NameTable.decode(buffer);
+
+            return BinaryFileTypeRegistry.read(new DecoderContext(nameTable.freezeForDecode(), buffer));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -41,8 +98,8 @@ public class RepoBinaryUtils {
 
     public static <FileType extends TypedFile<FileType> & Encodable> FileType decodeTyped(BinaryFileTypeRegistry.Type<FileType> type, byte[] bytes) {
         var inputStream = new ByteArrayInputStream(bytes);
-        try (inputStream) {
-            var buffer = new ByteBuffer(inputStream);
+        try (inputStream; var gzipInputStream = new GZIPInputStream(inputStream)) {
+            var buffer = new ByteBufferImpl(gzipInputStream);
             var fileVersion = buffer.readShort();
             if (fileVersion != BINARY_VERSION) {
                 if (fileVersion < BINARY_VERSION) {
@@ -51,7 +108,9 @@ public class RepoBinaryUtils {
                 throw new UnsupportedOperationException("File was compiled by a newer version!");
             }
 
-            return BinaryFileTypeRegistry.readTyped(type, buffer);
+            var nameTable = NameTable.decode(buffer);
+
+            return BinaryFileTypeRegistry.readUntyped(type, new DecoderContext(nameTable.freezeForDecode(), buffer));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

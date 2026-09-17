@@ -77,7 +77,7 @@ public class BuiltinRarities {
                 return new StrValue(color.get());
             });
         });
-        builder.function("name", function -> {
+        builder.function("names", function -> {
             function.arity(1);
             function.execute((evaluator, values) -> {
                 var first = values.getFirst();

@@ -29,7 +29,7 @@ public final class MobsAPI {
                         mobObject.has("position") ? Position.fromJson(mobObject.getAsJsonObject("position")) : null,
                         JsonHelper.getStringOrNull(mobObject, "texture"),
                         mobObject.get("itemId").getAsString(),
-                        mobObject.get("name").getAsString(),
+                        mobObject.get("names").getAsString(),
                         JsonHelper.getStringOrNull(mobObject, "type"),
                         mobObject.has("lootTables") ?
                         mobObject.getAsJsonArray("lootTables")
@@ -45,7 +45,7 @@ public final class MobsAPI {
 
     private static LootTable loadLootTable(JsonObject json) {
         return new LootTable(
-                json.get("name").getAsString(),
+                json.get("names").getAsString(),
                 JsonHelper.getInt(json, "mobLevel", 0),
                 JsonHelper.getInt(json, "xp", 0),
                 JsonHelper.getInt(json, "combatXp", 0),

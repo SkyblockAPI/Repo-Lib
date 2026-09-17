@@ -1,10 +1,13 @@
 package tech.thatgravyboat.repolib.v2.expl.expression;
 
 import org.jetbrains.annotations.NotNull;
-import tech.thatgravyboat.repolib.v2.binary.ByteBuffer;
+import tech.thatgravyboat.repolib.v2.binary.ByteBufferImpl;
+import tech.thatgravyboat.repolib.v2.binary.DecoderContext;
+import tech.thatgravyboat.repolib.v2.binary.EncoderContext;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionCodec;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypes;
+import tech.thatgravyboat.repolib.v2.binary.NameTable;
 
 import java.io.IOException;
 
@@ -26,12 +29,18 @@ public record AssignExpression(AccessExpression lhs, Expression value) implement
     }
 
     @Override
-    public void encode(ByteBuffer buffer) {
+    public void encode(EncoderContext buffer) {
         ExpressionCodec.writeUntyped(this.lhs, buffer);
         ExpressionCodec.write(this.value, buffer);
     }
 
-    public static AssignExpression decode(ByteBuffer buffer) throws IOException {
+    @Override
+    public void precode(NameTable table) {
+        this.lhs.precode(table);
+        this.value.precode(table);
+    }
+
+    public static AssignExpression decode(DecoderContext buffer) throws IOException {
         return new AssignExpression(
                 ExpressionCodec.readUntyped(ExpressionTypes.ACCESS, buffer),
                 ExpressionCodec.read(buffer)

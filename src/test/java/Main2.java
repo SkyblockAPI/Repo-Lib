@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -47,6 +48,10 @@ public class Main2 extends WebSocketServer {
         var instance = loader.create();
 
         var errors = loader.load();
+
+        if (errors.isEmpty()) {
+            Files.write(Path.of("bundle.srb"), loader.buildRepoBundle(), StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE);
+        }
     }
 
     private static StructValue toValue(JsonObject data) {

@@ -4,8 +4,10 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Locale;
 
-import tech.thatgravyboat.repolib.v2.binary.ByteBuffer;
+import tech.thatgravyboat.repolib.v2.binary.ByteBufferImpl;
+import tech.thatgravyboat.repolib.v2.binary.EncoderContext;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
+import tech.thatgravyboat.repolib.v2.binary.NameTable;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.expression.SelfEvaluatingExpression;
 
@@ -44,9 +46,12 @@ public sealed interface Value extends Comparable<Value>, SelfEvaluatingExpressio
 
 
     @Override
-    default void encode(ByteBuffer buffer) {
+    default void encode(EncoderContext buffer) {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    default void precode(NameTable table) {}
 
     @Override
     default ExpressionTypeRegistry.Type<?> expressionId() {

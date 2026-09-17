@@ -1,10 +1,13 @@
 package tech.thatgravyboat.repolib.v2.expl.expression;
 
 import org.jetbrains.annotations.NotNull;
-import tech.thatgravyboat.repolib.v2.binary.ByteBuffer;
+import tech.thatgravyboat.repolib.v2.binary.ByteBufferImpl;
+import tech.thatgravyboat.repolib.v2.binary.DecoderContext;
+import tech.thatgravyboat.repolib.v2.binary.EncoderContext;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionCodec;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypes;
+import tech.thatgravyboat.repolib.v2.binary.NameTable;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.ExecutionExceptions;
 import tech.thatgravyboat.repolib.v2.expl.value.NilValue;
@@ -49,13 +52,20 @@ public record ForEachExpression(AccessExpression field, Expression array, Expres
     }
 
     @Override
-    public void encode(ByteBuffer buffer) {
+    public void precode(NameTable table) {
+        this.field.precode(table);
+        this.array.precode(table);
+        this.body.precode(table);
+    }
+
+    @Override
+    public void encode(EncoderContext buffer) {
         ExpressionCodec.writeUntyped(this.field, buffer);
         ExpressionCodec.write(this.array, buffer);
         ExpressionCodec.write(this.body, buffer);
     }
 
-    public static ForEachExpression decode(ByteBuffer buffer) throws IOException {
+    public static ForEachExpression decode(DecoderContext buffer) throws IOException {
         return new ForEachExpression(
                 ExpressionCodec.readUntyped(ExpressionTypes.ACCESS, buffer),
                 ExpressionCodec.read(buffer),

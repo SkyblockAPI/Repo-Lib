@@ -6,7 +6,6 @@ import tech.thatgravyboat.repolib.v2.expl.expression.Expression;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
 
 public class ExpressionTypeRegistry {
 
@@ -18,7 +17,7 @@ public class ExpressionTypeRegistry {
             byte id
     ) implements DataType<ExpressionType> {
         @Override
-        public ExpressionType decode(ByteBuffer stream) throws IOException {
+        public ExpressionType decode(DecoderContext stream) throws IOException {
             return decoder.decode(stream);
         }
     }

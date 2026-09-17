@@ -1,8 +1,11 @@
 package tech.thatgravyboat.repolib.v2.expl.expression;
 
-import tech.thatgravyboat.repolib.v2.binary.ByteBuffer;
+import tech.thatgravyboat.repolib.v2.binary.ByteBufferImpl;
+import tech.thatgravyboat.repolib.v2.binary.DecoderContext;
+import tech.thatgravyboat.repolib.v2.binary.EncoderContext;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypes;
+import tech.thatgravyboat.repolib.v2.binary.NameTable;
 
 import java.io.IOException;
 
@@ -19,11 +22,16 @@ public record StrExpression(String value) implements Expression {
     }
 
     @Override
-    public void encode(ByteBuffer buffer) {
-        buffer.writeString(this.value);
+    public void precode(NameTable table) {
+        table.insert(this.value);
     }
 
-    public static StrExpression decode(ByteBuffer buffer) throws IOException {
-        return new StrExpression(buffer.readString());
+    @Override
+    public void encode(EncoderContext buffer) {
+        buffer.writeLiteral(this.value);
+    }
+
+    public static StrExpression decode(DecoderContext buffer) throws IOException {
+        return new StrExpression(buffer.readLiteral());
     }
 }
