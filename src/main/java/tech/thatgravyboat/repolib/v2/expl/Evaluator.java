@@ -3,6 +3,7 @@ package tech.thatgravyboat.repolib.v2.expl;
 import org.jetbrains.annotations.Contract;
 import tech.thatgravyboat.repolib.v2.expl.expression.*;
 import tech.thatgravyboat.repolib.v2.expl.value.*;
+import tech.thatgravyboat.repolib.v2.jvm.compiler.UsedByCompiler;
 
 import java.util.*;
 import java.util.function.Function;
@@ -16,20 +17,22 @@ public class Evaluator {
     private final Scope scope;
     private final Function<String, FunctionValue> fileFunction;
     public final List<ContentInfo> debugs = new ArrayList<>();
-    public final LinkedList<String> fileStack = new LinkedList<>();
     public final LinkedList<String> stack = new LinkedList<>();
     public final List<ContentInfo> errors = new ArrayList<>();
 
+    @UsedByCompiler
     public void push(String stack) {
         this.scope.push();
         this.stack.addLast(stack);
     }
 
+    @UsedByCompiler
     public void push(StructValue.MutableStruct scope, String stack) {
         this.scope.pushWithScope(scope);
         this.stack.addLast(stack);
     }
 
+    @UsedByCompiler
     public void pop() {
         this.scope.pop();
         this.stack.removeLast();
@@ -83,7 +86,7 @@ public class Evaluator {
                 new LayeredStructValue(new MutableStructValue(), defaults));
     }
 
-    public static final Evaluator CONSTANT = new Evaluator(ImmutableStructValue.EMPTY, x -> null);
+    public static final Evaluator CONSTANT = new Evaluator(ImmutableStructValue.EMPTY, _ -> null);
 
     public Value evaluate(Expression expression) {
         try {
@@ -126,6 +129,7 @@ public class Evaluator {
         return scope.get().get(field);
     }
 
+    @UsedByCompiler
     public void setField(String field, Value value) {
         KeyValue currentScope = scope.get();
         if (currentScope instanceof KeyValue.Mutable mutable) {
@@ -285,13 +289,17 @@ public class Evaluator {
     public StructValue evalStruct(StructExpression struct) {
         var fields = new MutableStructValue(new HashMap<>());
 
-        if (struct.spread() != null) {
-            getStructOrThrow(this.eval0(struct.spread())).forEach(entry -> fields.set(entry.getKey(), entry.getValue()));
-        }
-
         for (var entry : struct.fields().entrySet()) {
             fields.set(entry.getKey(), evalStructValue(fields, entry.getValue()));
         }
+
+        if (struct.spread() != null) {
+            return new LayeredStructValue(
+                    fields,
+                    getStructOrThrow(this.eval0(struct.spread()))
+            );
+        }
+
         return fields;
     }
 
@@ -428,6 +436,7 @@ public class Evaluator {
         throw new Panic("Unable to access property " + expression.field() + " of non key/value " + lhs);
     }
 
+    @UsedByCompiler
     public FunctionValue getFileAccess(String name) {
         var file = fileFunction.apply(name);
         if (file == null) throw new Panic("requested include " + name + " not found!");

@@ -105,7 +105,7 @@ public record LambdaExpression(
     @Override
     public boolean compile(CodeBuilder cb, CompilationTracker lc) {
         try {
-            Class<?> lambdaClass = ExpressionCompiler.compileLambda(this, lc.getCodeName(), false);
+            Class<?> lambdaClass = ExpressionCompiler.compileLambda(this, lc.getCodeName() + "$" + lc.uniqueId(), false);
             lc.loadTrackedObject(cb, lc.addTrackedObject(lambdaClass.getConstructor().newInstance()));
             cb.checkcast(CD_FunctionValue);
         } catch (IllegalAccessException | InstantiationException | InvocationTargetException | NoSuchMethodException | NoSuchFieldException e) {

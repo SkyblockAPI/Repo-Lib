@@ -4,7 +4,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-public record LayeredStructValue(StructValue.MutableStruct base, KeyValue overlay) implements StructValue, KeyValue.Mutable {
+public record LayeredStructValue(StructValue.MutableStruct base, KeyValue overlay) implements StructValue.MutableStruct {
     @Override
     public Value get(String field) {
         if (overlay.contains(field)) {
@@ -16,7 +16,7 @@ public record LayeredStructValue(StructValue.MutableStruct base, KeyValue overla
 
     @Override
     public StructValue.MutableStruct toMutableStruct() {
-        return base.toMutableStruct();
+        return this;
     }
 
     @Override

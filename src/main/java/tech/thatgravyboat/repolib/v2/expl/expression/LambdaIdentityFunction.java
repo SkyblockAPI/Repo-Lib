@@ -40,7 +40,7 @@ public record LambdaIdentityFunction(LambdaExpression expression) implements Sel
     @Override
     public boolean compile(CodeBuilder cb, CompilationTracker lc) {
         try {
-            Class<?> lambdaClass = ExpressionCompiler.compileLambda(expression, lc.getCodeName(), true);
+            Class<?> lambdaClass = ExpressionCompiler.compileLambda(expression, lc.getCodeName() + "$" + lc.uniqueId(), true);
             lc.loadTrackedObject(cb, lc.addTrackedObject(lambdaClass));
             cb.checkcast(CD_Class);
             cb.invokevirtual(CD_Class, "newInstance", MethodTypeDesc.of(CD_Object));

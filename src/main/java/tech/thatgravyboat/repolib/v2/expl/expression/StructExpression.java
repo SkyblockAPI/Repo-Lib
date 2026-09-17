@@ -1,5 +1,6 @@
 package tech.thatgravyboat.repolib.v2.expl.expression;
 
+import org.jetbrains.annotations.NotNull;
 import tech.thatgravyboat.repolib.v2.binary.ByteBuffer;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionCodec;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
@@ -9,7 +10,6 @@ import tech.thatgravyboat.repolib.v2.jvm.compiler.CompilationTracker;
 import java.io.IOException;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeBuilder;
-import java.lang.classfile.Label;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.util.Map;
@@ -20,12 +20,11 @@ import static java.lang.constant.ConstantDescs.*;
 import static tech.thatgravyboat.repolib.v2.jvm.compiler.ExplCD.*;
 import static tech.thatgravyboat.repolib.v2.jvm.compiler.ExplCD.CD_Evaluator;
 import static tech.thatgravyboat.repolib.v2.jvm.compiler.ExplCD.CD_MutableStructValue;
-import static tech.thatgravyboat.repolib.v2.jvm.compiler.ExplCD.CD_StructValue;
 
 public record StructExpression(Map<String, Expression> fields, AccessExpression spread) implements Expression {
 
     @Override
-    public String toString() {
+    public @NotNull String toString() {
         return fields.entrySet()
                 .stream()
                 .map(e -> e.getKey() + ": " + e.getValue())
@@ -71,37 +70,6 @@ public record StructExpression(Map<String, Expression> fields, AccessExpression 
         cb.invokespecial(CD_MutableStructValue, "<init>", MethodTypeDesc.of(CD_void, CD_Map));
         int structSlot = lc.getLowestUnused();
         cb.astore(structSlot);
-        if (spread != null) {
-            int iteratorSlot = lc.getLowestUnused();
-            ClassDesc iterator = ClassDesc.of("java.util.Iterator");
-            ClassDesc entry = ClassDesc.of("java.util.Map$Entry");
-            cb.aload(1);
-            spread.compile(cb, lc);
-            cb.invokevirtual(CD_Evaluator, "getStructOrThrow", MethodTypeDesc.of(CD_StructValue, CD_Value));
-            cb.invokeinterface(ClassDesc.of("java.lang.Iterable"), "iterator", MethodTypeDesc.of(iterator));
-            cb.astore(iteratorSlot);
-            Label loopLabel = cb.newLabel();
-            Label endLoopLabel = cb.newLabel();
-            cb.labelBinding(loopLabel);
-            cb.aload(iteratorSlot);
-            cb.invokeinterface(iterator, "hasNext", MethodTypeDesc.of(CD_boolean));
-            cb.ifeq(endLoopLabel);
-            cb.aload(structSlot);
-            cb.aload(iteratorSlot);
-            cb.invokeinterface(iterator, "next", MethodTypeDesc.of(CD_Object));
-            cb.checkcast(entry);
-            cb.dup();
-            cb.invokeinterface(entry, "getValue", MethodTypeDesc.of(CD_Object));
-            cb.checkcast(CD_Value);
-            cb.swap();
-            cb.invokeinterface(entry, "getKey", MethodTypeDesc.of(CD_Object));
-            cb.checkcast(CD_String);
-            cb.swap();
-            cb.invokevirtual(CD_MutableStructValue, "set", MethodTypeDesc.of(CD_void, CD_String, CD_Value));
-            cb.goto_(loopLabel);
-            cb.labelBinding(endLoopLabel);
-            lc.free(iteratorSlot);
-        }
         if (fields.size() > 100) {
             var chunkedEntries = fields.entrySet().stream()
                     .gather(Gatherers.windowFixed(500))
@@ -141,6 +109,16 @@ public record StructExpression(Map<String, Expression> fields, AccessExpression 
                 }
                 cb.invokevirtual(CD_MutableStructValue, "set", MethodTypeDesc.of(CD_void, CD_String, CD_Value));
             }
+        }
+        if (spread != null) {
+            cb.new_(CD_LayeredStructValue);
+            cb.dup();
+            cb.aload(structSlot);
+            cb.checkcast(CD_StructValueMutableStruct);
+            spread.compile(cb, lc);
+            cb.checkcast(CD_KeyValue);
+            cb.invokespecial(CD_LayeredStructValue, "<init>", MethodTypeDesc.of(CD_void, CD_StructValueMutableStruct, CD_KeyValue));
+            cb.astore(structSlot);
         }
         cb.aload(structSlot);
         lc.free(structSlot);
