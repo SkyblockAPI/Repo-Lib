@@ -19,20 +19,19 @@ import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
 public interface ModuleFile extends FunctionValueFile<ModuleFile>, Encodable {
 
-    boolean isInitialized();
 
     @Override
     default boolean needsInitialization() {
         return !isInitialized();
     }
 
-    void staticData(KeyValue value);
-    KeyValue staticData();
-
-    Expression script();
-    Expression staticDataExpression();
-
     String name();
+    void staticData(KeyValue value);
+    boolean isInitialized();
+    KeyValue staticData();
+    Expression staticDataExpression();
+    Value evaluate(Evaluator evaluator);
+    Expression script();
 
     @Override
     default void initialize(Evaluator evaluator) {
@@ -45,30 +44,18 @@ public interface ModuleFile extends FunctionValueFile<ModuleFile>, Encodable {
         }
     }
 
-
     @Override
     default boolean canReturnValueBeReturned() {
         return true;
     }
 
     @Override
-    default Value evaluate(Evaluator evaluator) {
-        evaluator.setInOverlay("static_data", this.staticData());
-        return evaluator.evaluate(this.script());
-    }
-
-    default Value evaluate0(Evaluator evaluator) {
-        evaluator.setInOverlay("static_data", this.staticData());
-        return evaluator.evaluate(this.script());
-    }
-
-    @Override
     default Value apply(Evaluator evaluator, List<Value> args) {
         if (args.size() == 1) {
             var scope = evaluator.getMutableStructOrThrow(args.getFirst());
-            return evaluator.pushPop(this.name(), scope, () -> this.evaluate0(evaluator));
+            return evaluator.pushPop(this.name(), scope, () -> this.evaluate(evaluator));
         } else {
-            return evaluator.pushPop(this.name(), () -> this.evaluate0(evaluator));
+            return evaluator.pushPop(this.name(), () -> this.evaluate(evaluator));
         }
     }
 
@@ -81,14 +68,14 @@ public interface ModuleFile extends FunctionValueFile<ModuleFile>, Encodable {
     }
 
     @Override
-    default  void encode(EncoderContext buffer) {
+    default void encode(EncoderContext buffer) {
         buffer.writeLiteral(this.name());
         ExpressionCodec.writeNullable(this.staticDataExpression(), buffer);
         ExpressionCodec.write(this.script(), buffer);
     }
 
     @Override
-    default  void precode(NameTable table) {
+    default void precode(NameTable table) {
         table.insert(this.name());
         if (this.staticDataExpression() != null) {
             this.staticDataExpression().precode(table);
@@ -101,7 +88,7 @@ public interface ModuleFile extends FunctionValueFile<ModuleFile>, Encodable {
         return FileTypes.MODULE;
     }
 
-    public class Impl implements ModuleFile {
+    class Impl implements ModuleFile {
         private final String name;
         private final Expression script;
         private KeyValue staticData;
@@ -126,6 +113,7 @@ public interface ModuleFile extends FunctionValueFile<ModuleFile>, Encodable {
 
         @Override
         public void staticData(KeyValue value) {
+            this.hasInitialized = true;
             this.staticData = value;
         }
 
@@ -133,7 +121,6 @@ public interface ModuleFile extends FunctionValueFile<ModuleFile>, Encodable {
             return staticData;
         }
 
-        @Override
         public Expression script() {
             return this.script;
         }
@@ -146,6 +133,12 @@ public interface ModuleFile extends FunctionValueFile<ModuleFile>, Encodable {
         @Override
         public String name() {
             return this.name;
+        }
+
+        @Override
+        public Value evaluate(Evaluator evaluator) {
+            evaluator.setInOverlay("static_data", this.staticData());
+            return evaluator.evaluate(this.script());
         }
     }
 }

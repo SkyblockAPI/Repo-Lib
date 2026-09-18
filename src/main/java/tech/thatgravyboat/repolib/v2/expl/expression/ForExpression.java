@@ -79,6 +79,8 @@ public record ForExpression(@Nullable Expression init, @Nullable Expression cond
         lc.setBreakLabel(endLoopLabel);
         lc.setContinueLabel(loopLabel);
 
+        lc.pushStack(cb, "for");
+
         if (init != null) {
             init.compile(cb, lc);
             cb.pop();
@@ -103,8 +105,9 @@ public record ForExpression(@Nullable Expression init, @Nullable Expression cond
         cb.goto_(loopLabel);
         cb.labelBinding(endLoopLabel);
         Snippets.pushNil(cb);
+        lc.popStack(cb);
         lc.setBreakLabel(oldBreakLabel);
-        lc.setBreakLabel(oldContinueLabel);
+        lc.setContinueLabel(oldContinueLabel);
         return false;
     }
 }

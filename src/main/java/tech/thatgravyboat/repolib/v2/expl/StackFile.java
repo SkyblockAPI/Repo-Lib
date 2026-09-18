@@ -37,7 +37,14 @@ public interface StackFile extends SelfEvaluatingExpression, TypedFile<StackFile
 
     boolean hasInitialized();
 
-    void init(RepoLoader loader, RepoConstants constants);
+    default void init(RepoLoader loader, RepoConstants constants) {
+        var struct = new MutableStructValue();
+        struct.set("categories", MutableArrayValue.create());
+        var evaluator = new Evaluator(new LayeredStructValue(struct, constants), loader::module);
+        this.evaluateMetaScript(evaluator);
+        struct.fields().remove("include");
+        this.meta(struct);
+    }
 
     @Override
     default Value evaluate(Evaluator evaluator) {
@@ -46,8 +53,10 @@ public interface StackFile extends SelfEvaluatingExpression, TypedFile<StackFile
     }
 
     KeyValue meta();
+    void meta(KeyValue meta);
     Expression script();
     Expression metaScript();
+    void evaluateMetaScript(Evaluator evaluator);
     String name();
 
     default Evaluator createEvaluator(StructValue overrides, Function<String, FunctionValue> lookup) {
@@ -89,14 +98,7 @@ public interface StackFile extends SelfEvaluatingExpression, TypedFile<StackFile
                     var section = new AtomicBoolean();
 
                     lore.function(
-                        "empty", (function) -> {
-                            function.vararg(true);
-                            function.execute(((evaluator, values) -> {
-                                entries.add(ImmutableStructValue.EMPTY);
-
-                                return Value.NIL;
-                            }));
-                        });
+                        "empty", (function) -> function.runs((() -> entries.add(ImmutableStructValue.EMPTY))));
                     lore.function(
                         "beginSection", (function) -> function.runs(() -> {
                             if (section.get()) {
@@ -123,7 +125,7 @@ public interface StackFile extends SelfEvaluatingExpression, TypedFile<StackFile
                     lore.function(
                         "addAll", function -> {
                             function.arity(1);
-                            function.executeVoid((evaluator, args) -> {
+                            function.executeSimpleVoid((args) -> {
                                 var values = ArrayValue.flatten(args);
                                 if (values.isEmpty()) {
                                     return;
@@ -201,47 +203,13 @@ public interface StackFile extends SelfEvaluatingExpression, TypedFile<StackFile
             return meta != null;
         }
 
-        public void init(RepoLoader loader, RepoConstants constants) {
-            var struct = new MutableStructValue();
-            struct.set(
-                "include", Constants.Builder.FunctionBuilder.create(function -> {
-                    function.arity(1);
-                    function.execute((evaluator, args) -> {
-                        var value = evaluator.getStringOrThrow(args.getFirst());
-                        var requested = loader.module(value);
-                        if (requested == null) {
-                            return evaluator.panic("Requested include " + value + " doesn't exist!");
-                        }
-                        evaluator.pushPop(
-                            value, () -> {
-                                evaluator.evaluate(requested);
-                                return Value.NIL;
-                            });
-
-                        return Value.NIL;
-                    });
-                }));
-            struct.set(
-                "static", Constants.Builder.FunctionBuilder.create(function -> {
-                    function.arity(1);
-                    function.execute((evaluator, args) -> {
-                        var value = evaluator.getStringOrThrow(args.getFirst());
-                        var requested = loader.module(value);
-                        if (requested == null) {
-                            return evaluator.panic("Requested include " + value + " doesn't exist!");
-                        }
-                        if (requested instanceof ModuleFile module) {
-                            return module.getStaticData();
-                        }
-
-                        return evaluator.panic("Can't access static data of non module file!");
-                    });
-                }));
-            struct.set("categories", MutableArrayValue.create());
-            var evaluator = new Evaluator(new LayeredStructValue(struct, constants), loader::module);
+        public void evaluateMetaScript(Evaluator evaluator) {
             evaluator.evaluate(this.metaScript);
-            struct.fields().remove("include");
-            this.meta = struct.toFullyImmutable();
+        }
+
+        @Override
+        public void meta(KeyValue meta) {
+            this.meta = meta;
         }
 
         public KeyValue meta() {
@@ -263,6 +231,7 @@ public interface StackFile extends SelfEvaluatingExpression, TypedFile<StackFile
             return this.name;
         }
 
+        @Override
         public StructValue evaluateScript(Evaluator evaluator) {
             evaluator.evaluate(script);
 

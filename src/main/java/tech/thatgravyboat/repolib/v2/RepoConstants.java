@@ -74,7 +74,7 @@ public final class RepoConstants implements StructValue.Forwarding {
             function.execute((evaluator, args) -> {
                 var arg = args.getFirst();
                 if (arg instanceof ModuleFile file) {
-                    return file.getStaticData();
+                    return file.staticData();
                 }
 
                 var value = evaluator.getStringOrThrow(arg);
@@ -83,7 +83,7 @@ public final class RepoConstants implements StructValue.Forwarding {
                     return evaluator.panic("Requested include " + value + " doesn't exist!");
                 }
                 if (requested instanceof ModuleFile module) {
-                    return module.getStaticData();
+                    return module.staticData();
                 }
 
                 return evaluator.panic("Can't access static data of non module file!");

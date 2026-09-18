@@ -30,19 +30,10 @@ public class FolderLoader implements FileVisitor<Path>, RepoLoader {
     private ModuleFile rootFile = null;
     private final Map<String, StackFile> stackFiles = new HashMap<>();
     private final List<LoadingErrors> errors = new ArrayList<>();
-    private Transformer expressionTransformer = (a, _) -> a;
     private final RepoConstants constants = new RepoConstants(this);
 
     public FolderLoader(Path path) {
         this.path = path;
-    }
-
-    public void registerTransform(Transformer transformer) {
-        this.expressionTransformer = transformer;
-    }
-
-    public Expression transform(Expression original, String name) {
-        return expressionTransformer.accept(original, name);
     }
 
     public List<LoadingErrors> load() throws IOException {
@@ -192,6 +183,11 @@ public class FolderLoader implements FileVisitor<Path>, RepoLoader {
     @Override
     public @NotNull FileVisitResult postVisitDirectory(Path dir, @Nullable IOException exc) {
         return FileVisitResult.CONTINUE;
+    }
+
+    @Override
+    public boolean shouldCompile() {
+        return true;
     }
 
     public byte[] buildRepoBundle() {

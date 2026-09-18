@@ -36,7 +36,6 @@ public class BundleLoader implements RepoLoader {
     private ModuleFile rootFile = null;
     private Expression rootList = null;
     private final RepoConstants constants = new RepoConstants(this);
-    private Transformer expressionTransformer = (a, _) -> a;
 
     public BundleLoader(Path bundle) {
         this.path = bundle;
@@ -141,20 +140,15 @@ public class BundleLoader implements RepoLoader {
         return this.modules.keySet();
     }
 
+    @Override
+    public boolean shouldCompile() {
+        return true;
+    }
+
     public Evaluator createEvaluator() {
         return new Evaluator(new LayeredStructValue(
                 new MutableStructValue(),
                 constants
         ), this::module);
-    }
-
-    @Override
-    public void registerTransform(Transformer transformer) {
-        this.expressionTransformer = transformer;
-    }
-
-    @Override
-    public Expression transform(Expression original, String name) {
-        return this.expressionTransformer.accept(original, name);
     }
 }

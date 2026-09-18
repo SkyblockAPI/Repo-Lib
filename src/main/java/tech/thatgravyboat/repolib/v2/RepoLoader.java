@@ -24,14 +24,5 @@ public interface RepoLoader {
     FunctionValue module(String name);
     Collection<String> modules();
     Evaluator createEvaluator();
-
-
-
-    void registerTransform(Transformer transformer);
-
-    Expression transform(Expression original, String name);
-
-    interface Transformer {
-        Expression accept(Expression original, String name);
-    }
+    boolean shouldCompile();
 }

@@ -59,18 +59,42 @@ public record CallExpression(Expression lhs, Collection<Expression> args) implem
         lhs.compile(cb, lc);
         cb.checkcast(ClassDesc.of("tech.thatgravyboat.repolib.v2.expl.value.FunctionValue"));
         cb.aload(1); // should always be EVALUATOR
-        cb.new_(ClassDesc.of("java.util.ArrayList"));
-        cb.dup();
-        cb.loadConstant(args.size());
-        cb.invokespecial(ClassDesc.of("java.util.ArrayList"), "<init>", MethodTypeDesc.of(CD_void, CD_int));
-        for (Expression arg : args) {
-            cb.dup();
-            arg.compile(cb, lc);
-            cb.invokeinterface(ClassDesc.of("java.util.List"), "add", MethodTypeDesc.of(CD_boolean, CD_Object));
-            cb.pop();
+
+        switch (args.size()) {
+            case 0: {
+                cb.invokestatic(CD_List, "of", MethodTypeDesc.of(CD_List), true);
+                break;
+            }
+            case 1: {
+                for (Expression arg : args) {
+                    arg.compile(cb, lc);
+                }
+                cb.invokestatic(CD_List, "of", MethodTypeDesc.of(CD_List, CD_Object), true);
+                break;
+            }
+            case 2: {
+                for (Expression arg : args) {
+                    arg.compile(cb, lc);
+                }
+                cb.invokestatic(CD_List, "of", MethodTypeDesc.of(CD_List, CD_Object, CD_Object), true);
+                break;
+            }
+            default: {
+                cb.new_(ClassDesc.of("java.util.ArrayList"));
+                cb.dup();
+                cb.loadConstant(args.size());
+                cb.invokespecial(ClassDesc.of("java.util.ArrayList"), "<init>", MethodTypeDesc.of(CD_void, CD_int));
+                for (Expression arg : args) {
+                    cb.dup();
+                    arg.compile(cb, lc);
+                    cb.invokeinterface(CD_List, "add", MethodTypeDesc.of(CD_boolean, CD_Object));
+                    cb.pop();
+                }
+            }
         }
+
         lc.pushStack(cb, "");
-        cb.invokeinterface(ClassDesc.of("tech.thatgravyboat.repolib.v2.expl.value.FunctionValue"), "apply", MethodTypeDesc.of(CD_Value, CD_Evaluator, ClassDesc.of("java.util.List")));
+        cb.invokeinterface(ClassDesc.of("tech.thatgravyboat.repolib.v2.expl.value.FunctionValue"), "apply", MethodTypeDesc.of(CD_Value, CD_Evaluator, CD_List));
         lc.popStack(cb);
         return false;
     }

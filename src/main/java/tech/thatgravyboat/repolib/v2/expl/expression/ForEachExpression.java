@@ -146,7 +146,7 @@ public record ForEachExpression(AccessExpression field, Expression array, Expres
             cb.goto_(loopLabel);
             cb.labelBinding(endLoopLabel);
             lc.setBreakLabel(oldBreakLabel);
-            lc.setBreakLabel(oldContinueLabel);
+            lc.setContinueLabel(oldContinueLabel);
         } else {
             int localSlot = lc.getLowestUnused();
             ClassDesc iterator = ClassDesc.of("java.util.Iterator");
@@ -164,7 +164,6 @@ public record ForEachExpression(AccessExpression field, Expression array, Expres
             lc.setContinueLabel(loopLabel);
 
             cb.labelBinding(loopLabel);
-
             cb.aload(localSlot);
             cb.invokeinterface(iterator, "hasNext", MethodTypeDesc.of(CD_boolean));
             cb.ifeq(endLoopLabel);
@@ -176,11 +175,12 @@ public record ForEachExpression(AccessExpression field, Expression array, Expres
             if (!body.compile(cb, lc)) {
                 cb.pop();
             }
+
             // meow
             cb.goto_(loopLabel);
             cb.labelBinding(endLoopLabel);
             lc.setBreakLabel(oldBreakLabel);
-            lc.setBreakLabel(oldContinueLabel);
+            lc.setContinueLabel(oldContinueLabel);
             lc.free(localSlot);
         }
         Snippets.pushNil(cb);

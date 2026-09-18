@@ -3,6 +3,7 @@ package tech.thatgravyboat.repolib.v2.expl;
 import java.util.Map;
 import tech.thatgravyboat.repolib.v2.RepoLoader;
 import tech.thatgravyboat.repolib.v2.expl.expression.*;
+import tech.thatgravyboat.repolib.v2.jvm.compiler.ExpressionCompiler;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,7 +41,7 @@ public final class Parser {
         }
 
         Type get() {
-            return expression.get();
+            return expression.orElseThrow();
         }
 
         Type get(Supplier<Type> defaultExpression) {
@@ -55,12 +56,14 @@ public final class Parser {
         while (lexer.peek() == Lexer.Token.IDENT) {
             lexer.next();
             switch (lexer.span()) {
-                case "meta" -> meta.update(() -> loader.transform(this.block(), name + ":meta"));
-                case "script" -> script.update(() -> loader.transform(this.block(), name + ":script"));
+                case "meta" -> meta.update(this::block);
+                case "script" -> script.update(this::block);
             }
         }
 
-        return new StackFile.Impl(name, meta.get(), script.get(StackFile.DEFAULT_SCRIPT));
+        var stack = new StackFile.Impl(name, meta.get(), script.get(StackFile.DEFAULT_SCRIPT));
+        if (loader.shouldCompile()) return ExpressionCompiler.compileStack(stack);
+        return stack;
     }
 
     public ModuleFile parseModuleFile(String name, RepoLoader loader) {
@@ -85,7 +88,9 @@ public final class Parser {
             lexer.expect(Lexer.Token.SEMICOLON);
         }
 
-        return new ModuleFile.Impl(name, struct.get(() -> null), loader.transform(parseExpression(), name));
+        var module = new ModuleFile.Impl(name, struct.get(() -> null), parseExpression());
+        if (loader.shouldCompile()) return ExpressionCompiler.compileModule(module);
+        return module;
     }
 
     public FunctionFile parseFunctionFile(String name, RepoLoader loader) {
@@ -98,7 +103,11 @@ public final class Parser {
             lexer.expect(Lexer.Token.OR);
         }
 
-        return new FunctionFile.Impl(name, arguments, loader.transform(parseExpression(), name));
+        var expression = parseExpression();
+
+        if (loader.shouldCompile()) expression = ExpressionCompiler.compileExpression(expression, name);
+
+        return new FunctionFile.Impl(name, arguments, expression);
     }
 
     public Expression parseExpression() {

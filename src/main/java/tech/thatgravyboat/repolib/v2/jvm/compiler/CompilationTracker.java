@@ -5,7 +5,6 @@ import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.Label;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -18,13 +17,14 @@ import static tech.thatgravyboat.repolib.v2.jvm.compiler.ExplCD.CD_Evaluator;
 
 public  class CompilationTracker {
     private final Set<Integer> usedLocals = new HashSet<>();
-    private final List<Object> trackedObjects = new ArrayList<>();
+    private final List<Object> trackedObjects;
 
-    CompilationTracker(ClassDesc ownClass, ClassBuilder ownBuilder) {
+    CompilationTracker(ClassDesc ownClass, ClassBuilder ownBuilder, List<Object> trackedObjects) {
         usedLocals.add(0);
         usedLocals.add(1);
         this.ownClass = ownClass;
         this.ownBuilder = ownBuilder;
+        this.trackedObjects = trackedObjects;
     }
 
     public int addTrackedObject(Object functionValue) {
@@ -36,10 +36,6 @@ public  class CompilationTracker {
         cb.getstatic(this.ownClass, "lambdas", CD_List);
         cb.loadConstant(index);
         cb.invokeinterface(CD_List, "get", MethodTypeDesc.of(CD_Object, CD_int));
-    }
-
-    public List<Object> getTrackedObjects() {
-        return trackedObjects;
     }
 
     public int getLowestUnused() {
