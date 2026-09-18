@@ -34,20 +34,23 @@ public final class StackFile implements SelfEvaluatingExpression, TypedFile<Stac
 
     private static final Expression SCRIPT = Expression.parse("include(\"item\");");
     public static final Supplier<Expression> DEFAULT_SCRIPT = () -> SCRIPT;
+    private final String name;
     private final Expression script;
     private final Expression metaScript;
     private KeyValue meta;
 
-    public StackFile(Expression meta, Expression script) {
+    public StackFile(String name, Expression meta, Expression script) {
+        this.name = name;
         this.script = script;
         this.metaScript = meta;
     }
 
     public static StackFile decode(DecoderContext buffer) throws IOException {
-        Expression meta = ExpressionCodec.read(buffer);
+        String name = buffer.readLiteral();
+        Expression meta = ExpressionCodec.readNullable(buffer);
         Expression script = ExpressionCodec.readNullable(buffer);
 
-        return new StackFile(meta, Objects.requireNonNullElseGet(script, DEFAULT_SCRIPT));
+        return new StackFile(name, meta, Objects.requireNonNullElseGet(script, DEFAULT_SCRIPT));
     }
 
     public boolean hasInitialized() {
@@ -210,6 +213,7 @@ public final class StackFile implements SelfEvaluatingExpression, TypedFile<Stac
 
     @Override
     public void encode(EncoderContext buffer) {
+        buffer.writeLiteral(this.name);
         ExpressionCodec.writeNullable(this.metaScript, buffer);
         buffer.writeBoolean(this.script != SCRIPT);
         if (this.script != SCRIPT) {
@@ -219,6 +223,7 @@ public final class StackFile implements SelfEvaluatingExpression, TypedFile<Stac
 
     @Override
     public void precode(NameTable table) {
+        table.insert(this.name);
         table.insert(this.metaScript);
         if (this.script != SCRIPT) {
             this.script.precode(table);
