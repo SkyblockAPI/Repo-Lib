@@ -16,6 +16,7 @@ import java.util.function.BiConsumer;
 import static java.lang.constant.ConstantDescs.*;
 import static tech.thatgravyboat.repolib.v2.jvm.compiler.ExplCD.*;
 
+@SuppressWarnings("preview")
 public class ExpressionCompiler {
     private static final MethodHandles.Lookup theLookup;
     static {
