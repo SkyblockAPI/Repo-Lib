@@ -60,7 +60,7 @@ public final class Parser {
             }
         }
 
-        return new StackFile(meta.get(), script.get(StackFile.DEFAULT_SCRIPT));
+        return new StackFile(name, meta.get(), script.get(StackFile.DEFAULT_SCRIPT));
     }
 
     public ModuleFile parseModuleFile(String name, RepoLoader loader, Evaluator evaluator) {
