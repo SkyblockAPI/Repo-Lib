@@ -7,12 +7,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.stream.Collectors;
@@ -22,15 +17,8 @@ import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
 import tech.thatgravyboat.repolib.v2.BundleLoader;
 import tech.thatgravyboat.repolib.v2.FolderLoader;
-import tech.thatgravyboat.repolib.v2.expl.value.ArrayValue;
-import tech.thatgravyboat.repolib.v2.expl.value.BoolValue;
-import tech.thatgravyboat.repolib.v2.expl.value.MutableArrayValue;
-import tech.thatgravyboat.repolib.v2.expl.value.MutableStructValue;
-import tech.thatgravyboat.repolib.v2.expl.value.NilValue;
-import tech.thatgravyboat.repolib.v2.expl.value.NumValue;
-import tech.thatgravyboat.repolib.v2.expl.value.StrValue;
-import tech.thatgravyboat.repolib.v2.expl.value.StructValue;
-import tech.thatgravyboat.repolib.v2.expl.value.Value;
+import tech.thatgravyboat.repolib.v2.RepoConfig;
+import tech.thatgravyboat.repolib.v2.expl.value.*;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class Main2 extends WebSocketServer {
@@ -41,14 +29,25 @@ public class Main2 extends WebSocketServer {
 
     static void main(String[] args) throws IOException {
         FolderLoader loader = new FolderLoader(Path.of("Repo-Data").toRealPath().normalize().toAbsolutePath());
-        var instance = loader.create();
 
         var errors = loader.load();
 
         var path = Path.of("bundle.srb");
         if (errors.isEmpty()) {
             Files.write(path, loader.buildRepoBundle(), StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE);
-            new BundleLoader(path).load();
+            var bundleLoader = new BundleLoader(path);
+            var instance = bundleLoader.create();
+            bundleLoader.load();
+            var stackFile = Objects.requireNonNull(bundleLoader.stackFile("items/slayer/enderman/aspect_of_the_void"));
+
+            {
+
+                var evaluator = stackFile.createEvaluator(instance.constants(), ImmutableStructValue.EMPTY, RepoConfig.DEFAULT, bundleLoader::module);
+                var stack = stackFile.evaluateScript(evaluator);
+                evaluator.errors.forEach(System.out::println);
+                evaluator.debugs.forEach(System.out::println);
+                System.out.println(stack);
+            }
         }
     }
 

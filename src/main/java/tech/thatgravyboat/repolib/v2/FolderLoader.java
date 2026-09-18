@@ -30,7 +30,7 @@ public class FolderLoader implements FileVisitor<Path>, RepoLoader {
     private ModuleFile rootFile = null;
     private final Map<String, StackFile> stackFiles = new HashMap<>();
     private final List<LoadingErrors> errors = new ArrayList<>();
-    private Transformer expressionTransformer = (a, n) -> a;
+    private Transformer expressionTransformer = (a, _) -> a;
     private final RepoConstants constants = new RepoConstants(this);
 
     public FolderLoader(Path path) {
@@ -106,7 +106,11 @@ public class FolderLoader implements FileVisitor<Path>, RepoLoader {
     }
 
     public StackFile stackFile(String fileName) {
-        return this.stackFiles.get(fileName);
+        StackFile stackFile = stackFiles.get(fileName);
+        if (stackFile != null && !stackFile.hasInitialized()) {
+            stackFile.init(this, constants);
+        }
+        return stackFile;
     }
 
     public Map<String, StackFile> stackFiles() {
@@ -173,8 +177,6 @@ public class FolderLoader implements FileVisitor<Path>, RepoLoader {
                 files.put(relativeName, expression);
             } else if (relativeFileName.equals("root.srll")) {
                 rootList = Expression.parse(content);
-            } else {
-//                errors.add(new LoadingErrors(file, "Not a valid script file"));
             }
         } catch (Exception exception) {
             errors.add(new LoadingErrors(file, exception));
