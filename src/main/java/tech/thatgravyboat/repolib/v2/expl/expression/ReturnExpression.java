@@ -1,9 +1,12 @@
 package tech.thatgravyboat.repolib.v2.expl.expression;
 
-import tech.thatgravyboat.repolib.v2.binary.ByteBuffer;
+import tech.thatgravyboat.repolib.v2.binary.ByteBufferImpl;
+import tech.thatgravyboat.repolib.v2.binary.DecoderContext;
+import tech.thatgravyboat.repolib.v2.binary.EncoderContext;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionCodec;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypes;
+import tech.thatgravyboat.repolib.v2.binary.NameTable;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.ExecutionExceptions;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
@@ -24,11 +27,16 @@ public record ReturnExpression(Expression retExpr) implements SelfEvaluatingExpr
     }
 
     @Override
-    public void encode(ByteBuffer buffer) {
+    public void precode(NameTable table) {
+        table.insert(this.retExpr);
+    }
+
+    @Override
+    public void encode(EncoderContext buffer) {
         ExpressionCodec.write(this.retExpr, buffer);
     }
 
-    public static ReturnExpression decode(ByteBuffer buffer) throws IOException {
+    public static ReturnExpression decode(DecoderContext buffer) throws IOException {
         return new ReturnExpression(ExpressionCodec.read(buffer));
     }
 

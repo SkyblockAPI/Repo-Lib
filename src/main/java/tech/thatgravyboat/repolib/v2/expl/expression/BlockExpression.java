@@ -7,10 +7,13 @@ import java.lang.classfile.CodeBuilder;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
-import tech.thatgravyboat.repolib.v2.binary.ByteBuffer;
+import tech.thatgravyboat.repolib.v2.binary.ByteBufferImpl;
+import tech.thatgravyboat.repolib.v2.binary.DecoderContext;
+import tech.thatgravyboat.repolib.v2.binary.EncoderContext;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionCodec;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypes;
+import tech.thatgravyboat.repolib.v2.binary.NameTable;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 import tech.thatgravyboat.repolib.v2.jvm.compiler.CompilationTracker;
@@ -32,11 +35,18 @@ public record BlockExpression(Collection<Expression> exprs) implements Expressio
     }
 
     @Override
-    public void encode(ByteBuffer buffer) {
+    public void precode(NameTable table) {
+        for (var expr : exprs) {
+            expr.precode(table);
+        }
+    }
+
+    @Override
+    public void encode(EncoderContext buffer) {
         buffer.writeCollection(this.exprs, ExpressionCodec::write);
     }
 
-    public static BlockExpression decode(ByteBuffer buffer) throws IOException {
+    public static BlockExpression decode(DecoderContext buffer) throws IOException {
         return new BlockExpression(buffer.readCollection(ExpressionCodec::read));
     }
 
@@ -75,11 +85,16 @@ public record BlockExpression(Collection<Expression> exprs) implements Expressio
         }
 
         @Override
-        public void encode(ByteBuffer buffer) {
+        public void encode(EncoderContext buffer) {
             ExpressionCodec.write(this.expression, buffer);
         }
 
-        public static LastElement decode(ByteBuffer buffer) throws IOException {
+        @Override
+        public void precode(NameTable table) {
+            table.insert(this.expression);
+        }
+
+        public static LastElement decode(DecoderContext buffer) throws IOException {
             return new LastElement(ExpressionCodec.read(buffer));
         }
 

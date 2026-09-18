@@ -2,37 +2,28 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
-
-import java.io.BufferedOutputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
-
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
-import tech.thatgravyboat.repolib.v2.RepoConfig;
-import tech.thatgravyboat.repolib.v2.RepoLoader;
+import tech.thatgravyboat.repolib.v2.BundleLoader;
+import tech.thatgravyboat.repolib.v2.FolderLoader;
 import tech.thatgravyboat.repolib.v2.expl.value.ArrayValue;
 import tech.thatgravyboat.repolib.v2.expl.value.BoolValue;
-import tech.thatgravyboat.repolib.v2.expl.value.ImmutableStructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.MutableArrayValue;
 import tech.thatgravyboat.repolib.v2.expl.value.MutableStructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.NilValue;
@@ -40,7 +31,6 @@ import tech.thatgravyboat.repolib.v2.expl.value.NumValue;
 import tech.thatgravyboat.repolib.v2.expl.value.StrValue;
 import tech.thatgravyboat.repolib.v2.expl.value.StructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
-import tech.thatgravyboat.repolib.v2.jvm.compiler.ExpressionCompiler;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class Main2 extends WebSocketServer {
@@ -49,57 +39,17 @@ public class Main2 extends WebSocketServer {
 
     boolean running = true;
 
-    public static void main(String[] args) throws IOException {
-        RepoLoader loader = new RepoLoader(Path.of("repo").toRealPath().normalize().toAbsolutePath());
+    static void main(String[] args) throws IOException {
+        FolderLoader loader = new FolderLoader(Path.of("Repo-Data").toRealPath().normalize().toAbsolutePath());
         var instance = loader.create();
-
-        FileOutputStream fos = new FileOutputStream("test.jar");
-        BufferedOutputStream bos = new BufferedOutputStream(fos);
-        ZipOutputStream zis = new ZipOutputStream(bos);
-
-        loader.registerTransform(ExpressionCompiler::createSelfEvaluatingExpression);
-        ExpressionCompiler.registerSaver((name, bytes) -> {
-            try {
-                zis.putNextEntry(new ZipEntry(name + ".class"));
-                zis.write(bytes);
-                zis.closeEntry();
-            } catch (IOException e) {
-                // ignore
-            }
-        });
 
         var errors = loader.load();
 
-        errors.forEach(System.out::println);
-
-        var data =
-                JsonParser.parseString(Files.readString(Path.of("data.jsonc"), StandardCharsets.UTF_8)).getAsJsonObject();
-
-        var stackFile = Objects.requireNonNull(loader.getStackFile("items/slayer/enderman/aspect_of_the_void"));
-
-        {
-
-            var evaluator = stackFile.createEvaluator(instance.constants(), ImmutableStructValue.EMPTY, RepoConfig.DEFAULT, loader::getModule);
-            var stack = stackFile.evaluateScript(evaluator);
-            evaluator.errors.forEach(System.out::println);
-            evaluator.debugs.forEach(System.out::println);
-            System.out.println(stack);
+        var path = Path.of("bundle.srb");
+        if (errors.isEmpty()) {
+            Files.write(path, loader.buildRepoBundle(), StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE);
+            new BundleLoader(path).load();
         }
-
-        long sum = 0;
-        for (int i = 0; i < 10000; i++) {
-
-            var evaluator = stackFile.createEvaluator(instance.constants(), ImmutableStructValue.EMPTY, RepoConfig.DEFAULT, loader::getModule);
-            long start = System.nanoTime();
-            var stack = stackFile.evaluateScript(evaluator);
-            sum += System.nanoTime() - start;
-            evaluator.errors.forEach(System.out::println);
-            evaluator.debugs.forEach(System.out::println);
-        }
-
-        System.out.println("Took " + (sum / 10000_000000.0) + "ms");
-
-        zis.close();
     }
 
     private static StructValue toValue(JsonObject data) {

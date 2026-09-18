@@ -1,11 +1,14 @@
 package tech.thatgravyboat.repolib.v2.expl.expression;
 
 import org.jetbrains.annotations.NotNull;
-import tech.thatgravyboat.repolib.v2.binary.ByteBuffer;
+import tech.thatgravyboat.repolib.v2.binary.ByteBufferImpl;
+import tech.thatgravyboat.repolib.v2.binary.DecoderContext;
+import tech.thatgravyboat.repolib.v2.binary.EncoderContext;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionCodec;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypes;
 import tech.thatgravyboat.repolib.v2.jvm.compiler.CompilationTracker;
+import tech.thatgravyboat.repolib.v2.binary.NameTable;
 
 import java.io.IOException;
 import java.lang.classfile.CodeBuilder;
@@ -32,12 +35,20 @@ public record CallExpression(Expression lhs, Collection<Expression> args) implem
     }
 
     @Override
-    public void encode(ByteBuffer buffer) {
+    public void precode(NameTable table) {
+        this.lhs.precode(table);
+        for (var arg : args) {
+            arg.precode(table);
+        }
+    }
+
+    @Override
+    public void encode(EncoderContext buffer) {
         ExpressionCodec.write(this.lhs, buffer);
         buffer.writeCollection(this.args, ExpressionCodec::write);
     }
 
-    public static CallExpression decode(ByteBuffer buffer) throws IOException {
+    public static CallExpression decode(DecoderContext buffer) throws IOException {
         return new CallExpression(
                 ExpressionCodec.read(buffer),
                 buffer.readCollection(ExpressionCodec::read)

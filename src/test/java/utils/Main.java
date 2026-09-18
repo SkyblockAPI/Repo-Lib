@@ -26,7 +26,7 @@ import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
 import tech.thatgravyboat.repolib.v2.RepoConfig;
-import tech.thatgravyboat.repolib.v2.RepoLoader;
+import tech.thatgravyboat.repolib.v2.FolderLoader;
 import tech.thatgravyboat.repolib.v2.expl.value.ArrayValue;
 import tech.thatgravyboat.repolib.v2.expl.value.BoolValue;
 import tech.thatgravyboat.repolib.v2.expl.value.MutableArrayValue;
@@ -48,7 +48,7 @@ public class Main extends WebSocketServer {
         new Main();
     }
 
-    private final RepoLoader loader = new RepoLoader(Path.of("Repo-Data").toRealPath().normalize().toAbsolutePath());
+    private final FolderLoader loader = new FolderLoader(Path.of("Repo-Data").toRealPath().normalize().toAbsolutePath());
 
     public Main() throws IOException {
         super(new InetSocketAddress("0.0.0.0", 8008));
@@ -77,15 +77,15 @@ public class Main extends WebSocketServer {
         var profile =
             JsonParser.parseString(Files.readString(Path.of("profile.jsonc"), StandardCharsets.UTF_8)).getAsJsonObject();
 
-        var stackFile = Objects.requireNonNull(loader.getStackFile(lastModifiedItem));
-        var evaluator = stackFile.createEvaluator(instance.constants(), toValue(data), toValue(profile), RepoConfig.DEFAULT, this.loader::getModule);
+        var stackFile = Objects.requireNonNull(loader.stackFile(lastModifiedItem));
+        var evaluator = stackFile.createEvaluator(instance.constants(), toValue(data), toValue(profile), RepoConfig.DEFAULT, this.loader::module);
         var stack = stackFile.evaluateScript(evaluator);
 
         evaluator.errors.forEach(System.out::println);
         evaluator.debugs.forEach(System.out::println);
 
         var item = new JsonObject();
-        item.add("minecraft:custom_name", asComponent(stack.get("name")));
+        item.add("minecraft:custom_name", asComponent(stack.get("names")));
         //noinspection RedundantCast
         item.add("minecraft:lore", asComponent((ArrayValue) stack.get("lore")).get("extra"));
         item.add("minecraft:custom_data", data);

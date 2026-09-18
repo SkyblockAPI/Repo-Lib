@@ -4,36 +4,38 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.jetbrains.annotations.Nullable;
+import tech.thatgravyboat.repolib.api.idoverlays.Requirement;
 import tech.thatgravyboat.repolib.internal.JsonHelper;
+import tech.thatgravyboat.repolib.internal.Utils;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
 public final class IdOverlaysAPI {
 
     public record WikiData(
-            @Nullable String official,
+            @Deprecated(forRemoval = true) @Nullable String official,
             @Nullable String independent
     ) {
         public static @Nullable WikiData fromJson(JsonObject json) {
             if (json == null) return null;
-            return new WikiData(
-                    JsonHelper.getStringOrNull(json, "official"),
-                    JsonHelper.getStringOrNull(json, "independent")
-            );
+            return new WikiData(null, JsonHelper.getStringOrNull(json, "independent"));
         }
     }
 
     public record OverlayData(
             @Nullable WikiData wiki,
             boolean vanilla,
+            @Nullable List<Requirement> requirements,
             JsonObject rawObject
     ) {
         public static OverlayData fromJson(JsonObject json) {
             return new OverlayData(
                     json.has("wiki") ? WikiData.fromJson(json.getAsJsonObject("wiki")) : null,
                     JsonHelper.getBoolean(json, "vanilla", false),
+                    json.has("requirements") ? JsonHelper.getList(json, "requirements", e -> Requirement.parse(e.getAsJsonObject())) : null,
                     json
             );
         }
@@ -48,6 +50,14 @@ public final class IdOverlaysAPI {
     private final Map<String, OverlayData> attributes = new HashMap<>();
 
     void load(JsonElement json) {
+        items.clear();
+        potions.clear();
+        runes.clear();
+        pets.clear();
+        mobs.clear();
+        enchantments.clear();
+        attributes.clear();
+
         if (json instanceof JsonArray array) {
             for (JsonElement element : array) {
                 if (element instanceof JsonObject obj) {
@@ -78,6 +88,8 @@ public final class IdOverlaysAPI {
                     }
                 }
             }
+        } else {
+            RepoLibLogger.warn("/Id Overlays/ Failed to load, expected JsonArray but got " + Utils.typeName(json));
         }
     }
 

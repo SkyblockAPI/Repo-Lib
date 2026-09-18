@@ -2,12 +2,15 @@ package tech.thatgravyboat.repolib.v2.expl.expression;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import tech.thatgravyboat.repolib.v2.binary.ByteBuffer;
+import tech.thatgravyboat.repolib.v2.binary.ByteBufferImpl;
+import tech.thatgravyboat.repolib.v2.binary.DecoderContext;
+import tech.thatgravyboat.repolib.v2.binary.EncoderContext;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionCodec;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypes;
 import tech.thatgravyboat.repolib.v2.jvm.compiler.CompilationTracker;
 import tech.thatgravyboat.repolib.v2.jvm.compiler.Snippets;
+import tech.thatgravyboat.repolib.v2.binary.NameTable;
 
 import java.io.IOException;
 import java.lang.classfile.CodeBuilder;
@@ -39,13 +42,20 @@ public record IfExpression(Expression cond, Expression thenExpr, @Nullable Expre
     }
 
     @Override
-    public void encode(ByteBuffer buffer) {
+    public void precode(NameTable table) {
+        table.insert(this.cond);
+        table.insert(this.thenExpr);
+        table.insert(this.elseExpr);
+    }
+
+    @Override
+    public void encode(EncoderContext buffer) {
         ExpressionCodec.write(this.cond, buffer);
         ExpressionCodec.write(this.thenExpr, buffer);
         ExpressionCodec.writeNullable(this.elseExpr, buffer);
     }
 
-    public static IfExpression decode(ByteBuffer buffer) throws IOException {
+    public static IfExpression decode(DecoderContext buffer) throws IOException {
         return new IfExpression(
                 ExpressionCodec.read(buffer),
                 ExpressionCodec.read(buffer),

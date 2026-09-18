@@ -5,11 +5,16 @@ import java.lang.classfile.CodeBuilder;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 
+import tech.thatgravyboat.repolib.v2.binary.ByteBufferImpl;
+import tech.thatgravyboat.repolib.v2.binary.DecoderContext;
+
 import tech.thatgravyboat.repolib.v2.binary.ByteBuffer;
 import tech.thatgravyboat.repolib.v2.binary.Encodable;
+import tech.thatgravyboat.repolib.v2.binary.EncoderContext;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionCodec;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypes;
+import tech.thatgravyboat.repolib.v2.binary.NameTable;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.value.FunctionValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
@@ -82,7 +87,7 @@ public record LambdaExpression(
     }
 
     @Override
-    public void encode(ByteBuffer buffer) {
+    public void encode(EncoderContext buffer) {
         buffer.writeCollection(this.arguments, LambdaArgument::encode);
         ExpressionCodec.write(this.body, buffer);
         buffer.writeBoolean(this.requiresSemicolon);
@@ -93,13 +98,21 @@ public record LambdaExpression(
         return ExpressionTypes.LAMBDA;
     }
 
-    public static LambdaExpression decode(ByteBuffer buffer) throws IOException {
+    public static LambdaExpression decode(DecoderContext buffer) throws IOException {
         return new LambdaExpression(
                 buffer.readCollection(LambdaArgument::decode),
                 ExpressionCodec.read(buffer),
                 null,
                 buffer.readBoolean()
         );
+    }
+
+    @Override
+    public void precode(NameTable table) {
+        for (var argument : this.arguments) {
+            table.insert(argument);
+        }
+        table.insert(this.body);
     }
 
     @Override
@@ -116,15 +129,20 @@ public record LambdaExpression(
 
     public record LambdaArgument(String name, int position, boolean optional) implements Encodable {
         @Override
-        public void encode(ByteBuffer buffer) {
-            buffer.writeString(this.name);
+        public void encode(EncoderContext buffer) {
+            buffer.writeLiteral(this.name);
             buffer.writeInt(this.position);
             buffer.writeBoolean(this.optional);
         }
 
-        public static LambdaArgument decode(ByteBuffer buffer) throws IOException {
+        @Override
+        public void precode(NameTable table) {
+            table.insert(this.name);
+        }
+
+        public static LambdaArgument decode(DecoderContext buffer) throws IOException {
             return new LambdaArgument(
-                    buffer.readString(),
+                    buffer.readLiteral(),
                     buffer.readInt(),
                     buffer.readBoolean()
             );

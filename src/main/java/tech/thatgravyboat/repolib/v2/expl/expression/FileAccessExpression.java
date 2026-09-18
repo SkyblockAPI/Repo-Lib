@@ -6,7 +6,9 @@ import java.lang.constant.MethodTypeDesc;
 import java.util.Collection;
 
 import org.jetbrains.annotations.NotNull;
-import tech.thatgravyboat.repolib.v2.binary.ByteBuffer;
+import tech.thatgravyboat.repolib.v2.binary.ByteBufferImpl;
+import tech.thatgravyboat.repolib.v2.binary.DecoderContext;
+import tech.thatgravyboat.repolib.v2.binary.EncoderContext;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionCodec;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypes;
@@ -15,6 +17,7 @@ import tech.thatgravyboat.repolib.v2.jvm.compiler.Snippets;
 
 import static java.lang.constant.ConstantDescs.CD_String;
 import static tech.thatgravyboat.repolib.v2.jvm.compiler.ExplCD.*;
+import tech.thatgravyboat.repolib.v2.binary.NameTable;
 
 public record FileAccessExpression(Collection<Expression> path) implements Expression {
 
@@ -29,11 +32,18 @@ public record FileAccessExpression(Collection<Expression> path) implements Expre
     }
 
     @Override
-    public void encode(ByteBuffer buffer) {
+    public void precode(NameTable table) {
+        for (var expression : path) {
+            expression.precode(table);
+        }
+    }
+
+    @Override
+    public void encode(EncoderContext buffer) {
         buffer.writeCollection(this.path, ExpressionCodec::write);
     }
 
-    public static FileAccessExpression decode(ByteBuffer buffer) throws IOException {
+    public static FileAccessExpression decode(DecoderContext buffer) throws IOException {
         return new FileAccessExpression(buffer.readCollection(ExpressionCodec::read));
     }
 

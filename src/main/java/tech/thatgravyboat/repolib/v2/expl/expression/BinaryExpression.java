@@ -1,10 +1,14 @@
 package tech.thatgravyboat.repolib.v2.expl.expression;
 
 import tech.thatgravyboat.repolib.v2.binary.ByteBuffer;
+import tech.thatgravyboat.repolib.v2.binary.ByteBufferImpl;
+import tech.thatgravyboat.repolib.v2.binary.DecoderContext;
+import tech.thatgravyboat.repolib.v2.binary.EncoderContext;
 import tech.thatgravyboat.repolib.v2.binary.EnumCodec;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionCodec;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypes;
+import tech.thatgravyboat.repolib.v2.binary.NameTable;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.value.BoolValue;
 import tech.thatgravyboat.repolib.v2.expl.value.MutableArrayValue;
@@ -37,13 +41,19 @@ public record BinaryExpression(Op op, Expression first, Expression second) imple
     }
 
     @Override
-    public void encode(ByteBuffer buffer) {
+    public void encode(EncoderContext buffer) {
         EnumCodec.encode(this.op, buffer);
         ExpressionCodec.write(this.first, buffer);
         ExpressionCodec.write(this.second, buffer);
     }
 
-    public static BinaryExpression decode(ByteBuffer buffer) throws IOException {
+    @Override
+    public void precode(NameTable table) {
+        this.first.precode(table);
+        this.second.precode(table);
+    }
+
+    public static BinaryExpression decode(DecoderContext buffer) throws IOException {
         return new BinaryExpression(
                 Op.CODEC.decode(buffer),
                 ExpressionCodec.read(buffer),

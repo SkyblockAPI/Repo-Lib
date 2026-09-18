@@ -17,7 +17,7 @@ public class ExpressionTypeRegistry {
             byte id
     ) implements DataType<ExpressionType> {
         @Override
-        public ExpressionType decode(ByteBuffer stream) throws IOException {
+        public ExpressionType decode(DecoderContext stream) throws IOException {
             return decoder.decode(stream);
         }
     }

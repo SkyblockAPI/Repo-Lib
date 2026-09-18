@@ -12,18 +12,22 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import tech.thatgravyboat.repolib.internal.Utils;
 
 public final class PotionsAPI {
 
     private final Map<String, Potion> potions = new HashMap<>();
 
     void load(JsonElement json) {
+        potions.clear();
         if (json instanceof JsonObject object) {
             object.asMap().forEach((key, value) -> {
                 if (value instanceof JsonObject valueObject) {
                     this.potions.put(key.toUpperCase(Locale.ROOT), Potion.fromJson(key, valueObject));
                 }
             });
+        } else {
+            RepoLibLogger.warn("/Potions/ Failed to load, expected JsonObject but got " + Utils.typeName(json));
         }
     }
 
@@ -60,7 +64,7 @@ public final class PotionsAPI {
                                 .map(JsonElement::getAsJsonObject)
                                 .map(PotionLevel::fromJson)
                                 .collect(Collectors.toMap(PotionLevel::level, Function.identity())),
-                        object.get("name").getAsString(),
+                        object.get("names").getAsString(),
                         JsonHelper.getString(object, "type", null),
                         JsonHelper.getString(object, "internal_potion", null),
                         object.get("vanilla_effect").getAsString()
@@ -74,15 +78,17 @@ public final class PotionsAPI {
     public record PotionLevel(
             int level,
             @NotNull String literalLevel,
-            @NotNull List<String> lore,
-            boolean splash
+            @Deprecated @NotNull List<String> lore,
+            boolean splash,
+            @NotNull JsonObject item
     ) {
         public static PotionLevel fromJson(JsonObject object) {
             return new PotionLevel(
                     JsonHelper.getInt(object, "level", 1),
                     JsonHelper.getString(object, "literal_level", "I"),
                     object.getAsJsonArray("lore").asList().stream().map(JsonElement::getAsString).toList(),
-                    JsonHelper.getBoolean(object, "splash", false)
+                    JsonHelper.getBoolean(object, "splash", false),
+                    object.getAsJsonObject("item")
             );
         }
     }

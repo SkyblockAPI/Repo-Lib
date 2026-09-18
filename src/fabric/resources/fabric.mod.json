@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "tech_thatgravyboat_repo-lib_repo-lib",
+  "version": "${version}",
+  "name": "repo-lib",
+  "custom": {
+    "modmenu": {
+      "badges": ["library"]
+    }
+  }
+}

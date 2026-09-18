@@ -14,38 +14,44 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
+import tech.thatgravyboat.repolib.internal.Utils;
 
 public final class MobsAPI {
 
     private final Map<String, Mob> mobs = new HashMap<>();
 
     void load(JsonElement json) {
+        mobs.clear();
         if (json instanceof JsonObject object) {
             for (var entry : object.entrySet()) {
                 String id = entry.getKey();
                 JsonObject mobObject = entry.getValue().getAsJsonObject();
+
                 this.mobs.put(id.toUpperCase(Locale.ROOT), new Mob(
                         JsonHelper.getStringOrNull(mobObject, "island"),
                         mobObject.has("position") ? Position.fromJson(mobObject.getAsJsonObject("position")) : null,
                         JsonHelper.getStringOrNull(mobObject, "texture"),
                         mobObject.get("itemId").getAsString(),
-                        mobObject.get("name").getAsString(),
+                        mobObject.get("names").getAsString(),
                         JsonHelper.getStringOrNull(mobObject, "type"),
                         mobObject.has("lootTables") ?
-                        mobObject.getAsJsonArray("lootTables")
-                                .asList()
-                                .stream()
-                                .map(JsonElement::getAsJsonObject)
-                                .map(MobsAPI::loadLootTable)
-                                .collect(Collectors.toList()) : List.of()
+                                mobObject.getAsJsonArray("lootTables")
+                                        .asList()
+                                        .stream()
+                                        .map(JsonElement::getAsJsonObject)
+                                        .map(MobsAPI::loadLootTable)
+                                        .collect(Collectors.toList()) : List.of(),
+                        mobObject.getAsJsonObject("item")
                 ));
             }
+        } else {
+            RepoLibLogger.warn("/Mobs/ Failed to load, expected JsonObject but got " + Utils.typeName(json));
         }
     }
 
     private static LootTable loadLootTable(JsonObject json) {
         return new LootTable(
-                json.get("name").getAsString(),
+                json.get("names").getAsString(),
                 JsonHelper.getInt(json, "mobLevel", 0),
                 JsonHelper.getInt(json, "xp", 0),
                 JsonHelper.getInt(json, "combatXp", 0),

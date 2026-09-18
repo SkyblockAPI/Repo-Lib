@@ -5,10 +5,13 @@ import java.util.List;
 import java.util.Objects;
 
 import tech.thatgravyboat.repolib.v2.binary.BinaryFileTypeRegistry;
-import tech.thatgravyboat.repolib.v2.binary.ByteBuffer;
+import tech.thatgravyboat.repolib.v2.binary.ByteBufferImpl;
+import tech.thatgravyboat.repolib.v2.binary.DecoderContext;
 import tech.thatgravyboat.repolib.v2.binary.Encodable;
+import tech.thatgravyboat.repolib.v2.binary.EncoderContext;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionCodec;
 import tech.thatgravyboat.repolib.v2.binary.FileTypes;
+import tech.thatgravyboat.repolib.v2.binary.NameTable;
 import tech.thatgravyboat.repolib.v2.binary.TypedFile;
 import tech.thatgravyboat.repolib.v2.expl.expression.Expression;
 import tech.thatgravyboat.repolib.v2.expl.value.FunctionValue;
@@ -17,7 +20,7 @@ import tech.thatgravyboat.repolib.v2.expl.value.KeyValue;
 import tech.thatgravyboat.repolib.v2.expl.value.StructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
-public final class ModuleFile implements FunctionValue, TypedFile<ModuleFile>, Encodable {
+public final class ModuleFile implements FunctionValueFile<ModuleFile>, Encodable {
     private final String name;
     private final Expression script;
     private KeyValue staticData;
@@ -80,19 +83,28 @@ public final class ModuleFile implements FunctionValue, TypedFile<ModuleFile>, E
         }
     }
 
-    public static ModuleFile decode(ByteBuffer buffer) throws IOException {
+    public static ModuleFile decode(DecoderContext buffer) throws IOException {
         return new ModuleFile(
-                buffer.readString(),
+                buffer.readLiteral(),
                 ExpressionCodec.readNullable(buffer),
                 ExpressionCodec.read(buffer)
         );
     }
 
     @Override
-    public void encode(ByteBuffer buffer) {
-        buffer.writeString(this.name);
+    public void encode(EncoderContext buffer) {
+        buffer.writeLiteral(this.name);
         ExpressionCodec.writeNullable(this.staticDataExpression, buffer);
         ExpressionCodec.write(this.script, buffer);
+    }
+
+    @Override
+    public void precode(NameTable table) {
+        table.insert(this.name);
+        if (this.staticDataExpression != null) {
+            this.staticDataExpression.precode(table);
+        }
+        this.script.precode(table);
     }
 
     @Override

@@ -1,8 +1,8 @@
 import tech.thatgravyboat.repolib.v2.RepoConstants;
-import tech.thatgravyboat.repolib.v2.RepoLoader;
+import tech.thatgravyboat.repolib.v2.FolderLoader;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.Parser;
-import tech.thatgravyboat.repolib.v2.jvm.compiler.ExpressionCompiler;
+import tech.thatgravyboat.repolib.v2.expl.compiler.ModuleCompiler;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -11,18 +11,24 @@ public class CompilerMain {
 
     public static void main(String[] args) throws IOException {
         try {
-            var repoLoader = new RepoLoader(Path.of("src/test/repo"));
-            repoLoader.registerTransform(ExpressionCompiler::createSelfEvaluatingExpression);
+            var repoLoader = new FolderLoader(Path.of("src/test/repo"));
+            repoLoader.registerTransform((e, n) -> {
+                try {
+                    return ModuleCompiler.createSelfEvaluatingExpression(e, n);
+                } catch (Exception ex) {
+                    throw new RuntimeException(ex);
+                }
+            });
             var errors = repoLoader.load();
             for (var error : errors) {
                 System.out.println("Failed to load file " + error.file() + " due to " + error.reason());
                 error.reason().printStackTrace();
             }
             var constants = new RepoConstants(repoLoader);
-            var evaluator = new Evaluator(constants, repoLoader::getModule);
+            var evaluator = new Evaluator(constants, repoLoader::module);
             var meow = new Parser("""
-                    print(1..5)
-                    """).parseModuleFile("test", repoLoader);
+                    print("meow");
+                    """).parseModuleFile("test", repoLoader, evaluator);
 //            meow.init(constants);
 //            System.out.println(meow.meta());
             System.out.println(meow.evaluate(evaluator));

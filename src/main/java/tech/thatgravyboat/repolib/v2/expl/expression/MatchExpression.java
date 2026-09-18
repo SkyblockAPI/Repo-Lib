@@ -1,11 +1,13 @@
 package tech.thatgravyboat.repolib.v2.expl.expression;
 
-import tech.thatgravyboat.repolib.v2.binary.ByteBuffer;
+import tech.thatgravyboat.repolib.v2.binary.DecoderContext;
 import tech.thatgravyboat.repolib.v2.binary.Encodable;
+import tech.thatgravyboat.repolib.v2.binary.EncoderContext;
 import tech.thatgravyboat.repolib.v2.binary.EnumCodec;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionCodec;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypes;
+import tech.thatgravyboat.repolib.v2.binary.NameTable;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 import tech.thatgravyboat.repolib.v2.jvm.compiler.CompilationTracker;
@@ -46,12 +48,20 @@ public record MatchExpression(Expression value, Collection<MatchBranch> branches
     }
 
     @Override
-    public void encode(ByteBuffer buffer) {
+    public void precode(NameTable table) {
+        table.insert(this.value);
+        for (var branch : branches) {
+            table.insert(branch);
+        }
+    }
+
+    @Override
+    public void encode(EncoderContext buffer) {
         ExpressionCodec.write(this.value, buffer);
         buffer.writeCollection(this.branches, MatchBranch::encode);
     }
 
-    public static MatchExpression decode(ByteBuffer buffer) throws IOException {
+    public static MatchExpression decode(DecoderContext buffer) throws IOException {
         return new MatchExpression(
                 ExpressionCodec.read(buffer),
                 buffer.readCollection(MatchBranch::decode)
@@ -60,13 +70,19 @@ public record MatchExpression(Expression value, Collection<MatchBranch> branches
 
     public record MatchBranch(MatchCondition condition, Expression check, Expression branch) implements Encodable{
         @Override
-        public void encode(ByteBuffer buffer) {
+        public void encode(EncoderContext buffer) {
             EnumCodec.encode(this.condition, buffer);
             ExpressionCodec.writeNullable(this.check, buffer);
             ExpressionCodec.write(this.branch, buffer);
         }
 
-        public static MatchBranch decode(ByteBuffer buffer) throws IOException {
+        @Override
+        public void precode(NameTable table) {
+            table.insert(this.check);
+            table.insert(this.branch);
+        }
+
+        public static MatchBranch decode(DecoderContext buffer) throws IOException {
             return new MatchBranch(
                     MatchCondition.CODEC.decode(buffer),
                     ExpressionCodec.readNullable(buffer),

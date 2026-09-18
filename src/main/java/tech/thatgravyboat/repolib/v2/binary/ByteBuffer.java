@@ -1,138 +1,125 @@
 package tech.thatgravyboat.repolib.v2.binary;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Objects;
 import java.util.function.BiConsumer;
 
-public record ByteBuffer(ByteArrayInputStream input, ByteArrayOutputStream output) {
-    public ByteBuffer(ByteArrayInputStream input) {
-        this(input, null);
-    }
+public interface ByteBuffer {
 
-    public ByteBuffer(ByteArrayOutputStream output) {
-        this(null, output);
-    }
+    byte readByte() throws IOException;
 
-    @Override
-    public ByteArrayInputStream input() {
-        return Objects.requireNonNull(this.input, "Can't read on output byte buffer");
-    }
+    short readShort() throws IOException;
 
-    @Override
-    public ByteArrayOutputStream output() {
-        return Objects.requireNonNull(this.output, "Can't write on input byte buffer");
-    }
+    int readInt() throws IOException;
 
-    public byte readByte() throws IOException {
-        return this.input().readNBytes(1)[0];
-    }
+    long readLong() throws IOException;
 
-    public short readShort() throws IOException {
-        short value = (short) (readByte() << Short.SIZE / 2);
-        value |= readByte();
-        return value;
-    }
+    void writeByte(byte b);
 
-    public int readInt() throws IOException {
-        int value = readShort() << Integer.SIZE / 2;
-        value |= readShort();
-        return value;
-    }
+    void writeShort(short s);
 
-    public long readLong() throws IOException {
-        int value = readInt() << Long.SIZE / 2;
-        value |= readInt();
-        return value;
-    }
+    void writeInt(int i);
 
-    public void writeByte(byte b) {
-        this.output().write(b);
-    }
+    void writeLong(long l);
 
-    public void writeShort(short s) {
-        writeByte((byte) ((s >>> Short.SIZE / 2) & 0xFF));
-        writeByte((byte) (s & 0xFF));
-    }
+    void writeByteArray(byte[] array);
 
-    public void writeInt(int i) {
-        writeShort((short) ((i >>> Integer.SIZE / 2) & 0xFFFF));
-        writeShort((short) (i & 0xFFFF));
-    }
+    byte[] readByteArray() throws IOException;
 
-    public void writeLong(long l) {
-        writeInt((int) ((l >>> Long.SIZE / 2) & 0xFFFFFFFFL));
-        writeInt((int) (l & 0xFFFFFFFFL));
-    }
+    void writeString(String value);
 
-    public void writeByteArray(byte[] array) {
-        this.writeInt(array.length);
-        this.output().writeBytes(array);
-    }
+    String readString() throws IOException;
 
-    public byte[] readByteArray() throws IOException {
-        var length = this.readInt();
-        var bytes = new byte[length];
-        var actual = this.input().read(bytes);
-        if (actual != length) {
-            throw new IOException("Expected " + length + " bytes but only got " + actual);
+    void writeBoolean(boolean bool);
+
+    boolean readBoolean() throws IOException;
+
+    void writeDouble(double value);
+
+    double readDouble() throws IOException;
+
+    interface Forwarding extends ByteBuffer {
+        ByteBuffer delegate();
+
+        @Override
+        default byte readByte() throws IOException {
+            return delegate().readByte();
         }
-        return bytes;
-    }
 
-    public void writeString(String value) {
-        this.writeByteArray(value.getBytes(StandardCharsets.UTF_8));
-    }
-
-    public String readString() throws IOException {
-        return new String(this.readByteArray(), StandardCharsets.UTF_8);
-    }
-
-    public void writeBoolean(boolean bool) {
-        writeByte((byte) (bool ? 1 : 0));
-    }
-
-    public boolean readBoolean() throws IOException {
-        return readByte() == 1;
-    }
-
-    public <Data extends Encodable> void write(DataType<Data> dataType, Data data) {
-        data.encode(this);
-    }
-
-    public <Data extends Encodable> Data read(DataType<Data> dataType) throws IOException {
-        return dataType.decode(this);
-    }
-
-    public <Data> void writeCollection(Collection<Data> data, BiConsumer<Data, ByteBuffer> serializer) {
-        writeInt(data.size());
-        for (var datum : data) {
-            serializer.accept(datum, this);
+        @Override
+        default short readShort() throws IOException {
+            return delegate().readShort();
         }
-    }
 
-    public <Data> Collection<Data> readCollection(Decoder<Data> decoder) throws IOException {
-        var size = readInt();
-        if (size == 0) {
-            return Collections.emptyList();
+        @Override
+        default int readInt() throws IOException {
+            return delegate().readInt();
         }
-        var list = new ArrayList<Data>(size);
-        for (var i = 0; i < size; i++) {
-            list.add(decoder.decode(this));
+
+        @Override
+        default long readLong() throws IOException {
+            return delegate().readLong();
         }
-        return list;
-    }
 
-    public void writeDouble(double value) {
-        this.writeLong(Double.doubleToRawLongBits(value));
-    }
+        @Override
+        default void writeByte(byte b) {
+            delegate().writeByte(b);
+        }
 
-    public double readDouble() throws IOException {
-        return Double.longBitsToDouble(this.readLong());
+        @Override
+        default void writeShort(short s) {
+            delegate().writeShort(s);
+        }
+
+        @Override
+        default void writeInt(int i) {
+            delegate().writeInt(i);
+        }
+
+        @Override
+        default void writeLong(long l) {
+            delegate().writeLong(l);
+        }
+
+        @Override
+        default void writeByteArray(byte[] array) {
+            delegate().writeByteArray(array);
+        }
+
+        @Override
+        default byte[] readByteArray() throws IOException {
+            return delegate().readByteArray();
+        }
+
+        @Override
+        default void writeString(String value) {
+            delegate().writeString(value);
+        }
+
+        @Override
+        default String readString() throws IOException {
+            return delegate().readString();
+        }
+
+        @Override
+        default void writeBoolean(boolean bool) {
+            delegate().writeBoolean(bool);
+        }
+
+        @Override
+        default boolean readBoolean() throws IOException {
+            return delegate().readBoolean();
+        }
+
+        @Override
+        default void writeDouble(double value) {
+            delegate().writeDouble(value);
+        }
+
+        @Override
+        default double readDouble() throws IOException {
+            return delegate().readDouble();
+        }
+
     }
 }
