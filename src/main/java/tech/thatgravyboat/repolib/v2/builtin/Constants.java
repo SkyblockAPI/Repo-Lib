@@ -13,14 +13,8 @@ import tech.thatgravyboat.repolib.v2.expl.value.StrValue;
 import tech.thatgravyboat.repolib.v2.expl.value.StructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
+import java.util.*;
+import java.util.function.*;
 
 public record Constants(Map<String, Value> map) implements StructValue {
     public Constants(Consumer<Builder> builder) {
@@ -45,6 +39,20 @@ public record Constants(Map<String, Value> map) implements StructValue {
 
     public static KeyValue.Mutable mutable(Consumer<Builder> builder) {
         return new MutableStructValue(Builder.create(builder, MutableStructValue::new));
+    }
+
+    @Override
+    public Set<String> keySet() {
+        return map.keySet();
+    }
+
+    @Override
+    public Map<String, KeyValue> sourceMap() {
+        Map<String, KeyValue> result = new HashMap<>(map.size());
+        for (String key : keySet()) {
+            result.put(key, this);
+        }
+        return result;
     }
 
     @Override
@@ -175,28 +183,28 @@ public record Constants(Map<String, Value> map) implements StructValue {
                 };
             }
 
-            public void executeArgless(java.util.function.Function<Evaluator, Value> executor) {
-                this.executor = ((evaluator, values) -> executor.apply(evaluator));
+            public void executeArgless(Function<Evaluator, Value> executor) {
+                this.executor = ((evaluator, _) -> executor.apply(evaluator));
             }
 
             public void executeArglessVoid(Consumer<Evaluator> executor) {
-                this.executeVoid((evaluator, args) -> executor.accept(evaluator));
+                this.executeVoid((evaluator, _) -> executor.accept(evaluator));
             }
 
-            public void executeSimple(java.util.function.Function<List<Value>, Value> executor) {
-                this.executor = ((evaluator, values) -> executor.apply(values));
+            public void executeSimple(Function<List<Value>, Value> executor) {
+                this.executor = ((_, values) -> executor.apply(values));
             }
 
             public void executeSimpleVoid(Consumer<List<Value>> executor) {
-                this.executeVoid((evaluator, args) -> executor.accept(args));
+                this.executeVoid((_, args) -> executor.accept(args));
             }
 
             public void supply(Supplier<Value> executor) {
-                this.executor = ((evaluator, values) -> executor.get());
+                this.executor = ((_, _) -> executor.get());
             }
 
             public void runs(Runnable executor) {
-                this.executeVoid((evaluator, values) -> executor.run());
+                this.executeVoid((_, _) -> executor.run());
             }
 
             public int getArityMin() {

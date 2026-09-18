@@ -2,11 +2,9 @@ package tech.thatgravyboat.repolib.v2.expl.value;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
-public record LayeredStructValue(StructValue.MutableStruct base, KeyValue overlay) implements StructValue, KeyValue.Mutable {
+public record LayeredStructValue(StructValue.MutableStruct base, KeyValue overlay) implements StructValue.MutableStruct {
     @Override
     public Value get(String field) {
         if (overlay.contains(field)) {
@@ -18,12 +16,19 @@ public record LayeredStructValue(StructValue.MutableStruct base, KeyValue overla
 
     @Override
     public StructValue.MutableStruct toMutableStruct() {
-        return base.toMutableStruct();
+        return this;
     }
 
     @Override
     public boolean contains(String field) {
-        return base.contains(field) || overlay.contains(field);
+        if (overlay.isEmpty()) {
+            if (base.isEmpty()) return false;
+            return base.contains(field);
+        }
+        if (base.isEmpty()) {
+            return overlay.contains(field);
+        }
+        return overlay.contains(field) || base.contains(field) ;
     }
 
     @Override
@@ -47,18 +52,36 @@ public record LayeredStructValue(StructValue.MutableStruct base, KeyValue overla
     }
 
     @Override
-    public @NotNull Iterator<Map.Entry<String, Value>> iterator() {
-        var keys = new HashSet<String>();
-        if (overlay instanceof Iterable<?> iterable) {
-            iterable.forEach(e -> {
-                if (e instanceof Map.Entry entry) {
-                    keys.add((String) entry.getKey());
-                }
-            });
-        }
-        base.forEach(e -> keys.add(e.getKey()));
+    public Set<String> keySet() {
+        Set<String> baseKeySet = base.keySet();
+        Set<String> overlayKeySet = overlay.keySet();
 
-        var parent = keys.iterator();
+        if (baseKeySet.isEmpty()) return overlayKeySet;
+        if (overlayKeySet.isEmpty()) return baseKeySet;
+
+        Set<String> set = new HashSet<>((baseKeySet.size() + overlayKeySet.size()) * 2);
+        set.addAll(baseKeySet);
+        set.addAll(overlayKeySet);
+        return set;
+    }
+
+    @Override
+    public Map<String, KeyValue> sourceMap() {
+        Map<String, KeyValue> overlayMap = overlay.sourceMap();
+        Map<String, KeyValue> baseMap = base.sourceMap();
+        if (overlayMap.isEmpty()) return baseMap;
+        if (baseMap.isEmpty()) return overlayMap;
+        Map<String, KeyValue> result = new HashMap<>((overlayMap.size() + baseMap.size()) * 2);
+        result.putAll(baseMap);
+        result.putAll(overlayMap);
+        return result;
+    }
+
+    @Override
+    public @NotNull Iterator<Map.Entry<String, Value>> iterator() {
+        var keys = sourceMap();
+
+        var parent = keys.entrySet().iterator();
 
         return new Iterator<>() {
             @Override
@@ -68,8 +91,8 @@ public record LayeredStructValue(StructValue.MutableStruct base, KeyValue overla
 
             @Override
             public Map.Entry<String, Value> next() {
-                String key = parent.next();
-                return Map.entry(key, get(key));
+                Map.Entry<String, KeyValue> key = parent.next();
+                return Map.entry(key.getKey(), key.getValue().get(key.getKey()));
             }
         };
     }

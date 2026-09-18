@@ -2,7 +2,6 @@ package tech.thatgravyboat.repolib.v2.expl.expression;
 
 
 import org.jetbrains.annotations.NotNull;
-import tech.thatgravyboat.repolib.v2.binary.ByteBufferImpl;
 import tech.thatgravyboat.repolib.v2.binary.DecoderContext;
 import tech.thatgravyboat.repolib.v2.binary.EncoderContext;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionCodec;
@@ -11,8 +10,16 @@ import tech.thatgravyboat.repolib.v2.binary.ExpressionTypes;
 import tech.thatgravyboat.repolib.v2.binary.NameTable;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
+import tech.thatgravyboat.repolib.v2.jvm.compiler.CompilationTracker;
 
 import java.io.IOException;
+import java.lang.classfile.CodeBuilder;
+import java.lang.constant.MethodTypeDesc;
+
+import static tech.thatgravyboat.repolib.v2.jvm.compiler.ExplCD.CD_Evaluator;
+import static tech.thatgravyboat.repolib.v2.jvm.compiler.ExplCD.CD_StructValue;
+import static tech.thatgravyboat.repolib.v2.jvm.compiler.ExplCD.CD_StructuredFunctionValue;
+import static tech.thatgravyboat.repolib.v2.jvm.compiler.ExplCD.CD_Value;
 
 public record FileCallExpression(Expression access, StructExpression expr) implements SelfEvaluatingExpression {
 
@@ -51,6 +58,16 @@ public record FileCallExpression(Expression access, StructExpression expr) imple
                 ExpressionCodec.read(buffer),
                 ExpressionCodec.readUntyped(ExpressionTypes.STRUCT, buffer)
         );
+    }
+
+    @Override
+    public boolean compile(CodeBuilder cb, CompilationTracker lc) {
+        access.compile(cb, lc);
+        cb.checkcast(CD_StructuredFunctionValue);
+        cb.aload(1);
+        expr.compile(cb, lc);
+        cb.invokeinterface(CD_StructuredFunctionValue, "apply", MethodTypeDesc.of(CD_Value, CD_Evaluator, CD_StructValue));
+        return false;
     }
 }
 

@@ -69,8 +69,7 @@ public class FolderLoader implements FileVisitor<Path>, RepoLoader {
             var rootFile = Expression.parseModuleOrThrow(
                     this,
                     "root",
-                    file,
-                    new Evaluator(new MutableStructValue(), this::module)
+                    file
             );
             this.files.put("root", rootFile);
             this.rootFile = rootFile;
@@ -170,7 +169,7 @@ public class FolderLoader implements FileVisitor<Path>, RepoLoader {
             } else if (relativeFileName.equals("root.srlm")) {
                 return FileVisitResult.CONTINUE;
             } else if (relativeFileName.endsWith(".srlm")) {
-                var expression = Expression.parseModuleOrThrow(this, relativeName, content, null);
+                var expression = Expression.parseModuleOrThrow(this, relativeName, content);
                 files.put(relativeName, expression);
             } else if (relativeFileName.endsWith(".srlf")) {
                 var expression = Expression.parseFunctionOrThrow(this, relativeName, content);

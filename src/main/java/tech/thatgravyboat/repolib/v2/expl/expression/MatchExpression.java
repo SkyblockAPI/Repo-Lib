@@ -10,9 +10,18 @@ import tech.thatgravyboat.repolib.v2.binary.ExpressionTypes;
 import tech.thatgravyboat.repolib.v2.binary.NameTable;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
+import tech.thatgravyboat.repolib.v2.jvm.compiler.CompilationTracker;
+import tech.thatgravyboat.repolib.v2.jvm.compiler.Snippets;
 
 import java.io.IOException;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.Label;
+import java.lang.constant.MethodTypeDesc;
 import java.util.Collection;
+
+import static java.lang.constant.ConstantDescs.CD_boolean;
+import static tech.thatgravyboat.repolib.v2.jvm.compiler.ExplCD.CD_Evaluator;
+import static tech.thatgravyboat.repolib.v2.jvm.compiler.ExplCD.CD_Value;
 
 public record MatchExpression(Expression value, Collection<MatchBranch> branches) implements SelfEvaluatingExpression {
     @Override
@@ -80,6 +89,40 @@ public record MatchExpression(Expression value, Collection<MatchBranch> branches
                     ExpressionCodec.read(buffer)
             );
         }
+    }
+
+    @Override
+    public boolean compile(CodeBuilder cb, CompilationTracker lc) {
+        value.compile(cb, lc);
+        int localSlot = lc.getLowestUnused();
+        cb.astore(localSlot);
+        Label endEndLabel = cb.newLabel();
+        boolean hasCatchall = false;
+        for (MatchExpression.MatchBranch branch : branches) {
+            Label endLabel = cb.newLabel();
+            if (branch.check() != null) {
+                Enum.EnumDesc<MatchExpression.MatchCondition> meow = branch.condition().describeConstable().orElseThrow();
+                cb.loadConstant(meow);
+                cb.aload(1);
+                cb.aload(localSlot);
+                branch.check().compile(cb, lc);
+                cb.invokevirtual(meow.constantType(), "compare", MethodTypeDesc.of(CD_boolean, CD_Evaluator, CD_Value, CD_Value));
+                cb.ifeq(endLabel);
+            } else {
+                hasCatchall = true;
+            }
+
+            branch.branch().compile(cb, lc);
+            cb.goto_(endEndLabel);
+            cb.labelBinding(endLabel);
+        }
+        if (!hasCatchall) {
+            Snippets.pushNil(cb);
+        }
+        lc.free(localSlot);
+        cb.labelBinding(endEndLabel);
+        cb.nop();
+        return false;
     }
 
     public enum MatchCondition {

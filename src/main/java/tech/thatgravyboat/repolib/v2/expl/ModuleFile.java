@@ -5,16 +5,13 @@ import java.util.List;
 import java.util.Objects;
 
 import tech.thatgravyboat.repolib.v2.binary.BinaryFileTypeRegistry;
-import tech.thatgravyboat.repolib.v2.binary.ByteBufferImpl;
 import tech.thatgravyboat.repolib.v2.binary.DecoderContext;
 import tech.thatgravyboat.repolib.v2.binary.Encodable;
 import tech.thatgravyboat.repolib.v2.binary.EncoderContext;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionCodec;
 import tech.thatgravyboat.repolib.v2.binary.FileTypes;
 import tech.thatgravyboat.repolib.v2.binary.NameTable;
-import tech.thatgravyboat.repolib.v2.binary.TypedFile;
 import tech.thatgravyboat.repolib.v2.expl.expression.Expression;
-import tech.thatgravyboat.repolib.v2.expl.value.FunctionValue;
 import tech.thatgravyboat.repolib.v2.expl.value.ImmutableStructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.KeyValue;
 import tech.thatgravyboat.repolib.v2.expl.value.StructValue;
@@ -59,7 +56,7 @@ public final class ModuleFile implements FunctionValueFile<ModuleFile>, Encodabl
 
     @Override
     public boolean canReturnValueBeReturned() {
-        return this.script.canReturnValueBeReturned();
+        return true;
     }
 
     @Override

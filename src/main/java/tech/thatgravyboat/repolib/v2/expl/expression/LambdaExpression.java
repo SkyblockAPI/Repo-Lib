@@ -1,6 +1,8 @@
 package tech.thatgravyboat.repolib.v2.expl.expression;
 
 import java.io.IOException;
+import java.lang.classfile.CodeBuilder;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 
 import tech.thatgravyboat.repolib.v2.binary.DecoderContext;
@@ -13,6 +15,10 @@ import tech.thatgravyboat.repolib.v2.binary.NameTable;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.value.FunctionValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
+import tech.thatgravyboat.repolib.v2.jvm.compiler.CompilationTracker;
+import tech.thatgravyboat.repolib.v2.jvm.compiler.ExpressionCompiler;
+
+import static tech.thatgravyboat.repolib.v2.jvm.compiler.ExplCD.CD_FunctionValue;
 
 public record LambdaExpression(
         Collection<LambdaArgument> arguments, Expression body, Value function, boolean requiresSemicolon
@@ -101,6 +107,18 @@ public record LambdaExpression(
             table.insert(argument);
         }
         table.insert(this.body);
+    }
+
+    @Override
+    public boolean compile(CodeBuilder cb, CompilationTracker lc) {
+        try {
+            Class<?> lambdaClass = ExpressionCompiler.compileLambda(this, lc.getCodeName() + "$" + lc.uniqueId(), false);
+            lc.loadTrackedObject(cb, lc.addTrackedObject(lambdaClass.getConstructor().newInstance()));
+            cb.checkcast(CD_FunctionValue);
+        } catch (IllegalAccessException | InstantiationException | InvocationTargetException | NoSuchMethodException | NoSuchFieldException e) {
+            throw new RuntimeException(e);
+        }
+        return false;
     }
 
     public record LambdaArgument(String name, int position, boolean optional) implements Encodable {

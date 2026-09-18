@@ -5,6 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 public record ImmutableStructValue(Map<String, Value> fields) implements StructValue {
 
@@ -17,7 +18,7 @@ public record ImmutableStructValue(Map<String, Value> fields) implements StructV
     }
 
     @Override
-    public String toString() {
+    public @NotNull String toString() {
         return fields.toString();
     }
 
@@ -25,6 +26,21 @@ public record ImmutableStructValue(Map<String, Value> fields) implements StructV
     @Override
     public boolean contains(String field) {
         return fields.containsKey(field);
+    }
+
+    @Override
+    public Set<String> keySet() {
+        return fields.keySet();
+    }
+
+    @Override
+    public Map<String, KeyValue> sourceMap() {
+        if (fields.isEmpty()) return Map.of();
+        Map<String, KeyValue> result = new HashMap<>(fields.size() * 2);
+        for (String key : keySet()) {
+            result.put(key, this);
+        }
+        return result;
     }
 
     @Override
