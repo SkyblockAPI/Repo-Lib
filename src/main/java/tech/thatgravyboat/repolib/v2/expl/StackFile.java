@@ -30,36 +30,180 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-public final class StackFile implements SelfEvaluatingExpression, TypedFile<StackFile> {
+public interface StackFile extends SelfEvaluatingExpression, TypedFile<StackFile> {
 
-    private static final Expression SCRIPT = Expression.parse("include(\"item\");");
-    public static final Supplier<Expression> DEFAULT_SCRIPT = () -> SCRIPT;
-    private final String name;
-    private final Expression script;
-    private final Expression metaScript;
-    private KeyValue meta;
+    Expression SCRIPT = Expression.parse("include(\"item\");");
+    Supplier<Expression> DEFAULT_SCRIPT = () -> SCRIPT;
 
-    public StackFile(String name, Expression meta, Expression script) {
-        this.name = name;
-        this.script = script;
-        this.metaScript = meta;
+    boolean hasInitialized();
+
+    void init(RepoLoader loader, RepoConstants constants);
+
+    @Override
+    default Value evaluate(Evaluator evaluator) {
+        evaluateScript(evaluator);
+        return Value.NIL;
     }
 
-    public static StackFile decode(DecoderContext buffer) throws IOException {
+    KeyValue meta();
+    Expression script();
+    Expression metaScript();
+    String name();
+
+    default Evaluator createEvaluator(StructValue overrides, Function<String, FunctionValue> lookup) {
+        return createEvaluator(overrides, ImmutableStructValue.EMPTY, RepoConfig.DEFAULT, lookup);
+    }
+
+    default Evaluator createEvaluator(StructValue overrides, StructValue data, Function<String, FunctionValue> lookup) {
+        return createEvaluator(overrides, data, RepoConfig.DEFAULT, lookup);
+    }
+
+    default Evaluator createEvaluator(
+            StructValue overrides,
+            StructValue data,
+            RepoConfig config,
+            Function<String, FunctionValue> lookup
+    ) {
+        return this.createEvaluator(overrides, data, ImmutableStructValue.EMPTY, config, lookup);
+    }
+
+    default Evaluator createEvaluator(
+            StructValue overrides,
+            StructValue data,
+            StructValue profile,
+            RepoConfig config,
+            Function<String, FunctionValue> lookup
+    ) {
+
+        var inputs = new MutableStructValue();
+
+        for (var entry : overrides) {
+            inputs.set(entry.getKey(), entry.getValue());
+        }
+
+        inputs.set("config", config);
+
+        inputs.set(
+            "stack", Constants.mutable((builder) -> builder.field(
+                "lore", MutableArrayValue.create(entries -> new Constants(lore -> {
+                    var section = new AtomicBoolean();
+
+                    lore.function(
+                        "empty", (function) -> {
+                            function.vararg(true);
+                            function.execute(((evaluator, values) -> {
+                                entries.add(ImmutableStructValue.EMPTY);
+
+                                return Value.NIL;
+                            }));
+                        });
+                    lore.function(
+                        "beginSection", (function) -> function.runs(() -> {
+                            if (section.get()) {
+                                entries.add(ImmutableStructValue.EMPTY);
+                            }
+                            section.set(false);
+                        }));
+                    lore.function(
+                        "endSection", (function) -> function.runs(() -> {
+                            if (section.get()) {
+                                entries.add(ImmutableStructValue.EMPTY);
+                            }
+                            section.set(false);
+                        }));
+                    lore.function("clear", (function) -> function.runs(entries::clear));
+                    lore.function(
+                        "add", function -> {
+                            function.arity(1);
+                            function.executeSimpleVoid(args -> {
+                                section.set(true);
+                                entries.add(args.getFirst());
+                            });
+                        });
+                    lore.function(
+                        "addAll", function -> {
+                            function.arity(1);
+                            function.executeVoid((evaluator, args) -> {
+                                var values = ArrayValue.flatten(args);
+                                if (values.isEmpty()) {
+                                    return;
+                                }
+                                section.set(true);
+                                entries.addAll(values);
+                            });
+                        });
+
+                })))).toMutable());
+        inputs.set("data", data);
+        inputs.set("categories", MutableArrayValue.create());
+        inputs.set("profile", profile);
+        inputs.set("meta", this.meta());
+
+        return new Evaluator(inputs, lookup);
+    }
+
+    StructValue evaluateScript(Evaluator evaluator);
+
+    default KeyValue evaluate(StructValue overrides, Function<String, FunctionValue> lookup) {
+        return evaluateScript(createEvaluator(overrides, lookup));
+    }
+
+    @Override
+    default void encode(EncoderContext buffer) {
+        buffer.writeLiteral(this.name());
+        ExpressionCodec.writeNullable(this.metaScript(), buffer);
+        buffer.writeBoolean(this.script() != SCRIPT);
+        if (this.script() != SCRIPT) {
+            ExpressionCodec.write(this.script(), buffer);
+        }
+    }
+
+    @Override
+    default void precode(NameTable table) {
+        table.insert(this.name());
+        table.insert(this.metaScript());
+        if (this.script() != SCRIPT) {
+            this.script().precode(table);
+        }
+    }
+
+    static StackFile decode(DecoderContext buffer) throws IOException {
         String name = buffer.readLiteral();
         Expression meta = ExpressionCodec.readNullable(buffer);
         Expression script = ExpressionCodec.readNullable(buffer);
 
-        return new StackFile(name, meta, Objects.requireNonNullElseGet(script, DEFAULT_SCRIPT));
+        return new Impl(name, meta, Objects.requireNonNullElseGet(script, DEFAULT_SCRIPT));
     }
 
-    public boolean hasInitialized() {
-        return meta != null;
+    @Override
+    default BinaryFileTypeRegistry.Type<StackFile> fileId() {
+        return FileTypes.STACK;
     }
 
-    public void init(RepoLoader loader, RepoConstants constants) {
-        var struct = new MutableStructValue();
-        struct.set(
+    @Override
+    default ExpressionTypeRegistry.Type<StackFile> expressionId() {
+        throw new UnsupportedOperationException();
+    }
+
+    class Impl implements StackFile {
+        private final String name;
+        private final Expression script;
+        private final Expression metaScript;
+        private KeyValue meta;
+
+        public Impl(String name, Expression meta, Expression script) {
+            this.name = name;
+            this.script = script;
+            this.metaScript = meta;
+        }
+
+        public boolean hasInitialized() {
+            return meta != null;
+        }
+
+        public void init(RepoLoader loader, RepoConstants constants) {
+            var struct = new MutableStructValue();
+            struct.set(
                 "include", Constants.Builder.FunctionBuilder.create(function -> {
                     function.arity(1);
                     function.execute((evaluator, args) -> {
@@ -69,15 +213,15 @@ public final class StackFile implements SelfEvaluatingExpression, TypedFile<Stac
                             return evaluator.panic("Requested include " + value + " doesn't exist!");
                         }
                         evaluator.pushPop(
-                                value, () -> {
-                                    evaluator.evaluate(requested);
-                                    return Value.NIL;
-                                });
+                            value, () -> {
+                                evaluator.evaluate(requested);
+                                return Value.NIL;
+                            });
 
                         return Value.NIL;
                     });
                 }));
-        struct.set(
+            struct.set(
                 "static", Constants.Builder.FunctionBuilder.create(function -> {
                     function.arity(1);
                     function.execute((evaluator, args) -> {
@@ -93,150 +237,37 @@ public final class StackFile implements SelfEvaluatingExpression, TypedFile<Stac
                         return evaluator.panic("Can't access static data of non module file!");
                     });
                 }));
-        struct.set("categories", MutableArrayValue.create());
-        var evaluator = new Evaluator(new LayeredStructValue(struct, constants), loader::module);
-        evaluator.evaluate(this.metaScript);
-        struct.fields().remove("include");
-        this.meta = struct.toFullyImmutable();
-    }
-
-    @Override
-    public Value evaluate(Evaluator evaluator) {
-        evaluateScript(evaluator);
-        return Value.NIL;
-    }
-
-    public KeyValue meta() {
-        return meta;
-    }
-
-    public Evaluator createEvaluator(StructValue overrides, Function<String, FunctionValue> lookup) {
-        return createEvaluator(overrides, ImmutableStructValue.EMPTY, RepoConfig.DEFAULT, lookup);
-    }
-
-    public Evaluator createEvaluator(StructValue overrides, StructValue data, Function<String, FunctionValue> lookup) {
-        return createEvaluator(overrides, data, RepoConfig.DEFAULT, lookup);
-    }
-
-    public Evaluator createEvaluator(
-            StructValue overrides,
-            StructValue data,
-            RepoConfig config,
-            Function<String, FunctionValue> lookup
-    ) {
-        return this.createEvaluator(overrides, data, ImmutableStructValue.EMPTY, config, lookup);
-    }
-
-    public Evaluator createEvaluator(
-            StructValue overrides,
-            StructValue data,
-            StructValue profile,
-            RepoConfig config,
-            Function<String, FunctionValue> lookup
-    ) {
-        var inputs = new MutableStructValue();
-
-        for (var entry : overrides) {
-            inputs.set(entry.getKey(), entry.getValue());
+            struct.set("categories", MutableArrayValue.create());
+            var evaluator = new Evaluator(new LayeredStructValue(struct, constants), loader::module);
+            evaluator.evaluate(this.metaScript);
+            struct.fields().remove("include");
+            this.meta = struct.toFullyImmutable();
         }
 
-        inputs.set("config", config);
-
-        inputs.set(
-                "stack", Constants.mutable((builder) -> builder.field(
-                        "lore", MutableArrayValue.create(entries -> new Constants(lore -> {
-                            var section = new AtomicBoolean();
-
-                            lore.function(
-                                    "empty", (function) -> {
-                                        function.vararg(true);
-                                        function.execute(((evaluator, values) -> {
-                                            entries.add(ImmutableStructValue.EMPTY);
-
-                                            return Value.NIL;
-                                        }));
-                                    });
-                            lore.function(
-                                    "beginSection", (function) -> function.runs(() -> {
-                                        if (section.get()) {
-                                            entries.add(ImmutableStructValue.EMPTY);
-                                        }
-                                        section.set(false);
-                                    }));
-                            lore.function(
-                                    "endSection", (function) -> function.runs(() -> {
-                                        if (section.get()) {
-                                            entries.add(ImmutableStructValue.EMPTY);
-                                        }
-                                        section.set(false);
-                                    }));
-                            lore.function("clear", (function) -> function.runs(entries::clear));
-                            lore.function(
-                                    "add", function -> {
-                                        function.arity(1);
-                                        function.executeSimpleVoid(args -> {
-                                            section.set(true);
-                                            entries.add(args.getFirst());
-                                        });
-                                    });
-                            lore.function(
-                                    "addAll", function -> {
-                                        function.arity(1);
-                                        function.executeVoid((evaluator, args) -> {
-                                            var values = ArrayValue.flatten(args);
-                                            if (values.isEmpty()) {
-                                                return;
-                                            }
-                                            section.set(true);
-                                            entries.addAll(values);
-                                        });
-                                    });
-
-                        })))).toMutable());
-        inputs.set("data", data);
-        inputs.set("categories", MutableArrayValue.create());
-        inputs.set("profile", profile);
-        inputs.set("meta", this.meta);
-
-        return new Evaluator(inputs, lookup);
-    }
-
-    public StructValue evaluateScript(Evaluator evaluator) {
-        evaluator.evaluate(script);
-
-        return evaluator.defaults.get("stack") instanceof StructValue value ? value : ImmutableStructValue.EMPTY;
-    }
-
-    public KeyValue evaluate(StructValue overrides, Function<String, FunctionValue> lookup) {
-        return evaluateScript(createEvaluator(overrides, lookup));
-    }
-
-    @Override
-    public void encode(EncoderContext buffer) {
-        buffer.writeLiteral(this.name);
-        ExpressionCodec.writeNullable(this.metaScript, buffer);
-        buffer.writeBoolean(this.script != SCRIPT);
-        if (this.script != SCRIPT) {
-            ExpressionCodec.write(this.script, buffer);
+        public KeyValue meta() {
+            return meta;
         }
-    }
 
-    @Override
-    public void precode(NameTable table) {
-        table.insert(this.name);
-        table.insert(this.metaScript);
-        if (this.script != SCRIPT) {
-            this.script.precode(table);
+        @Override
+        public Expression script() {
+            return this.script;
         }
-    }
 
-    @Override
-    public BinaryFileTypeRegistry.Type<StackFile> fileId() {
-        return FileTypes.STACK;
-    }
+        @Override
+        public Expression metaScript() {
+            return this.metaScript;
+        }
 
-    @Override
-    public ExpressionTypeRegistry.Type<StackFile> expressionId() {
-        throw new UnsupportedOperationException();
+        @Override
+        public String name() {
+            return this.name;
+        }
+
+        public StructValue evaluateScript(Evaluator evaluator) {
+            evaluator.evaluate(script);
+
+            return evaluator.defaults.get("stack") instanceof StructValue value ? value : ImmutableStructValue.EMPTY;
+        }
+
     }
 }

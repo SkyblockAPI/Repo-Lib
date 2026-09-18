@@ -17,71 +17,63 @@ import tech.thatgravyboat.repolib.v2.expl.value.KeyValue;
 import tech.thatgravyboat.repolib.v2.expl.value.StructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
-public final class ModuleFile implements FunctionValueFile<ModuleFile>, Encodable {
-    private final String name;
-    private final Expression script;
-    private KeyValue staticData;
-    private final Expression staticDataExpression;
-    private boolean hasInitialized = false;
+public interface ModuleFile extends FunctionValueFile<ModuleFile>, Encodable {
 
-    public ModuleFile(String name, Expression staticData, Expression script) {
-        this.name = name;
-        this.script = script;
-        staticDataExpression = staticData;
-        if (staticData == null) {
-            this.staticData = ImmutableStructValue.EMPTY;
-            hasInitialized = true;
-        }
-    }
+    boolean isInitialized();
 
     @Override
-    public boolean needsInitialization() {
-        return !hasInitialized;
+    default boolean needsInitialization() {
+        return !isInitialized();
     }
 
+    void staticData(KeyValue value);
+    KeyValue staticData();
+
+    Expression script();
+    Expression staticDataExpression();
+
+    String name();
+
     @Override
-    public void initialize(Evaluator evaluator) {
-        if (hasInitialized) return;
-        var data =  ((StructValue) Objects.requireNonNullElse(evaluator, Evaluator.CONSTANT).eval0(staticDataExpression));
+    default void initialize(Evaluator evaluator) {
+        if (isInitialized()) return;
+        var data =  ((StructValue) Objects.requireNonNullElse(evaluator, Evaluator.CONSTANT).eval0(staticDataExpression()));
         if (data instanceof KeyValue.Mutable mutable) {
-            this.staticData = mutable.toFullyImmutable();
+            this.staticData(mutable.toFullyImmutable());
         } else {
-            this.staticData = data;
+            this.staticData(data);
         }
     }
 
-    public KeyValue getStaticData() {
-        return staticData;
-    }
 
     @Override
-    public boolean canReturnValueBeReturned() {
+    default boolean canReturnValueBeReturned() {
         return true;
     }
 
     @Override
-    public Value evaluate(Evaluator evaluator) {
-        evaluator.setInOverlay("static_data", this.staticData);
-        return evaluator.evaluate(script);
+    default Value evaluate(Evaluator evaluator) {
+        evaluator.setInOverlay("static_data", this.staticData());
+        return evaluator.evaluate(this.script());
     }
 
-    private Value evaluate0(Evaluator evaluator) {
-        evaluator.setInOverlay("static_data", this.staticData);
-        return evaluator.evaluate(script);
+    default Value evaluate0(Evaluator evaluator) {
+        evaluator.setInOverlay("static_data", this.staticData());
+        return evaluator.evaluate(this.script());
     }
 
     @Override
-    public Value apply(Evaluator evaluator, List<Value> args) {
+    default Value apply(Evaluator evaluator, List<Value> args) {
         if (args.size() == 1) {
             var scope = evaluator.getMutableStructOrThrow(args.getFirst());
-            return evaluator.pushPop(name, scope, () -> this.evaluate0(evaluator));
+            return evaluator.pushPop(this.name(), scope, () -> this.evaluate0(evaluator));
         } else {
-            return evaluator.pushPop(name, () -> this.evaluate0(evaluator));
+            return evaluator.pushPop(this.name(), () -> this.evaluate0(evaluator));
         }
     }
 
-    public static ModuleFile decode(DecoderContext buffer) throws IOException {
-        return new ModuleFile(
+    static ModuleFile decode(DecoderContext buffer) throws IOException {
+        return new ModuleFile.Impl(
                 buffer.readLiteral(),
                 ExpressionCodec.readNullable(buffer),
                 ExpressionCodec.read(buffer)
@@ -89,24 +81,72 @@ public final class ModuleFile implements FunctionValueFile<ModuleFile>, Encodabl
     }
 
     @Override
-    public void encode(EncoderContext buffer) {
-        buffer.writeLiteral(this.name);
-        ExpressionCodec.writeNullable(this.staticDataExpression, buffer);
-        ExpressionCodec.write(this.script, buffer);
+    default  void encode(EncoderContext buffer) {
+        buffer.writeLiteral(this.name());
+        ExpressionCodec.writeNullable(this.staticDataExpression(), buffer);
+        ExpressionCodec.write(this.script(), buffer);
     }
 
     @Override
-    public void precode(NameTable table) {
-        table.insert(this.name);
-        if (this.staticDataExpression != null) {
-            this.staticDataExpression.precode(table);
+    default  void precode(NameTable table) {
+        table.insert(this.name());
+        if (this.staticDataExpression() != null) {
+            this.staticDataExpression().precode(table);
         }
-        this.script.precode(table);
+        this.script().precode(table);
     }
 
     @Override
-    public BinaryFileTypeRegistry.Type<ModuleFile> fileId() {
+    default BinaryFileTypeRegistry.Type<ModuleFile> fileId() {
         return FileTypes.MODULE;
+    }
+
+    public class Impl implements ModuleFile {
+        private final String name;
+        private final Expression script;
+        private KeyValue staticData;
+        private final Expression staticDataExpression;
+        private boolean hasInitialized = false;
+
+        public Impl(String name, Expression staticData, Expression script) {
+            this.name = name;
+            this.script = script;
+            staticDataExpression = staticData;
+            if (staticData == null) {
+                this.staticData = ImmutableStructValue.EMPTY;
+                hasInitialized = true;
+            }
+        }
+
+
+        @Override
+        public boolean isInitialized() {
+            return this.hasInitialized;
+        }
+
+        @Override
+        public void staticData(KeyValue value) {
+            this.staticData = value;
+        }
+
+        public KeyValue staticData() {
+            return staticData;
+        }
+
+        @Override
+        public Expression script() {
+            return this.script;
+        }
+
+        @Override
+        public Expression staticDataExpression() {
+            return this.staticDataExpression;
+        }
+
+        @Override
+        public String name() {
+            return this.name;
+        }
     }
 }
 

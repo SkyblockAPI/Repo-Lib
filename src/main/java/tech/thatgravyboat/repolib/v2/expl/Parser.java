@@ -60,7 +60,7 @@ public final class Parser {
             }
         }
 
-        return new StackFile(name, meta.get(), script.get(StackFile.DEFAULT_SCRIPT));
+        return new StackFile.Impl(name, meta.get(), script.get(StackFile.DEFAULT_SCRIPT));
     }
 
     public ModuleFile parseModuleFile(String name, RepoLoader loader) {
@@ -85,7 +85,7 @@ public final class Parser {
             lexer.expect(Lexer.Token.SEMICOLON);
         }
 
-        return new ModuleFile(name, struct.get(() -> null), loader.transform(parseExpression(), name));
+        return new ModuleFile.Impl(name, struct.get(() -> null), loader.transform(parseExpression(), name));
     }
 
     public FunctionFile parseFunctionFile(String name, RepoLoader loader) {
@@ -98,7 +98,7 @@ public final class Parser {
             lexer.expect(Lexer.Token.OR);
         }
 
-        return new FunctionFile(name, arguments, loader.transform(parseExpression(), name));
+        return new FunctionFile.Impl(name, arguments, loader.transform(parseExpression(), name));
     }
 
     public Expression parseExpression() {
