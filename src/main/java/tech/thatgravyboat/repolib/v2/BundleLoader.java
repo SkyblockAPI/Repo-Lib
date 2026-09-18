@@ -120,12 +120,20 @@ public class BundleLoader implements RepoLoader {
 
     @Override
     public StackFile stackFile(String name) {
-        return this.stackFiles.get(name);
+        StackFile stackFile = stackFiles.get(name);
+        if (stackFile != null && !stackFile.hasInitialized()) {
+            stackFile.init(this, constants);
+        }
+        return stackFile;
     }
 
     @Override
     public FunctionValue module(String name) {
-        return this.modules.get(name);
+        FunctionValue module = modules.get(name);
+        if (module != null && module.needsInitialization()) {
+            module.initialize(createEvaluator());
+        }
+        return module;
     }
 
     @Override

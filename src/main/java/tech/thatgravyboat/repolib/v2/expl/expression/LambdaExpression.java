@@ -3,7 +3,6 @@ package tech.thatgravyboat.repolib.v2.expl.expression;
 import java.io.IOException;
 import java.util.Collection;
 
-import tech.thatgravyboat.repolib.v2.binary.ByteBufferImpl;
 import tech.thatgravyboat.repolib.v2.binary.DecoderContext;
 import tech.thatgravyboat.repolib.v2.binary.Encodable;
 import tech.thatgravyboat.repolib.v2.binary.EncoderContext;
@@ -82,7 +81,6 @@ public record LambdaExpression(
     public void encode(EncoderContext buffer) {
         buffer.writeCollection(this.arguments, LambdaArgument::encode);
         ExpressionCodec.write(this.body, buffer);
-        buffer.writeBoolean(this.requiresSemicolon);
     }
 
     @Override
@@ -93,9 +91,7 @@ public record LambdaExpression(
     public static LambdaExpression decode(DecoderContext buffer) throws IOException {
         return new LambdaExpression(
                 buffer.readCollection(LambdaArgument::decode),
-                ExpressionCodec.read(buffer),
-                null,
-                buffer.readBoolean()
+                ExpressionCodec.read(buffer)
         );
     }
 
