@@ -5,6 +5,13 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.jetbrains.annotations.Nullable;
 import tech.thatgravyboat.repolib.api.idoverlays.Requirement;
+import tech.thatgravyboat.repolib.api.recipes.ingredient.AttributeIngredient;
+import tech.thatgravyboat.repolib.api.recipes.ingredient.CraftingIngredient;
+import tech.thatgravyboat.repolib.api.recipes.ingredient.EnchantmentIngredient;
+import tech.thatgravyboat.repolib.api.recipes.ingredient.ItemIngredient;
+import tech.thatgravyboat.repolib.api.recipes.ingredient.PetIngredient;
+import tech.thatgravyboat.repolib.api.recipes.ingredient.PotionIngredient;
+import tech.thatgravyboat.repolib.api.recipes.ingredient.RuneIngredient;
 import tech.thatgravyboat.repolib.internal.JsonHelper;
 import tech.thatgravyboat.repolib.internal.Utils;
 
@@ -119,5 +126,17 @@ public final class IdOverlaysAPI {
 
     public @Nullable OverlayData getPet(String id, String tier) {
         return this.pets.get(id.toUpperCase(Locale.ROOT) + ";" + tier.toUpperCase(Locale.ROOT));
+    }
+
+    public @Nullable OverlayData getFromIngredient(CraftingIngredient ingredient) {
+        return switch (ingredient) {
+            case ItemIngredient i -> getItem(i.id());
+            case PetIngredient p -> getPet(p.id(), p.tier());
+            case EnchantmentIngredient e -> getEnchantment(e.id(), e.level());
+            case RuneIngredient r -> getRune(r.id(), r.tier());
+            case AttributeIngredient a -> getAttribute(a.id());
+            case PotionIngredient p -> getPotion(p.id(), p.level());
+            default -> null;
+        };
     }
 }
