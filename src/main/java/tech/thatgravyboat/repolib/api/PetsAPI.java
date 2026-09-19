@@ -91,7 +91,7 @@ public final class PetsAPI {
         private static Data fromJson(JsonObject json) {
             JsonObject tiers = json.get("tiers").getAsJsonObject();
             return new Data(
-                    json.get("name").getAsString(),
+                    json.get("names").getAsString(),
                     tiers.entrySet()
                             .stream()
                             .collect(Collectors.toMap(

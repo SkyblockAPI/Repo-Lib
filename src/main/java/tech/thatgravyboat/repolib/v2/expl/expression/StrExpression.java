@@ -1,0 +1,46 @@
+package tech.thatgravyboat.repolib.v2.expl.expression;
+
+import org.jetbrains.annotations.NotNull;
+import tech.thatgravyboat.repolib.v2.binary.DecoderContext;
+import tech.thatgravyboat.repolib.v2.binary.EncoderContext;
+import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
+import tech.thatgravyboat.repolib.v2.binary.ExpressionTypes;
+import tech.thatgravyboat.repolib.v2.binary.NameTable;
+import tech.thatgravyboat.repolib.v2.jvm.compiler.CompilationTracker;
+import tech.thatgravyboat.repolib.v2.jvm.compiler.Snippets;
+
+import java.io.IOException;
+import java.lang.classfile.CodeBuilder;
+
+public record StrExpression(String value) implements Expression {
+
+    @Override
+    public @NotNull String toString() {
+        return "\"" + value + "\"";
+    }
+
+    @Override
+    public ExpressionTypeRegistry.Type<?> expressionId() {
+        return ExpressionTypes.STRING;
+    }
+
+    @Override
+    public void precode(NameTable table) {
+        table.insert(this.value);
+    }
+
+    @Override
+    public void encode(EncoderContext buffer) {
+        buffer.writeLiteral(this.value);
+    }
+
+    public static StrExpression decode(DecoderContext buffer) throws IOException {
+        return new StrExpression(buffer.readLiteral());
+    }
+
+    @Override
+    public boolean compile(CodeBuilder cb, CompilationTracker lc) {
+        Snippets.loadStrValue(cb, value);
+        return false;
+    }
+}

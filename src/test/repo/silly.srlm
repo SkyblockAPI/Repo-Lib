@@ -1,0 +1,45 @@
+print("test");
+
+name = "print";
+
+printf = ::<(name + "f")>::;
+
+printf("silly");
+printf("silly", "debug");
+
+printf{
+    message: "meow",
+    severity: "error",
+};
+
+  total_star_count = 10;
+if (!total_star_count) return [];
+
+stars = [" "];
+
+orange_star_count = Math.clamp(total_star_count, 0, 5);
+
+if (orange_star_count > 0) {
+  stars += {
+    text: "✪",
+    color: "orange"
+  };
+}
+
+remaining_stars = total_star_count - orange_star_count;
+
+if (remaining_stars > 0) stars.add({
+  text: match (remaining_stars) {
+    1 -> "➊1",
+    2 -> "➋2",
+    3 -> "➌3",
+    4 -> "➍4",
+    5 -> "➎5",
+    else -> "?",
+  },
+  color: "red"
+});
+
+print(stars);
+
+stars;

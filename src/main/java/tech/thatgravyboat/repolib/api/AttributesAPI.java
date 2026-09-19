@@ -63,7 +63,7 @@ public final class AttributesAPI {
                     jsonObject.get("attribute_id").getAsString(),
                     jsonObject.get("shard_name").getAsString(),
                     jsonObject.get("shard_id").getAsString(),
-                    jsonObject.get("name").getAsString(),
+                    jsonObject.get("names").getAsString(),
                     jsonObject.get("item").getAsString(),
                     Optional.ofNullable(jsonObject.get("texture")).map(JsonElement::getAsString).orElse(null),
                     jsonObject.get("rarity").getAsString(),
