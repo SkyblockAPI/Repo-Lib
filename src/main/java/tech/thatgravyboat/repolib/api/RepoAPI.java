@@ -179,6 +179,12 @@ public final class RepoAPI {
 
     //endregion
 
+    public static void runIfInitialized(Runnable action) {
+        if (isInitialized()) {
+            action.run();
+        }
+    }
+
     public static boolean isInitialized() {
         return RepoAPI.status == RepoStatus.SUCCESS;
     }
