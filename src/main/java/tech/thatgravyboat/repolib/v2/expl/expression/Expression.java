@@ -45,5 +45,21 @@ public sealed interface Expression extends Encodable, CompilableExpression
         throw new RuntimeException("Invalid type " + getClass().getSimpleName());
     }
 
+    @Override
+    default boolean isBoolean() {
+        return false;
+    }
+    @Override
+    default boolean isNumber() {
+        return false;
+    }
+
+    @Override
+    default void compileBoolean(CodeBuilder cb, CompilationTracker lc) {
+    }
+    @Override
+    default void compileNumber(CodeBuilder cb, CompilationTracker lc) {
+    }
+
     ExpressionTypeRegistry.Type<?> expressionId();
 }

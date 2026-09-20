@@ -59,6 +59,16 @@ public record UnaryExpression(Op op, Expression rhs) implements Expression {
         return false;
     }
 
+    @Override
+    public boolean isBoolean() {
+        return op.isBoolean();
+    }
+
+    @Override
+    public void compileBoolean(CodeBuilder cb, CompilationTracker lc) {
+        op.compileBoolean(cb, rhs, lc);
+    }
+
     public enum Op {
         NEGATE {
             @Override
@@ -75,12 +85,21 @@ public record UnaryExpression(Op op, Expression rhs) implements Expression {
                 }
                 cb.invokespecial(CD_NumValue, "<init>", MethodTypeDesc.of(CD_void, CD_double));
             }
+
+            @Override
+            boolean isBoolean() {
+                return false;
+            }
         }, NOT {
             @Override
             void compile(CodeBuilder cb, Expression rhs, CompilationTracker lc) {
-                cb.aload(1);
-                rhs.compile(cb, lc);
-                cb.invokevirtual(CD_Evaluator, "asBool", MethodTypeDesc.of(CD_boolean, CD_Value));
+                if (rhs.isBoolean()) {
+                    rhs.compileBoolean(cb, lc);
+                } else {
+                    cb.aload(1);
+                    rhs.compile(cb, lc);
+                    cb.invokevirtual(CD_Evaluator, "asBool", MethodTypeDesc.of(CD_boolean, CD_Value));
+                }
                 Label meow1 = cb.newLabel();
                 Label meow2 = cb.newLabel();
                 cb.ifne(meow1);
@@ -90,10 +109,37 @@ public record UnaryExpression(Op op, Expression rhs) implements Expression {
                 cb.getstatic(CD_BoolValue, "FALSE", CD_Value);
                 cb.labelBinding(meow2);
             }
+
+            @Override
+            boolean isBoolean() {
+                return true;
+            }
+
+            @Override
+            void compileBoolean(CodeBuilder cb, Expression rhs, CompilationTracker lc) {
+                if (rhs.isBoolean()) {
+                    rhs.compileBoolean(cb, lc);
+                } else {
+                    cb.aload(1);
+                    rhs.compile(cb, lc);
+                    cb.invokevirtual(CD_Evaluator, "asBool", MethodTypeDesc.of(CD_boolean, CD_Value));
+                }
+                Label meow1 = cb.newLabel();
+                Label meow2 = cb.newLabel();
+                cb.ifne(meow1);
+                cb.loadConstant(1);
+                cb.goto_(meow2);
+                cb.labelBinding(meow1);
+                cb.loadConstant(0);
+                cb.labelBinding(meow2);
+            }
         },
         ;
 
         abstract void compile(CodeBuilder cb, Expression rhs, CompilationTracker lc);
+
+        abstract boolean isBoolean();
+        void compileBoolean(CodeBuilder cb, Expression rhs, CompilationTracker lc) {}
 
         public static final EnumCodec<Op> CODEC = new EnumCodec<>(values());
     }

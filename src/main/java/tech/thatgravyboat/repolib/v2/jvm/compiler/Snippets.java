@@ -4,6 +4,7 @@ import tech.thatgravyboat.repolib.v2.expl.expression.AccessExpression;
 import tech.thatgravyboat.repolib.v2.expl.expression.StrExpression;
 
 import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.Label;
 import java.lang.constant.*;
 import java.util.Arrays;
 
@@ -122,5 +123,16 @@ public class Snippets {
             cb.swap();
             cb.invokeinterface(CD_MutableKV, "set", MethodTypeDesc.of(CD_void, CD_String, CD_Value));
         }
+    }
+
+    public static void booleanToBoolValue(CodeBuilder cb) {
+        Label endLabel = cb.newLabel();
+        Label falseLabel = cb.newLabel();
+        cb.ifeq(falseLabel);
+        cb.getstatic(CD_BoolValue, "TRUE", CD_Value);
+        cb.goto_(endLabel);
+        cb.labelBinding(falseLabel);
+        cb.getstatic(CD_BoolValue, "FALSE", CD_Value);
+        cb.labelBinding(endLabel);
     }
 }

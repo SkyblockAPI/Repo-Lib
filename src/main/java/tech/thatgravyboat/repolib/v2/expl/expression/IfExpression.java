@@ -64,11 +64,15 @@ public record IfExpression(Expression cond, Expression thenExpr, @Nullable Expre
 
     @Override
     public boolean compile(CodeBuilder cb, CompilationTracker lc) {
-        cb.aload(1);
-        cond.compile(cb, lc);
+        if (cond.isBoolean()) {
+            cond.compileBoolean(cb, lc);
+        } else {
+            cb.aload(1);
+            cond.compile(cb, lc);
+            cb.invokevirtual(CD_Evaluator, "asBool", MethodTypeDesc.of(CD_boolean, CD_Value));
+        }
         Label endLabel = cb.newLabel();
         Label endEndLabel = cb.newLabel();
-        cb.invokevirtual(CD_Evaluator, "asBool", MethodTypeDesc.of(CD_boolean, CD_Value));
         cb.ifeq(endLabel);
         thenExpr.compile(cb, lc);
         cb.goto_(endEndLabel);

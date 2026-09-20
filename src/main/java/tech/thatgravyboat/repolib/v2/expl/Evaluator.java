@@ -248,9 +248,8 @@ public class Evaluator {
             };
         } catch (Panic e) {
             error(e.getMessage());
-            throw e;
         }
-//        return Value.NIL;
+        return Value.NIL;
     }
 
     private Value pauseForDebug() {

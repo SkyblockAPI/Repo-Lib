@@ -237,6 +237,7 @@ public class ExpressionCompiler {
                                 cb.return_();
                                 cb.labelBinding(endLabel);
                                 CompilationTracker lc = new CompilationTracker(classDesc, builder, lambdas);
+                                lc.setCodeName(uncompiled.name());
                                 lc.pushStack(cb, "static");
                                 cb.aload(0);
                                 if (!uncompiled.staticDataExpression().compile(cb, lc)) {
@@ -328,14 +329,14 @@ public class ExpressionCompiler {
 
             maybeSave(uncompiled.name(), classBytes);
 
-            Class<?> sexClass = theLookup
+            Class<?> mdlClass = theLookup
                     .defineHiddenClass(classBytes, true)
                     .lookupClass();
 
-            sexClass.getField("lambdas").set(null, lambdas);
+            mdlClass.getField("lambdas").set(null, lambdas);
 
 
-            return (ModuleFile) sexClass.getConstructor().newInstance();
+            return (ModuleFile) mdlClass.getConstructor().newInstance();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -380,6 +381,7 @@ public class ExpressionCompiler {
 
                         builder.withMethod("evaluateMetaScript", MethodTypeDesc.of(CD_void, CD_Evaluator), ClassFile.ACC_PUBLIC, mb -> mb.withCode(cb -> {
                             CompilationTracker lc = new CompilationTracker(classDesc, builder, lambdas);
+                            lc.setCodeName(uncompiled.name()+"_meta");
                             cb.aload(0);
                             if (!uncompiled.metaScript().compile(cb, lc)) {
                                 lc.popAll(cb);
@@ -444,14 +446,14 @@ public class ExpressionCompiler {
 
             maybeSave(uncompiled.name(), classBytes);
 
-            Class<?> sexClass = theLookup
+            Class<?> stkClass = theLookup
                     .defineHiddenClass(classBytes, true)
                     .lookupClass();
 
-            sexClass.getField("lambdas").set(null, lambdas);
+            stkClass.getField("lambdas").set(null, lambdas);
 
 
-            return (StackFile) sexClass.getConstructor().newInstance();
+            return (StackFile) stkClass.getConstructor().newInstance();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

@@ -94,12 +94,20 @@ public record ForEachExpression(AccessExpression field, Expression array, Expres
             Label checkLabel = cb.newLabel();
             Label loopLabel = cb.newLabel();
             Label endLoopLabel = cb.newLabel();
-            from.compile(cb, lc);
-            Snippets.getNumberOrThrow(cb);
-            cb.d2i();
-            if (!inclusiveStart) {
-                cb.loadConstant(1);
-                cb.iadd();
+            if (from instanceof NumExpression(double fromValue)) {
+                if (inclusiveStart) {
+                    cb.loadConstant((int) fromValue);
+                } else {
+                    cb.loadConstant((int) fromValue + 1);
+                }
+            } else {
+                from.compile(cb, lc);
+                Snippets.getNumberOrThrow(cb);
+                cb.d2i();
+                if (!inclusiveStart) {
+                    cb.loadConstant(1);
+                    cb.iadd();
+                }
             }
             cb.istore(localSlot);
             v.compile(cb, lc);

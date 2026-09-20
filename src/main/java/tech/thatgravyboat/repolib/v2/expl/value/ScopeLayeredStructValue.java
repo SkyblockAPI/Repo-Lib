@@ -44,12 +44,12 @@ public record ScopeLayeredStructValue(StructValue base, StructValue.MutableStruc
 
     @Override
     public boolean contains(String field) {
-        if (base.isEmpty()) {
-            if (overlay.isEmpty()) return false;
-            return overlay.contains(field);
-        }
         if (overlay.isEmpty()) {
+            if (base.isEmpty()) return false;
             return base.contains(field);
+        }
+        if (base.isEmpty()) {
+            return overlay.contains(field);
         }
         return base.contains(field) || overlay.contains(field) ;
     }

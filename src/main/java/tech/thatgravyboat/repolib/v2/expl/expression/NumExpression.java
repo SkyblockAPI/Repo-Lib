@@ -41,4 +41,14 @@ public record NumExpression(double value) implements Expression {
         Snippets.loadNumValue(cb, value);
         return false;
     }
+
+    @Override
+    public boolean isNumber() {
+        return true;
+    }
+
+    @Override
+    public void compileNumber(CodeBuilder cb, CompilationTracker lc) {
+        cb.loadConstant(value);
+    }
 }

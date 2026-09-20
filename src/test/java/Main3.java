@@ -9,22 +9,33 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.Objects;
 
 public class Main3 {
     public static void main(String[] args) throws IOException {
         RepoLoader loader = new FolderLoader(Path.of("Repo-Data").toRealPath().normalize().toAbsolutePath());
+        RepoLoader noCompileLoader = new FolderLoader(Path.of("Repo-Data").toRealPath().normalize().toAbsolutePath()) {
+            @Override
+            public boolean shouldCompile() {
+                return false;
+            }
+        };
         var instance = loader.create();
+        var noCompileInstance = noCompileLoader.create();
 
         ExpressionCompiler.registerSaver(((s, bytes) -> {
             try {
-                Files.write(Path.of("output", s.replaceAll("[:]", "_") + ".class"), bytes);
+                var path = Path.of("output", s.replaceAll("[:]", "_") + ".class");
+                Files.createDirectories(path.getParent());
+                Files.write(path, bytes, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }));
 
         var errors = loader.load();
+        noCompileLoader.load();
 
         errors.forEach(System.out::println);
 
@@ -32,27 +43,37 @@ public class Main3 {
                 JsonParser.parseString(Files.readString(Path.of("data.jsonc"), StandardCharsets.UTF_8)).getAsJsonObject();
 
         var stackFile = Objects.requireNonNull(loader.stackFile("items/slayer/enderman/aspect_of_the_void"));
+        var uncompiledStackFile = noCompileLoader.stackFile("items/slayer/enderman/aspect_of_the_void");
 
         {
 
             var evaluator = stackFile.createEvaluator(instance.constants(), ImmutableStructValue.EMPTY, RepoConfig.DEFAULT, loader::module);
             var stack = stackFile.evaluateScript(evaluator);
+            var noCompileEvaluator = uncompiledStackFile.createEvaluator(noCompileInstance.constants(), ImmutableStructValue.EMPTY, RepoConfig.DEFAULT, noCompileLoader::module);
+            var noCompileStack = uncompiledStackFile.evaluateScript(noCompileEvaluator);
             evaluator.errors.forEach(System.out::println);
             evaluator.debugs.forEach(System.out::println);
             System.out.println(stack);
+            System.out.println(noCompileStack);
         }
 
         long sum = 0;
-        for (int i = 0; i < 10000; i++) {
+        long uncompiledSum = 0;
+        for (int i = 0; i < 100000; i++) {
 
             var evaluator = stackFile.createEvaluator(instance.constants(), ImmutableStructValue.EMPTY, RepoConfig.DEFAULT, loader::module);
             long start = System.nanoTime();
             var stack = stackFile.evaluateScript(evaluator);
             sum += System.nanoTime() - start;
+            long noCompileStart = System.nanoTime();
+            var noCompileEvaluator = uncompiledStackFile.createEvaluator(noCompileInstance.constants(), ImmutableStructValue.EMPTY, RepoConfig.DEFAULT, noCompileLoader::module);
+            var noCompileStack = uncompiledStackFile.evaluateScript(noCompileEvaluator);
+            uncompiledSum += System.nanoTime() - noCompileStart;
             evaluator.errors.forEach(System.out::println);
             evaluator.debugs.forEach(System.out::println);
         }
 
-        System.out.println("Took " + (sum / 10000_000000.0) + "ms");
+        System.out.println("Took " + (sum / 100_000_000000.0) + "ms (compiled)");
+        System.out.println("Took " + (uncompiledSum / 100_000_000000.0) + "ms (uncompiled)");
     }
 }

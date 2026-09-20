@@ -41,4 +41,14 @@ public record BoolExpression(boolean value) implements Expression {
         Snippets.loadBoolValue(cb, value);
         return false;
     }
+
+    @Override
+    public boolean isBoolean() {
+        return true;
+    }
+
+    @Override
+    public void compileBoolean(CodeBuilder cb, CompilationTracker lc) {
+        cb.loadConstant(value ? 1 : 0);
+    }
 }

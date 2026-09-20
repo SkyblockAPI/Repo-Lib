@@ -47,8 +47,32 @@ public record InExpression(AccessExpression holder, Expression field) implements
 
     @Override
     public boolean compile(CodeBuilder cb, CompilationTracker lc) {
-        field.compile(cb, lc);
-        Snippets.getStringOrThrow(cb);
+        compileBoolean(cb, lc);
+        Label trueCase = cb.newLabel();
+        Label falseCase = cb.newLabel();
+        cb.ifeq(trueCase);
+        cb.getstatic(CD_BoolValue, "TRUE", CD_Value);
+        cb.goto_(falseCase);
+        cb.labelBinding(trueCase);
+        cb.getstatic(CD_BoolValue, "FALSE", CD_Value);
+        cb.labelBinding(falseCase);
+        cb.nop();
+        return false;
+    }
+
+    @Override
+    public boolean isBoolean() {
+        return true;
+    }
+
+    @Override
+    public void compileBoolean(CodeBuilder cb, CompilationTracker lc) {
+        if (field instanceof StrExpression(String value)) {
+            cb.loadConstant(value);
+        } else {
+            field.compile(cb, lc);
+            Snippets.getStringOrThrow(cb);
+        }
 
         Label isNotKv = cb.newLabel();
         Label endLabel = cb.newLabel();
@@ -70,15 +94,5 @@ public record InExpression(AccessExpression holder, Expression field) implements
         cb.invokevirtual(CD_String, "contains", MethodTypeDesc.of(CD_boolean, ClassDesc.of("java.lang.CharSequence")));
 
         cb.labelBinding(endLabel);
-        Label trueCase = cb.newLabel();
-        Label falseCase = cb.newLabel();
-        cb.ifeq(trueCase);
-        cb.getstatic(CD_BoolValue, "TRUE", CD_Value);
-        cb.goto_(falseCase);
-        cb.labelBinding(trueCase);
-        cb.getstatic(CD_BoolValue, "FALSE", CD_Value);
-        cb.labelBinding(falseCase);
-        cb.nop();
-        return false;
     }
 }

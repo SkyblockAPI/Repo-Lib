@@ -14,11 +14,6 @@ import tech.thatgravyboat.repolib.v2.jvm.compiler.Snippets;
 import java.io.IOException;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.Label;
-import java.lang.constant.MethodTypeDesc;
-
-import static java.lang.constant.ConstantDescs.CD_boolean;
-import static tech.thatgravyboat.repolib.v2.jvm.compiler.ExplCD.CD_Evaluator;
-import static tech.thatgravyboat.repolib.v2.jvm.compiler.ExplCD.CD_Value;
 
 public record ForExpression(@Nullable Expression init, @Nullable Expression cond, @Nullable Expression incr, Expression body) implements Expression {
 
@@ -93,9 +88,7 @@ public record ForExpression(@Nullable Expression init, @Nullable Expression cond
         }
         cb.labelBinding(checkLabel);
         if (cond != null) {
-            cb.aload(1);
-            cond.compile(cb, lc);
-            cb.invokevirtual(CD_Evaluator, "asBool", MethodTypeDesc.of(CD_boolean, CD_Value));
+            cond.compileBoolean(cb, lc);
             cb.ifeq(endLoopLabel);
         }
 
