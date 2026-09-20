@@ -1,17 +1,9 @@
 package tech.thatgravyboat.repolib.v2.builtin;
 
+import com.google.gson.*;
 import org.jetbrains.annotations.NotNull;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
-import tech.thatgravyboat.repolib.v2.expl.value.BoolValue;
-import tech.thatgravyboat.repolib.v2.expl.value.FunctionValue;
-import tech.thatgravyboat.repolib.v2.expl.value.ImmutableStructValue;
-import tech.thatgravyboat.repolib.v2.expl.value.KeyValue;
-import tech.thatgravyboat.repolib.v2.expl.value.LambdaFunctionValue;
-import tech.thatgravyboat.repolib.v2.expl.value.MutableStructValue;
-import tech.thatgravyboat.repolib.v2.expl.value.NumValue;
-import tech.thatgravyboat.repolib.v2.expl.value.StrValue;
-import tech.thatgravyboat.repolib.v2.expl.value.StructValue;
-import tech.thatgravyboat.repolib.v2.expl.value.Value;
+import tech.thatgravyboat.repolib.v2.expl.value.*;
 
 import java.util.*;
 import java.util.function.*;
@@ -37,8 +29,47 @@ public record Constants(Map<String, Value> map) implements StructValue {
         return map.containsKey(field);
     }
 
-    public static KeyValue.Mutable mutable(Consumer<Builder> builder) {
+    public static Mutable mutable(Consumer<Builder> builder) {
         return new MutableStructValue(Builder.create(builder, MutableStructValue::new));
+    }
+
+    public static StructValue kvFromJson(JsonObject jsonObject) {
+        Map<String, Value> structKeys = new HashMap<>();
+        for (String key : jsonObject.keySet()) {
+            var jsonEntry = jsonObject.get(key);
+            structKeys.put(key, valueFromJson(jsonEntry));
+        }
+        return new ImmutableStructValue(structKeys);
+    }
+
+    private static Value valueFromJson(JsonElement element) {
+        return switch (element) {
+            case JsonObject subObject: {
+                yield kvFromJson(subObject);
+            }
+            case JsonArray jsonArray: {
+                List<Value> array = new ArrayList<>(jsonArray.size());
+                for (var arrayElement : jsonArray) {
+                    array.add(valueFromJson(arrayElement));
+                }
+                yield MutableArrayValue.create(array).toImmutableArray();
+            }
+            case JsonPrimitive primitive: {
+                if (primitive.isNumber()) {
+                    yield new NumValue(primitive.getAsDouble());
+                } else if (primitive.isBoolean()) {
+                    yield BoolValue.wrap(primitive.getAsBoolean());
+                } else if (primitive.isString()) {
+                    yield new StrValue(primitive.getAsString());
+                }
+                yield Value.NIL;
+            }
+            case JsonNull ignored: {
+                yield Value.NIL;
+            }
+            default:
+                throw new IllegalStateException("Unexpected value: " + element);
+        };
     }
 
     @Override
@@ -66,13 +97,13 @@ public record Constants(Map<String, Value> map) implements StructValue {
     }
 
     public static class Builder {
-        private java.util.function.Function<Map<String, Value>, KeyValue> struct;
+        private Function<Map<String, Value>, KeyValue> struct;
         private final Map<String, Value> map = new HashMap<>();
 
         private Builder() {
         }
 
-        private static Map<String, Value> create(Consumer<Builder> builderConsumer, java.util.function.Function<Map<String, Value>, KeyValue> struct) {
+        private static Map<String, Value> create(Consumer<Builder> builderConsumer, Function<Map<String, Value>, KeyValue> struct) {
             var builder = new Builder();
             builder.struct = struct;
             builderConsumer.accept(builder);
@@ -107,15 +138,15 @@ public record Constants(Map<String, Value> map) implements StructValue {
             field(name, FunctionBuilder.create(function));
         }
 
-        public void struct(String name, Consumer<Constants.Builder> builder) {
+        public void struct(String name, Consumer<Builder> builder) {
             field(name, struct.apply(Builder.create(builder, struct)));
         }
 
-        public void mutableStruct(String name, Consumer<Constants.Builder> builder) {
+        public void mutableStruct(String name, Consumer<Builder> builder) {
             field(name, struct.apply(Builder.create(builder, MutableStructValue::new)));
         }
 
-        public void immutableStruct(String name, Consumer<Constants.Builder> builder) {
+        public void immutableStruct(String name, Consumer<Builder> builder) {
             field(name, struct.apply(Builder.create(builder, ImmutableStructValue::new)));
         }
 

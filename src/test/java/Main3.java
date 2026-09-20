@@ -2,6 +2,7 @@ import com.google.gson.JsonParser;
 import tech.thatgravyboat.repolib.v2.FolderLoader;
 import tech.thatgravyboat.repolib.v2.RepoConfig;
 import tech.thatgravyboat.repolib.v2.RepoLoader;
+import tech.thatgravyboat.repolib.v2.builtin.Constants;
 import tech.thatgravyboat.repolib.v2.expl.value.ImmutableStructValue;
 import tech.thatgravyboat.repolib.v2.jvm.compiler.ExpressionCompiler;
 
@@ -14,8 +15,9 @@ import java.util.Objects;
 
 public class Main3 {
     public static void main(String[] args) throws IOException {
-        RepoLoader loader = new FolderLoader(Path.of("Repo-Data").toRealPath().normalize().toAbsolutePath());
-        RepoLoader noCompileLoader = new FolderLoader(Path.of("Repo-Data").toRealPath().normalize().toAbsolutePath()) {
+        Path repoPath = Path.of("Repo-Data").toRealPath().normalize().toAbsolutePath();
+        RepoLoader loader = new FolderLoader(repoPath);
+        RepoLoader noCompileLoader = new FolderLoader(repoPath) {
             @Override
             public boolean shouldCompile() {
                 return false;
@@ -42,14 +44,16 @@ public class Main3 {
         var data =
                 JsonParser.parseString(Files.readString(Path.of("data.jsonc"), StandardCharsets.UTF_8)).getAsJsonObject();
 
+        var constData = Constants.kvFromJson(data);
+
         var stackFile = Objects.requireNonNull(loader.stackFile("items/slayer/enderman/aspect_of_the_void"));
         var uncompiledStackFile = noCompileLoader.stackFile("items/slayer/enderman/aspect_of_the_void");
 
         {
 
-            var evaluator = stackFile.createEvaluator(instance.constants(), ImmutableStructValue.EMPTY, RepoConfig.DEFAULT, loader::module);
+            var evaluator = stackFile.createEvaluator(instance.constants(), constData, RepoConfig.DEFAULT, loader::module);
             var stack = stackFile.evaluateScript(evaluator);
-            var noCompileEvaluator = uncompiledStackFile.createEvaluator(noCompileInstance.constants(), ImmutableStructValue.EMPTY, RepoConfig.DEFAULT, noCompileLoader::module);
+            var noCompileEvaluator = uncompiledStackFile.createEvaluator(noCompileInstance.constants(), constData, RepoConfig.DEFAULT, noCompileLoader::module);
             var noCompileStack = uncompiledStackFile.evaluateScript(noCompileEvaluator);
             evaluator.errors.forEach(System.out::println);
             evaluator.debugs.forEach(System.out::println);

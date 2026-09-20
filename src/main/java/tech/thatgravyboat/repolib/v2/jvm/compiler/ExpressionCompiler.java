@@ -205,12 +205,12 @@ public class ExpressionCompiler {
                             cb.aload(0);
                             cb.loadConstant(uncompiled.isInitialized() ? 1 : 0);
                             cb.putfield(classDesc, "hasInitialized", CD_boolean);
-                            cb.return_();
                             if (uncompiled.isInitialized()) {
                                 cb.aload(0);
                                 lc.loadTrackedObject(cb, lc.addTrackedObject(uncompiled.staticData()));
                                 cb.putfield(classDesc, "staticData", CD_KeyValue);
                             }
+                            cb.return_();
                         }));
 
                         // so that it can be bundled still :3

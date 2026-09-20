@@ -56,7 +56,6 @@ public record InExpression(AccessExpression holder, Expression field) implements
         cb.labelBinding(trueCase);
         cb.getstatic(CD_BoolValue, "FALSE", CD_Value);
         cb.labelBinding(falseCase);
-        cb.nop();
         return false;
     }
 

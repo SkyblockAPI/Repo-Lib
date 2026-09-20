@@ -64,6 +64,7 @@ public record IfExpression(Expression cond, Expression thenExpr, @Nullable Expre
 
     @Override
     public boolean compile(CodeBuilder cb, CompilationTracker lc) {
+        boolean alwaysReturns = true;
         if (cond.isBoolean()) {
             cond.compileBoolean(cb, lc);
         } else {
@@ -74,16 +75,20 @@ public record IfExpression(Expression cond, Expression thenExpr, @Nullable Expre
         Label endLabel = cb.newLabel();
         Label endEndLabel = cb.newLabel();
         cb.ifeq(endLabel);
-        thenExpr.compile(cb, lc);
-        cb.goto_(endEndLabel);
+        if (!thenExpr.compile(cb, lc)) {
+            cb.goto_(endEndLabel);
+            alwaysReturns = false;
+        }
         cb.labelBinding(endLabel);
         if (elseExpr != null) {
-            elseExpr.compile(cb, lc);
+            if (!elseExpr.compile(cb, lc)) {
+                alwaysReturns = false;
+            }
         } else {
+            alwaysReturns = false;
             Snippets.pushNil(cb);
         }
         cb.labelBinding(endEndLabel);
-        cb.nop();
-        return false;
+        return alwaysReturns;
     }
 }

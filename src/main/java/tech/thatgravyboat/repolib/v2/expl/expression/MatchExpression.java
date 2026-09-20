@@ -112,8 +112,9 @@ public record MatchExpression(Expression value, Collection<MatchBranch> branches
                 hasCatchall = true;
             }
 
-            branch.branch().compile(cb, lc);
-            cb.goto_(endEndLabel);
+            if (!branch.branch().compile(cb, lc)) {
+                cb.goto_(endEndLabel);
+            }
             cb.labelBinding(endLabel);
         }
         if (!hasCatchall) {
@@ -121,7 +122,6 @@ public record MatchExpression(Expression value, Collection<MatchBranch> branches
         }
         lc.free(localSlot);
         cb.labelBinding(endEndLabel);
-        cb.nop();
         return false;
     }
 

@@ -8,6 +8,12 @@ import static tech.thatgravyboat.repolib.v2.jvm.compiler.ExplCD.CD_Evaluator;
 import static tech.thatgravyboat.repolib.v2.jvm.compiler.ExplCD.CD_Value;
 
 public interface CompilableExpression {
+    /***
+     * Compile the expression to JVM bytecode
+     * @param cb where the code gets built
+     * @param lc a tracker that handles a lot of logic shared across different types
+     * @return whether the expression unconditionally jumped
+     */
     boolean compile(CodeBuilder cb, CompilationTracker lc);
     boolean isBoolean();
     void compileBoolean(CodeBuilder cb, CompilationTracker lc);

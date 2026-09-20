@@ -22,15 +22,10 @@ void main() {
         var constants = new RepoConstants(repoLoader);
         var evaluator = new Evaluator(constants, repoLoader::module);
         var meow = new Parser("""
-testval = [1, 3, 55, 53];
-test23 = [5, 1, 7];
-for (val2 : test23) {
-ignore = false;
-for (i = 0; i < 2; i+=1) {
-    print(i);
-};
-if (ignore) continue;
-print("val2" + "mrow?");
+return if (true) {
+    return 5;
+} else {
+5
 };
 """).parseModuleFile("test", repoLoader);
 //            meow.init(constants);
