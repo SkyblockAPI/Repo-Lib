@@ -1,0 +1,146 @@
+package tech.thatgravyboat.repolib.v2;
+
+import tech.thatgravyboat.repolib.v2.builtin.BuiltinArray;
+import tech.thatgravyboat.repolib.v2.builtin.BuiltinBoolean;
+import tech.thatgravyboat.repolib.v2.builtin.BuiltinComponent;
+import tech.thatgravyboat.repolib.v2.builtin.BuiltinMath;
+import tech.thatgravyboat.repolib.v2.builtin.BuiltinObjects;
+import tech.thatgravyboat.repolib.v2.builtin.BuiltinRarities;
+import tech.thatgravyboat.repolib.v2.builtin.BuiltinString;
+import tech.thatgravyboat.repolib.v2.builtin.Constants;
+import tech.thatgravyboat.repolib.v2.expl.ModuleFile;
+import tech.thatgravyboat.repolib.v2.expl.value.MutableArrayValue;
+import tech.thatgravyboat.repolib.v2.expl.value.StrValue;
+import tech.thatgravyboat.repolib.v2.expl.value.StructValue;
+import tech.thatgravyboat.repolib.v2.expl.value.Value;
+
+public final class RepoConstants implements StructValue.Forwarding {
+    private RepoLoader loader;
+    private final Constants constants = new Constants((builder) -> {
+        builder.field("Math", BuiltinMath.MATH);
+        builder.field("Objects", BuiltinObjects.OBJECTS);
+        builder.field("Rarity", BuiltinRarities.RARITY);
+        builder.field("String", BuiltinString.STRING);
+        builder.field("Boolean", BuiltinBoolean.BOOLEAN);
+        builder.field("Component", BuiltinComponent.COMPONENT);
+        builder.field("Array", BuiltinArray.ARRAY);
+
+
+        builder.function("include", function -> {
+            function.arity(1, 2);
+            function.vararg(true);
+            function.execute((evaluator, args) -> {
+                var value = args.getFirst().asString();
+                var requested = loader.module(value);
+                if (requested == null) {
+                    return evaluator.panic("Requested include " + value + " doesn't exist!");
+                }
+
+                if (args.size() == 2) {
+                    var scope = args.get(1).asMutableStruct();
+                    return evaluator.pushPop(value, scope, () -> {
+                        evaluator.evaluate(requested);
+                        return Value.NIL;
+                    });
+                } else {
+                    return evaluator.pushPop(value, () -> {
+                        evaluator.evaluate(requested);
+                        return Value.NIL;
+                    });
+                }
+            });
+        });
+
+        builder.function("call", function -> {
+            function.arity(1, 2);
+            function.vararg(true);
+            function.execute((evaluator, args) -> {
+                var value = args.getFirst().asString();
+                var requested = loader.module(value);
+                if (requested == null) {
+                    return evaluator.panic("Requested include " + value + " doesn't exist!");
+                }
+                if (args.size() == 2) {
+                    var scope = args.get(1).asMutableStruct();
+                    return evaluator.pushPop(value, scope, () -> evaluator.evaluate(requested));
+                } else {
+                    return evaluator.pushPop(value, () -> evaluator.evaluate(requested));
+                }
+            });
+        });
+
+        builder.function("static", function -> {
+            function.arity(1);
+            function.execute((evaluator, args) -> {
+                var arg = args.getFirst();
+                if (arg instanceof ModuleFile file) {
+                    return file.staticData();
+                }
+
+                var value = arg.asString();
+                var requested = loader.module(value);
+                if (requested == null) {
+                    return evaluator.panic("Requested include " + value + " doesn't exist!");
+                }
+                if (requested instanceof ModuleFile module) {
+                    return module.staticData();
+                }
+
+                return evaluator.panic("Can't access static data of non module file!");
+            });
+        });
+
+        builder.function("list", function -> {
+            function.arity(1);
+            function.execute((evaluator, args) -> {
+                var arg = args.getFirst();
+                var prefix = arg.asString();
+                var allModules = loader.modules();
+                var resultList = MutableArrayValue.create();
+                for (String module : allModules) {
+                    if (module.startsWith(prefix) && module.lastIndexOf('/') < prefix.length()) {
+                        resultList.add(new StrValue(module.substring(prefix.length())));
+                    }
+                }
+                return resultList;
+            });
+        });
+
+        builder.function("dirs", function -> {
+            function.arity(1);
+            function.execute((evaluator, args) -> {
+                var arg = args.getFirst();
+                var prefix = arg.asString();
+                var allModules = loader.modules();
+                var resultList = MutableArrayValue.create();
+                for (String module : allModules) {
+                    if (module.startsWith(prefix)) {
+                        int lastSlash = module.lastIndexOf('/');
+                        if (lastSlash > prefix.length()) {
+                            resultList.add(new StrValue(module.substring(prefix.length(), lastSlash)));
+                        }
+                    }
+                }
+                return resultList;
+            });
+        });
+
+        builder.function("print", (function) -> {
+            function.vararg(true);
+            function.executeSimpleVoid((values) -> System.out.println(values.stream().map(Value::prettyPrint).toList()));
+        });
+    });
+
+    public RepoConstants(RepoLoader loader) {
+        this.loader = loader;
+    }
+
+    @Override
+    public StructValue delegate() {
+        return constants;
+    }
+
+    public RepoLoader loader() {
+        return loader;
+    }
+}

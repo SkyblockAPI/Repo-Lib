@@ -26,20 +26,25 @@ val neoforge: SourceSet by sourceSets.creating {
 dependencies {
     implementation("org.jetbrains:annotations:24.1.0")
     implementation("com.google.code.gson:gson:2.10")
-
+    implementation("it.unimi.dsi:fastutil:8.5.16")
+    testImplementation("org.java-websocket:Java-WebSocket:1.6.0")
     "fabricImplementation"("net.fabricmc:fabric-loader:0.15.0") { isTransitive = false}
 
     "neoforgeImplementation"("net.neoforged.fancymodloader:loader:3.0.13") { isTransitive = false}
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
 }
 
 tasks.jar {
     from(fabric.output)
     from(neoforge.output)
+}
+
+tasks.withType<JavaCompile>().forEach {
+    it.options.compilerArgs.add("--enable-preview")
 }
 
 tasks.register<Jar>("sourcesJar") {
@@ -52,6 +57,7 @@ tasks.register<Jar>("sourcesJar") {
 
 val baseUrl = "https://raw.githubusercontent.com/SkyblockAPI/Repo/refs/heads/main/cloudflare"
 
+/*
 val downloadRepo = tasks.create("downloadRepo") {
     val outDir = layout.buildDirectory.dir("backup_repo")
     val outDirPath = outDir.get().asFile.toPath().resolve("backup")
@@ -98,7 +104,7 @@ sourceSets.main.configure {
 tasks.build.configure {
     this.dependsOn(downloadRepo)
     this.mustRunAfter(downloadRepo)
-}
+}*/
 
 publishing {
     publications {

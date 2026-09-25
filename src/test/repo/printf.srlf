@@ -1,0 +1,10 @@
+| message, severity? |
+
+
+prefix = match (severity) {
+  "debug" -> "[DEBUG]",
+  "error" -> "[ERROR]",
+  else -> "[INFO]",
+}
+
+print(prefix, message);

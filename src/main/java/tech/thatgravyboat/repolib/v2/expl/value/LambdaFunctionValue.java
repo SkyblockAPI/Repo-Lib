@@ -1,0 +1,21 @@
+package tech.thatgravyboat.repolib.v2.expl.value;
+
+import java.util.List;
+import java.util.function.BiFunction;
+import org.jetbrains.annotations.NotNull;
+import tech.thatgravyboat.repolib.v2.expl.Evaluator;
+
+public record LambdaFunctionValue(
+    BiFunction<Evaluator, List<Value>, Value> executor, boolean vararg, int arityMin, int arityMax
+) implements LambdaValue {
+
+    @Override
+    public Value apply(Evaluator evaluator, List<Value> args) {
+        return executor.apply(evaluator, args);
+    }
+
+    @Override
+    public LambdaFunctionValue asLambda() {
+        return this;
+    }
+}
