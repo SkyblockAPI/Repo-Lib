@@ -42,7 +42,6 @@ import tech.thatgravyboat.repolib.v2.expl.value.StrValue;
 import tech.thatgravyboat.repolib.v2.expl.value.StructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.StructuredFunctionValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
-import tech.thatgravyboat.repolib.v2.jvm.compiler.UsedByCompiler;
 
 public class Evaluator {
 

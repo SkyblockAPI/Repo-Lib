@@ -4,7 +4,6 @@ import tech.thatgravyboat.repolib.v2.RepoConfig;
 import tech.thatgravyboat.repolib.v2.RepoLoader;
 import tech.thatgravyboat.repolib.v2.builtin.Constants;
 import tech.thatgravyboat.repolib.v2.expl.value.ImmutableStructValue;
-import tech.thatgravyboat.repolib.v2.jvm.compiler.ExpressionCompiler;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -25,16 +24,6 @@ public class Main3 {
         };
         var instance = loader.create();
         var noCompileInstance = noCompileLoader.create();
-
-        ExpressionCompiler.registerSaver(((s, bytes) -> {
-            try {
-                var path = Path.of("output", s.replaceAll("[:]", "_") + ".class");
-                Files.createDirectories(path.getParent());
-                Files.write(path, bytes, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }));
 
         var errors = loader.load();
         noCompileLoader.load();
