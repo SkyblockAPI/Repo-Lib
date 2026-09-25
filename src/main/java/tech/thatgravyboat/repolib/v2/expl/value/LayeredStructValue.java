@@ -15,6 +15,11 @@ public record LayeredStructValue(StructValue.MutableStruct base, KeyValue overla
     }
 
     @Override
+    public int size() {
+        return this.base.size();
+    }
+
+    @Override
     public StructValue.MutableStruct toMutableStruct() {
         return this;
     }

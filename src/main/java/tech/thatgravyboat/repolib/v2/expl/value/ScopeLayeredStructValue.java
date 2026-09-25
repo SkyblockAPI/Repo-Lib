@@ -1,5 +1,6 @@
 package tech.thatgravyboat.repolib.v2.expl.value;
 
+import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import java.util.*;
 
 import org.jetbrains.annotations.NotNull;
@@ -19,12 +20,17 @@ public record ScopeLayeredStructValue(StructValue base, StructValue.MutableStruc
 
     @Override
     public ImmutableStructValue toImmutable() {
-        var map = new HashMap<String, Value>();
+        var map = new HashMap<String, Value>(base.size() + overlay.size());
 
         base.forEach((entry) -> map.put(entry.getKey(), entry.getValue()));
         overlay.forEach((entry) -> map.put(entry.getKey(), entry.getValue()));
 
         return new ImmutableStructValue(map);
+    }
+
+    @Override
+    public int size() {
+        return this.base.size() + this.overlay.size();
     }
 
     @Override

@@ -1,27 +1,33 @@
 package tech.thatgravyboat.repolib.v2.expl.value;
 
+import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
 public record MutableStructValue(Map<String, Value> fields) implements StructValue.MutableStruct {
     public MutableStructValue() {
-        this(new LinkedHashMap<>());
+        this(new HashMap<>());
     }
     public MutableStructValue(StructValue value) {
         this(asMap(value));
     }
 
-    private static HashMap<String, Value> asMap(StructValue value) {
+    private static Map<String, Value> asMap(StructValue value) {
         return switch (value) {
-            case MutableStructValue(Map<String, Value> fields) -> new LinkedHashMap<>(fields);
-            case ImmutableStructValue(Map<String, Value> fields) -> new LinkedHashMap<>(fields);
+            case MutableStructValue(Map<String, Value> fields) -> new HashMap<>(fields);
+            case ImmutableStructValue(Map<String, Value> fields) -> new HashMap<>(fields);
             default -> {
-                var map = new LinkedHashMap<String, Value>();
+                var map = new HashMap<String, Value>();
                 value.forEach(entry -> map.put(entry.getKey(), entry.getValue()));
                 yield map;
             }
         };
+    }
+
+    @Override
+    public int size() {
+        return this.fields.size();
     }
 
     @Override

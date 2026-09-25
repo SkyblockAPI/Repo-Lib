@@ -22,6 +22,10 @@ public record ImmutableStructValue(Map<String, Value> fields) implements StructV
         return fields.toString();
     }
 
+    @Override
+    public int size() {
+        return this.fields.size();
+    }
 
     @Override
     public boolean contains(String field) {

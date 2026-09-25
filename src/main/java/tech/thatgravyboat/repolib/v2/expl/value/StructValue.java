@@ -14,6 +14,8 @@ public interface StructValue extends KeyValue, Iterable<Map.Entry<String, Value>
         return this.toMutableStruct();
     }
 
+    int size();
+
     static String prettyPrint(StructValue result) {
         return prettyPrint(result, "", 0);
     }
@@ -65,6 +67,11 @@ public interface StructValue extends KeyValue, Iterable<Map.Entry<String, Value>
         @Override
         default @NotNull Iterator<Map.Entry<String, Value>> iterator() {
             return delegate().iterator();
+        }
+
+        @Override
+        default int size() {
+            return delegate().size();
         }
     }
 

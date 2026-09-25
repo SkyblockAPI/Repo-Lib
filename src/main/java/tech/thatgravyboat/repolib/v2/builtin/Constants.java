@@ -25,6 +25,11 @@ public record Constants(Map<String, Value> map) implements StructValue {
     }
 
     @Override
+    public int size() {
+        return this.map.size();
+    }
+
+    @Override
     public boolean contains(String field) {
         return map.containsKey(field);
     }

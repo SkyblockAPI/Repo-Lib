@@ -43,6 +43,7 @@ public class Main3 {
             var noCompileEvaluator = stackFile.createEvaluator(instance.constants(), ImmutableStructValue.EMPTY, RepoConfig.DEFAULT, loader::module);
             var noCompileStack = stackFile.evaluateScript(noCompileEvaluator);
             uncompiledSum += System.nanoTime() - noCompileStart;
+            System.out.print("Try " + i + " (avg " + uncompiledSum / ((i + 1) * 1000000.0) + "ms)\r");
         }
 
         System.out.println("Took " + (uncompiledSum / 100_000_000000.0) + "ms (uncompiled)");
