@@ -4,9 +4,6 @@ import tech.thatgravyboat.repolib.v2.binary.DecoderContext;
 import tech.thatgravyboat.repolib.v2.binary.EncoderContext;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypes;
-import tech.thatgravyboat.repolib.v2.jvm.compiler.CompilationTracker;
-
-import java.lang.classfile.CodeBuilder;
 import tech.thatgravyboat.repolib.v2.binary.NameTable;
 
 public final class DebugExpression implements Expression {
@@ -30,8 +27,4 @@ public final class DebugExpression implements Expression {
         return new DebugExpression();
     }
 
-    @Override
-    public boolean compile(CodeBuilder cb, CompilationTracker lc) {
-        return false;
-    }
 }

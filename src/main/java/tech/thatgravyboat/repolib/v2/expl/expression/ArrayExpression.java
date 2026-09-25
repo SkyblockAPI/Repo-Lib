@@ -1,5 +1,8 @@
 package tech.thatgravyboat.repolib.v2.expl.expression;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 import org.jetbrains.annotations.NotNull;
 import tech.thatgravyboat.repolib.v2.binary.DecoderContext;
 import tech.thatgravyboat.repolib.v2.binary.EncoderContext;
@@ -10,18 +13,6 @@ import tech.thatgravyboat.repolib.v2.binary.NameTable;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.value.MutableArrayValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
-import tech.thatgravyboat.repolib.v2.jvm.compiler.CompilationTracker;
-
-import java.io.IOException;
-import java.lang.classfile.CodeBuilder;
-import java.lang.constant.ClassDesc;
-import java.lang.constant.MethodTypeDesc;
-import java.util.ArrayList;
-import java.util.Collection;
-
-import static java.lang.constant.ConstantDescs.*;
-import static tech.thatgravyboat.repolib.v2.jvm.compiler.ExplCD.CD_MutableArrayValue;
-import static tech.thatgravyboat.repolib.v2.jvm.compiler.ExplCD.CD_Value;
 
 public record ArrayExpression(Collection<Expression> list) implements SelfEvaluatingExpression {
     @Override
@@ -61,19 +52,4 @@ public record ArrayExpression(Collection<Expression> list) implements SelfEvalua
         return new ArrayExpression(buffer.readCollection(ExpressionCodec::read));
     }
 
-    @Override
-    public boolean compile(CodeBuilder cb, CompilationTracker lc) {
-        ClassDesc arrayList = ClassDesc.of("java.util.ArrayList");
-        cb.new_(arrayList);
-        cb.dup();
-        cb.loadConstant(list.size());
-        cb.invokespecial(arrayList, "<init>", MethodTypeDesc.of(CD_void, CD_int));
-        cb.invokestatic(CD_MutableArrayValue, "create", MethodTypeDesc.of(CD_MutableArrayValue, CD_List));
-        for (Expression entry : list) {
-            cb.dup();
-            entry.compile(cb, lc);
-            cb.invokevirtual(CD_MutableArrayValue, "add", MethodTypeDesc.of(CD_void, CD_Value));
-        }
-        return false;
-    }
 }

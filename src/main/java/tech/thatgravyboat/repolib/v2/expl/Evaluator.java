@@ -1,13 +1,48 @@
 package tech.thatgravyboat.repolib.v2.expl;
 
-import org.jetbrains.annotations.Contract;
-import tech.thatgravyboat.repolib.v2.expl.expression.*;
-import tech.thatgravyboat.repolib.v2.expl.value.*;
-import tech.thatgravyboat.repolib.v2.jvm.compiler.UsedByCompiler;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import org.jetbrains.annotations.Contract;
+import tech.thatgravyboat.repolib.v2.expl.expression.AccessExpression;
+import tech.thatgravyboat.repolib.v2.expl.expression.AssignExpression;
+import tech.thatgravyboat.repolib.v2.expl.expression.BlockExpression;
+import tech.thatgravyboat.repolib.v2.expl.expression.BoolExpression;
+import tech.thatgravyboat.repolib.v2.expl.expression.CallExpression;
+import tech.thatgravyboat.repolib.v2.expl.expression.DebugExpression;
+import tech.thatgravyboat.repolib.v2.expl.expression.Expression;
+import tech.thatgravyboat.repolib.v2.expl.expression.FileAccessExpression;
+import tech.thatgravyboat.repolib.v2.expl.expression.ForExpression;
+import tech.thatgravyboat.repolib.v2.expl.expression.IfExpression;
+import tech.thatgravyboat.repolib.v2.expl.expression.InExpression;
+import tech.thatgravyboat.repolib.v2.expl.expression.LambdaExpression;
+import tech.thatgravyboat.repolib.v2.expl.expression.LambdaIdentityFunction;
+import tech.thatgravyboat.repolib.v2.expl.expression.NumExpression;
+import tech.thatgravyboat.repolib.v2.expl.expression.SelfEvaluatingExpression;
+import tech.thatgravyboat.repolib.v2.expl.expression.StatementExpression;
+import tech.thatgravyboat.repolib.v2.expl.expression.StrExpression;
+import tech.thatgravyboat.repolib.v2.expl.expression.StructExpression;
+import tech.thatgravyboat.repolib.v2.expl.expression.UnaryExpression;
+import tech.thatgravyboat.repolib.v2.expl.value.ArrayValue;
+import tech.thatgravyboat.repolib.v2.expl.value.BoolValue;
+import tech.thatgravyboat.repolib.v2.expl.value.FunctionValue;
+import tech.thatgravyboat.repolib.v2.expl.value.ImmutableStructValue;
+import tech.thatgravyboat.repolib.v2.expl.value.KeyValue;
+import tech.thatgravyboat.repolib.v2.expl.value.LambdaFunctionValue;
+import tech.thatgravyboat.repolib.v2.expl.value.LayeredStructValue;
+import tech.thatgravyboat.repolib.v2.expl.value.MutableStructValue;
+import tech.thatgravyboat.repolib.v2.expl.value.NilValue;
+import tech.thatgravyboat.repolib.v2.expl.value.NumValue;
+import tech.thatgravyboat.repolib.v2.expl.value.ScopeLayeredStructValue;
+import tech.thatgravyboat.repolib.v2.expl.value.StrValue;
+import tech.thatgravyboat.repolib.v2.expl.value.StructValue;
+import tech.thatgravyboat.repolib.v2.expl.value.StructuredFunctionValue;
+import tech.thatgravyboat.repolib.v2.expl.value.Value;
+import tech.thatgravyboat.repolib.v2.jvm.compiler.UsedByCompiler;
 
 public class Evaluator {
 
@@ -20,19 +55,16 @@ public class Evaluator {
     public final LinkedList<String> stack = new LinkedList<>();
     public final List<ContentInfo> errors = new ArrayList<>();
 
-    @UsedByCompiler
     public void push(String stack) {
         this.scope.push();
         this.stack.addLast(stack);
     }
 
-    @UsedByCompiler
     public void push(StructValue.MutableStruct scope, String stack) {
         this.scope.pushWithScope(scope);
         this.stack.addLast(stack);
     }
 
-    @UsedByCompiler
     public void pop() {
         this.scope.pop();
         this.stack.removeLast();
@@ -81,9 +113,8 @@ public class Evaluator {
     public Evaluator(StructValue defaults, Function<String, FunctionValue> fileFunction) {
         this.fileFunction = fileFunction;
         this.defaults = defaults;
-        scope = new Scope(defaults instanceof LayeredStructValue ?
-                defaults :
-                new LayeredStructValue(new MutableStructValue(), defaults));
+        scope = new Scope(defaults instanceof LayeredStructValue ? defaults :
+            new LayeredStructValue(new MutableStructValue(), defaults));
     }
 
     public static final Evaluator CONSTANT = new Evaluator(ImmutableStructValue.EMPTY, _ -> null);
@@ -129,7 +160,6 @@ public class Evaluator {
         return scope.get().get(field);
     }
 
-    @UsedByCompiler
     public void setField(String field, Value value) {
         KeyValue currentScope = scope.get();
         if (currentScope instanceof KeyValue.Mutable mutable) {
@@ -264,7 +294,8 @@ public class Evaluator {
         } else if (holder instanceof StrValue(String value)) {
             return BoolValue.wrap(value.contains(field));
         }
-        throw new Panic("Can't check if '" + in.field() + "/\\" + field + "' is in non string or keyvalue type " + holder);
+        throw new Panic(
+            "Can't check if '" + in.field() + "/\\" + field + "' is in non string or keyvalue type " + holder);
     }
 
     private Value evalUnary(UnaryExpression unary) {
@@ -276,11 +307,7 @@ public class Evaluator {
 
     private Value evalStructValue(MutableStructValue self, Expression expression) {
         if (expression instanceof LambdaIdentityFunction(LambdaExpression lambdaExpression)) {
-            return new LambdaExpression(
-                lambdaExpression.arguments(),
-                lambdaExpression.body(),
-                self
-            ).function();
+            return new LambdaExpression(lambdaExpression.arguments(), lambdaExpression.body(), self).function();
         }
         return this.eval0(expression);
     }
@@ -293,10 +320,7 @@ public class Evaluator {
         }
 
         if (struct.spread() != null) {
-            return new LayeredStructValue(
-                    fields,
-                    getStructOrThrow(this.eval0(struct.spread()))
-            );
+            return new LayeredStructValue(fields, getStructOrThrow(this.eval0(struct.spread())));
         }
 
         return fields;
@@ -335,7 +359,8 @@ public class Evaluator {
 
         while (true) {
             if (iteration > MAX_ITERATIONS) {
-                throw new Panic("For loop has iterated more than %d times, aborting to prevent infinite loop.".formatted(MAX_ITERATIONS));
+                throw new Panic("For loop has iterated more than %d times, aborting to prevent infinite loop.".formatted(
+                    MAX_ITERATIONS));
             }
 
             var cond = aFor.cond();
@@ -435,10 +460,11 @@ public class Evaluator {
         throw new Panic("Unable to access property " + expression.field() + " of non key/value " + lhs);
     }
 
-    @UsedByCompiler
     public FunctionValue getFileAccess(String name) {
         var file = fileFunction.apply(name);
-        if (file == null) throw new Panic("requested include " + name + " not found!");
+        if (file == null) {
+            throw new Panic("requested include " + name + " not found!");
+        }
         return file;
     }
 
@@ -487,7 +513,9 @@ public class Evaluator {
         }
 
         public void pop() {
-            if (scopes.size() == 1) throw new IllegalStateException("Cannot pop base scope");
+            if (scopes.size() == 1) {
+                throw new IllegalStateException("Cannot pop base scope");
+            }
             scopes.removeLast();
         }
     }

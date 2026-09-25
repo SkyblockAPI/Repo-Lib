@@ -1,18 +1,40 @@
 package tech.thatgravyboat.repolib.v2.expl;
 
-import java.util.Map;
-import tech.thatgravyboat.repolib.v2.RepoLoader;
-import tech.thatgravyboat.repolib.v2.expl.expression.*;
-import tech.thatgravyboat.repolib.v2.jvm.compiler.ExpressionCompiler;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
+import tech.thatgravyboat.repolib.v2.RepoLoader;
+import tech.thatgravyboat.repolib.v2.expl.expression.AccessExpression;
+import tech.thatgravyboat.repolib.v2.expl.expression.ArrayExpression;
+import tech.thatgravyboat.repolib.v2.expl.expression.AssignExpression;
+import tech.thatgravyboat.repolib.v2.expl.expression.BinaryExpression;
+import tech.thatgravyboat.repolib.v2.expl.expression.BlockExpression;
+import tech.thatgravyboat.repolib.v2.expl.expression.BoolExpression;
+import tech.thatgravyboat.repolib.v2.expl.expression.CallExpression;
+import tech.thatgravyboat.repolib.v2.expl.expression.DebugExpression;
+import tech.thatgravyboat.repolib.v2.expl.expression.Expression;
+import tech.thatgravyboat.repolib.v2.expl.expression.FileAccessExpression;
+import tech.thatgravyboat.repolib.v2.expl.expression.FileCallExpression;
+import tech.thatgravyboat.repolib.v2.expl.expression.ForEachExpression;
+import tech.thatgravyboat.repolib.v2.expl.expression.ForExpression;
+import tech.thatgravyboat.repolib.v2.expl.expression.IfExpression;
+import tech.thatgravyboat.repolib.v2.expl.expression.InExpression;
+import tech.thatgravyboat.repolib.v2.expl.expression.LambdaExpression;
+import tech.thatgravyboat.repolib.v2.expl.expression.LambdaIdentityFunction;
+import tech.thatgravyboat.repolib.v2.expl.expression.MatchExpression;
+import tech.thatgravyboat.repolib.v2.expl.expression.NumExpression;
+import tech.thatgravyboat.repolib.v2.expl.expression.RangeExpression;
+import tech.thatgravyboat.repolib.v2.expl.expression.ReturnExpression;
+import tech.thatgravyboat.repolib.v2.expl.expression.StatementExpression;
+import tech.thatgravyboat.repolib.v2.expl.expression.StrExpression;
+import tech.thatgravyboat.repolib.v2.expl.expression.StructExpression;
+import tech.thatgravyboat.repolib.v2.expl.expression.UnaryExpression;
 
 public final class Parser {
     private final String source;
@@ -62,7 +84,6 @@ public final class Parser {
         }
 
         var stack = new StackFile.Impl(name, meta.get(), script.get(StackFile.DEFAULT_SCRIPT));
-        if (loader.shouldCompile()) return ExpressionCompiler.compileStack(stack);
         return stack;
     }
 
@@ -88,9 +109,7 @@ public final class Parser {
             lexer.expect(Lexer.Token.SEMICOLON);
         }
 
-        var module = new ModuleFile.Impl(name, struct.get(() -> null), parseExpression());
-        if (loader.shouldCompile()) return ExpressionCompiler.compileModule(module);
-        return module;
+        return new ModuleFile.Impl(name, struct.get(() -> null), parseExpression());
     }
 
     public FunctionFile parseFunctionFile(String name, RepoLoader loader) {
@@ -103,11 +122,7 @@ public final class Parser {
             lexer.expect(Lexer.Token.OR);
         }
 
-        var expression = parseExpression();
-
-        if (loader.shouldCompile()) expression = ExpressionCompiler.compileExpression(expression, name);
-
-        return new FunctionFile.Impl(name, arguments, expression);
+        return new FunctionFile.Impl(name, arguments, parseExpression());
     }
 
     public Expression parseExpression() {
@@ -135,6 +150,7 @@ public final class Parser {
     public Expression parseBinaryOrNormalUntil(Lexer.Token... ends) {
         return parseBinaryOrNormalUntil(true, ends);
     }
+
     public Expression parseBinaryOrNormalUntil(boolean allowChainedPlus, Lexer.Token... ends) {
         var end = join(ends, Lexer.Token.BINARY);
         var first = parseUntil(end);
@@ -168,7 +184,10 @@ public final class Parser {
             }
             case PLUS -> {
                 lexer.next();
-                yield new BinaryExpression(BinaryExpression.Op.PLUS, first, allowChainedPlus ? parseBinaryOrNormalUntil(end) : parseUntil(end));
+                yield new BinaryExpression(
+                    BinaryExpression.Op.PLUS,
+                    first,
+                    allowChainedPlus ? parseBinaryOrNormalUntil(end) : parseUntil(end));
             }
             case MINUS -> {
                 lexer.next();
@@ -456,9 +475,7 @@ public final class Parser {
                 lexer.expect(Lexer.Token.COLON);
                 var expr = parseBinaryOrNormalUntil(Lexer.Token.COMMA, Lexer.Token.R_BRACE);
                 if (expr instanceof LambdaExpression lambda) {
-                    fields.put(
-                        field,
-                        new LambdaIdentityFunction(lambda));
+                    fields.put(field, new LambdaIdentityFunction(lambda));
                 } else {
                     fields.put(field, expr);
                 }
@@ -640,7 +657,7 @@ public final class Parser {
         Lexer.Token next;
         loop:
         while ((next = lexer.peek()) != null) {
-//            System.out.println()
+            //            System.out.println()
             switch (next) {
                 case Lexer.Token.IDENT -> {
                     lexer.next();

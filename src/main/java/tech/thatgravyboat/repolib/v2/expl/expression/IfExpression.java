@@ -1,5 +1,6 @@
 package tech.thatgravyboat.repolib.v2.expl.expression;
 
+import java.io.IOException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import tech.thatgravyboat.repolib.v2.binary.DecoderContext;
@@ -7,18 +8,7 @@ import tech.thatgravyboat.repolib.v2.binary.EncoderContext;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionCodec;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypes;
-import tech.thatgravyboat.repolib.v2.jvm.compiler.CompilationTracker;
-import tech.thatgravyboat.repolib.v2.jvm.compiler.Snippets;
 import tech.thatgravyboat.repolib.v2.binary.NameTable;
-
-import java.io.IOException;
-import java.lang.classfile.CodeBuilder;
-import java.lang.classfile.Label;
-import java.lang.constant.MethodTypeDesc;
-
-import static java.lang.constant.ConstantDescs.CD_boolean;
-import static tech.thatgravyboat.repolib.v2.jvm.compiler.ExplCD.CD_Evaluator;
-import static tech.thatgravyboat.repolib.v2.jvm.compiler.ExplCD.CD_Value;
 
 public record IfExpression(Expression cond, Expression thenExpr, @Nullable Expression elseExpr) implements Expression {
 
@@ -56,39 +46,9 @@ public record IfExpression(Expression cond, Expression thenExpr, @Nullable Expre
 
     public static IfExpression decode(DecoderContext buffer) throws IOException {
         return new IfExpression(
-                ExpressionCodec.read(buffer),
-                ExpressionCodec.read(buffer),
-                ExpressionCodec.readNullable(buffer)
-        );
+            ExpressionCodec.read(buffer),
+            ExpressionCodec.read(buffer),
+            ExpressionCodec.readNullable(buffer));
     }
 
-    @Override
-    public boolean compile(CodeBuilder cb, CompilationTracker lc) {
-        boolean alwaysReturns = true;
-        if (cond.isBoolean()) {
-            cond.compileBoolean(cb, lc);
-        } else {
-            cb.aload(1);
-            cond.compile(cb, lc);
-            cb.invokevirtual(CD_Evaluator, "asBool", MethodTypeDesc.of(CD_boolean, CD_Value));
-        }
-        Label endLabel = cb.newLabel();
-        Label endEndLabel = cb.newLabel();
-        cb.ifeq(endLabel);
-        if (!thenExpr.compile(cb, lc)) {
-            cb.goto_(endEndLabel);
-            alwaysReturns = false;
-        }
-        cb.labelBinding(endLabel);
-        if (elseExpr != null) {
-            if (!elseExpr.compile(cb, lc)) {
-                alwaysReturns = false;
-            }
-        } else {
-            alwaysReturns = false;
-            Snippets.pushNil(cb);
-        }
-        cb.labelBinding(endEndLabel);
-        return alwaysReturns;
-    }
 }

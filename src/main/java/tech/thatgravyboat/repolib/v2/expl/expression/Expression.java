@@ -8,19 +8,16 @@ import tech.thatgravyboat.repolib.v2.expl.FunctionFile;
 import tech.thatgravyboat.repolib.v2.expl.ModuleFile;
 import tech.thatgravyboat.repolib.v2.expl.Parser;
 import tech.thatgravyboat.repolib.v2.expl.StackFile;
-import tech.thatgravyboat.repolib.v2.jvm.compiler.CompilableExpression;
-import tech.thatgravyboat.repolib.v2.jvm.compiler.CompilationTracker;
 
-import java.lang.classfile.CodeBuilder;
-
-public sealed interface Expression extends Encodable, CompilableExpression
-        permits AccessExpression, AssignExpression, BlockExpression, BoolExpression, CallExpression, DebugExpression,
+public sealed interface Expression extends Encodable
+    permits AccessExpression, AssignExpression, BlockExpression, BoolExpression, CallExpression, DebugExpression,
     FileAccessExpression, ForExpression, IfExpression, InExpression, NumExpression, SelfEvaluatingExpression,
     StatementExpression, StrExpression, StructExpression, UnaryExpression {
 
     static StackFile parseFileOrThrow(RepoLoader loader, String source, String name) {
         return new Parser(source).parseFile(loader, name);
     }
+
     static ModuleFile parseModuleOrThrow(RepoLoader loader, String name, String source) {
         return new Parser(source).parseModuleFile(name, loader);
     }
@@ -36,30 +33,11 @@ public sealed interface Expression extends Encodable, CompilableExpression
     default boolean requiresSemicolon() {
         return true;
     }
+
     default boolean canReturnValueBeReturned() {
         return false;
     }
 
-    @Override
-    default boolean compile(CodeBuilder cb, CompilationTracker lc) {
-        throw new RuntimeException("Invalid type " + getClass().getSimpleName());
-    }
-
-    @Override
-    default boolean isBoolean() {
-        return false;
-    }
-    @Override
-    default boolean isNumber() {
-        return false;
-    }
-
-    @Override
-    default void compileBoolean(CodeBuilder cb, CompilationTracker lc) {
-    }
-    @Override
-    default void compileNumber(CodeBuilder cb, CompilationTracker lc) {
-    }
-
     ExpressionTypeRegistry.Type<?> expressionId();
+
 }
