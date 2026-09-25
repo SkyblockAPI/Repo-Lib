@@ -1,19 +1,22 @@
 package tech.thatgravyboat.repolib.v2.expl.expression;
 
-import java.io.IOException;
 import java.util.Collection;
-import tech.thatgravyboat.repolib.v2.binary.DecoderContext;
-import tech.thatgravyboat.repolib.v2.binary.Encodable;
-import tech.thatgravyboat.repolib.v2.binary.EncoderContext;
-import tech.thatgravyboat.repolib.v2.binary.EnumCodec;
-import tech.thatgravyboat.repolib.v2.binary.ExpressionCodec;
+import org.jetbrains.annotations.Nullable;
+import tech.thatgravyboat.repolib.v2.binary.BinaryCodec;
+import tech.thatgravyboat.repolib.v2.binary.BinaryRecordBuilder;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypes;
-import tech.thatgravyboat.repolib.v2.binary.NameTable;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
-public record MatchExpression(Expression value, Collection<MatchBranch> branches) implements SelfEvaluatingExpression {
+public record MatchExpression(Expression<?> value, Collection<MatchBranch> branches)
+    implements SelfEvaluatingExpression<MatchExpression> {
+
+    public static final BinaryCodec<MatchExpression> CODEC = BinaryRecordBuilder.of(
+        BinaryCodec.EXPRESSION.forGetter(MatchExpression::value),
+        MatchBranch.CODEC.collection().forGetter(MatchExpression::branches),
+        MatchExpression::new);
+
     @Override
     public Value evaluate(Evaluator evaluator) {
         var value = evaluator.eval0(this.value);
@@ -33,48 +36,16 @@ public record MatchExpression(Expression value, Collection<MatchBranch> branches
     }
 
     @Override
-    public ExpressionTypeRegistry.Type<?> expressionId() {
+    public ExpressionTypeRegistry.Type<MatchExpression> expressionId() {
         return ExpressionTypes.MATCH;
     }
 
-    @Override
-    public void precode(NameTable table) {
-        table.insert(this.value);
-        for (var branch : branches) {
-            table.insert(branch);
-        }
-    }
-
-    @Override
-    public void encode(EncoderContext buffer) {
-        ExpressionCodec.write(this.value, buffer);
-        buffer.writeCollection(this.branches, MatchBranch::encode);
-    }
-
-    public static MatchExpression decode(DecoderContext buffer) throws IOException {
-        return new MatchExpression(ExpressionCodec.read(buffer), buffer.readCollection(MatchBranch::decode));
-    }
-
-    public record MatchBranch(MatchCondition condition, Expression check, Expression branch) implements Encodable {
-        @Override
-        public void encode(EncoderContext buffer) {
-            EnumCodec.encode(this.condition, buffer);
-            ExpressionCodec.writeNullable(this.check, buffer);
-            ExpressionCodec.write(this.branch, buffer);
-        }
-
-        @Override
-        public void precode(NameTable table) {
-            table.insert(this.check);
-            table.insert(this.branch);
-        }
-
-        public static MatchBranch decode(DecoderContext buffer) throws IOException {
-            return new MatchBranch(
-                MatchCondition.CODEC.decode(buffer),
-                ExpressionCodec.readNullable(buffer),
-                ExpressionCodec.read(buffer));
-        }
+    public record MatchBranch(MatchCondition condition, @Nullable Expression<?> check, Expression<?> branch) {
+        public static final BinaryCodec<MatchBranch> CODEC = BinaryRecordBuilder.of(
+            MatchCondition.CODEC.forGetter(MatchBranch::condition),
+            BinaryCodec.EXPRESSION.nullable().forGetter(MatchBranch::check),
+            BinaryCodec.EXPRESSION.forGetter(MatchBranch::branch),
+            MatchBranch::new);
     }
 
     public enum MatchCondition {
@@ -124,7 +95,7 @@ public record MatchExpression(Expression value, Collection<MatchBranch> branches
         },
         ;
 
-        public static final EnumCodec<MatchCondition> CODEC = new EnumCodec<>(values());
+        public static final BinaryCodec<MatchCondition> CODEC = BinaryCodec.enumCodec(values());
 
 
         public abstract boolean compare(Evaluator evaluator, Value value, Value testValue);

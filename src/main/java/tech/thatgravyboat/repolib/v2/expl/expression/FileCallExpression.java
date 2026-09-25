@@ -1,18 +1,21 @@
 package tech.thatgravyboat.repolib.v2.expl.expression;
 
 
-import java.io.IOException;
 import org.jetbrains.annotations.NotNull;
-import tech.thatgravyboat.repolib.v2.binary.DecoderContext;
-import tech.thatgravyboat.repolib.v2.binary.EncoderContext;
-import tech.thatgravyboat.repolib.v2.binary.ExpressionCodec;
+import tech.thatgravyboat.repolib.v2.binary.BinaryCodec;
+import tech.thatgravyboat.repolib.v2.binary.BinaryRecordBuilder;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypes;
-import tech.thatgravyboat.repolib.v2.binary.NameTable;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
-public record FileCallExpression(Expression access, StructExpression expr) implements SelfEvaluatingExpression {
+public record FileCallExpression(Expression<?> access, StructExpression expr)
+    implements SelfEvaluatingExpression<FileCallExpression> {
+
+    public static final BinaryCodec<FileCallExpression> CODEC = BinaryRecordBuilder.of(
+        BinaryCodec.EXPRESSION.forGetter(FileCallExpression::access),
+        StructExpression.CODEC.forGetter(FileCallExpression::expr),
+        FileCallExpression::new);
 
     @Override
     public @NotNull String toString() {
@@ -28,27 +31,10 @@ public record FileCallExpression(Expression access, StructExpression expr) imple
     }
 
     @Override
-    public ExpressionTypeRegistry.Type<?> expressionId() {
+    public ExpressionTypeRegistry.Type<FileCallExpression> expressionId() {
         return ExpressionTypes.FILE_CALL;
     }
 
-    @Override
-    public void precode(NameTable table) {
-        this.access.precode(table);
-        this.expr.precode(table);
-    }
-
-    @Override
-    public void encode(EncoderContext buffer) {
-        ExpressionCodec.write(this.access, buffer);
-        ExpressionCodec.writeUntyped(this.expr, buffer);
-    }
-
-    public static FileCallExpression decode(DecoderContext buffer) throws IOException {
-        return new FileCallExpression(
-            ExpressionCodec.read(buffer),
-            ExpressionCodec.readUntyped(ExpressionTypes.STRUCT, buffer));
-    }
 
 }
 

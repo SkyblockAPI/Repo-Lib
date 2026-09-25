@@ -2,14 +2,13 @@ package tech.thatgravyboat.repolib.v2.expl.expression;
 
 
 import tech.thatgravyboat.repolib.v2.RepoLoader;
-import tech.thatgravyboat.repolib.v2.binary.Encodable;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
 import tech.thatgravyboat.repolib.v2.expl.FunctionFile;
 import tech.thatgravyboat.repolib.v2.expl.ModuleFile;
 import tech.thatgravyboat.repolib.v2.expl.Parser;
 import tech.thatgravyboat.repolib.v2.expl.StackFile;
 
-public sealed interface Expression extends Encodable
+public sealed interface Expression<ExpressionType extends Expression<ExpressionType>>
     permits AccessExpression, AssignExpression, BlockExpression, BoolExpression, CallExpression, DebugExpression,
     FileAccessExpression, ForExpression, IfExpression, InExpression, NumExpression, SelfEvaluatingExpression,
     StatementExpression, StrExpression, StructExpression, UnaryExpression {
@@ -26,7 +25,7 @@ public sealed interface Expression extends Encodable
         return new Parser(source).parseFunctionFile(name, loader);
     }
 
-    static Expression parse(String source) {
+    static Expression<?> parse(String source) {
         return new Parser(source).parseExpression();
     }
 
@@ -38,6 +37,5 @@ public sealed interface Expression extends Encodable
         return false;
     }
 
-    ExpressionTypeRegistry.Type<?> expressionId();
-
+    ExpressionTypeRegistry.Type<ExpressionType> expressionId();
 }

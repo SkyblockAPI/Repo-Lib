@@ -118,7 +118,7 @@ public class Evaluator {
 
     public static final Evaluator CONSTANT = new Evaluator(ImmutableStructValue.EMPTY, _ -> null);
 
-    public Value evaluate(Expression expression) {
+    public Value evaluate(Expression<?> expression) {
         try {
             if (expression != null && expression.canReturnValueBeReturned()) {
                 return eval0(expression);
@@ -247,7 +247,7 @@ public class Evaluator {
         throw new Panic("Failed to convert " + value + " into a struct");
     }
 
-    public Value eval0(Expression expression) {
+    public Value eval0(Expression<?> expression) {
         try {
             return switch (expression) {
                 case FileAccessExpression access -> evalFileAccess(access);
@@ -272,7 +272,7 @@ public class Evaluator {
                     }
                     throw new Panic("Unexpected statement expression " + token);
                 }
-                case SelfEvaluatingExpression self -> self.evaluate(this);
+                case SelfEvaluatingExpression<?> self -> self.evaluate(this);
                 case null -> Value.NIL;
             };
         } catch (Panic e) {
@@ -304,7 +304,7 @@ public class Evaluator {
         };
     }
 
-    private Value evalStructValue(MutableStructValue self, Expression expression) {
+    private Value evalStructValue(MutableStructValue self, Expression<?> expression) {
         if (expression instanceof LambdaIdentityFunction(LambdaExpression lambdaExpression)) {
             return new LambdaExpression(lambdaExpression.arguments(), lambdaExpression.body(), self).function();
         }

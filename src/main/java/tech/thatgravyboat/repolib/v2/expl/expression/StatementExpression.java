@@ -1,37 +1,25 @@
 package tech.thatgravyboat.repolib.v2.expl.expression;
 
-import java.io.IOException;
 import java.util.Locale;
 import org.jetbrains.annotations.NotNull;
-import tech.thatgravyboat.repolib.v2.binary.DecoderContext;
-import tech.thatgravyboat.repolib.v2.binary.EncoderContext;
-import tech.thatgravyboat.repolib.v2.binary.EnumCodec;
+import tech.thatgravyboat.repolib.v2.binary.BinaryCodec;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypes;
-import tech.thatgravyboat.repolib.v2.binary.NameTable;
 
-public record StatementExpression(Op op) implements Expression {
+public record StatementExpression(Op op) implements Expression<StatementExpression> {
+
+    public static final BinaryCodec<StatementExpression> CODEC =
+        Op.CODEC.mapped(StatementExpression::new, StatementExpression::op);
+
     @Override
     public @NotNull String toString() {
         return op.name().toLowerCase(Locale.ROOT);
     }
 
     @Override
-    public ExpressionTypeRegistry.Type<?> expressionId() {
+    public ExpressionTypeRegistry.Type<StatementExpression> expressionId() {
         return ExpressionTypes.STATEMENT;
     }
-
-    @Override
-    public void encode(EncoderContext buffer) {
-        EnumCodec.encode(this.op, buffer);
-    }
-
-    public static StatementExpression decode(DecoderContext buffer) throws IOException {
-        return new StatementExpression(Op.CODEC.decode(buffer));
-    }
-
-    @Override
-    public void precode(NameTable table) {}
 
     public enum Op {
         RETURN,
@@ -39,6 +27,6 @@ public record StatementExpression(Op op) implements Expression {
         CONTINUE,
         ;
 
-        public static final EnumCodec<Op> CODEC = new EnumCodec<>(values());
+        public static final BinaryCodec<Op> CODEC = BinaryCodec.enumCodec(values());
     }
 }

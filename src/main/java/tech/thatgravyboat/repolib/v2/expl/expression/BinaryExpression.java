@@ -2,13 +2,12 @@ package tech.thatgravyboat.repolib.v2.expl.expression;
 
 import java.io.IOException;
 import java.util.Objects;
+import tech.thatgravyboat.repolib.v2.binary.BinaryCodec;
+import tech.thatgravyboat.repolib.v2.binary.BinaryRecordBuilder;
 import tech.thatgravyboat.repolib.v2.binary.DecoderContext;
-import tech.thatgravyboat.repolib.v2.binary.EncoderContext;
-import tech.thatgravyboat.repolib.v2.binary.EnumCodec;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionCodec;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypes;
-import tech.thatgravyboat.repolib.v2.binary.NameTable;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.value.BoolValue;
 import tech.thatgravyboat.repolib.v2.expl.value.MutableArrayValue;
@@ -16,29 +15,23 @@ import tech.thatgravyboat.repolib.v2.expl.value.NumValue;
 import tech.thatgravyboat.repolib.v2.expl.value.StrValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
-public record BinaryExpression(Op op, Expression first, Expression second) implements SelfEvaluatingExpression {
+public record BinaryExpression(Op op, Expression<?> first, Expression<?> second)
+    implements SelfEvaluatingExpression<BinaryExpression> {
+
+    public static final BinaryCodec<BinaryExpression> CODEC = BinaryRecordBuilder.of(
+        Op.CODEC.forGetter(BinaryExpression::op),
+        BinaryCodec.EXPRESSION.forGetter(BinaryExpression::first),
+        BinaryCodec.EXPRESSION.forGetter(BinaryExpression::second),
+        BinaryExpression::new);
 
     @Override
     public Value evaluate(Evaluator evaluator) {
-        return op.perform(evaluator, first, second);
+        return op.performRaw(evaluator, first, second);
     }
 
     @Override
-    public ExpressionTypeRegistry.Type<?> expressionId() {
+    public ExpressionTypeRegistry.Type<BinaryExpression> expressionId() {
         return ExpressionTypes.BINARY;
-    }
-
-    @Override
-    public void encode(EncoderContext buffer) {
-        EnumCodec.encode(this.op, buffer);
-        ExpressionCodec.write(this.first, buffer);
-        ExpressionCodec.write(this.second, buffer);
-    }
-
-    @Override
-    public void precode(NameTable table) {
-        this.first.precode(table);
-        this.second.precode(table);
     }
 
     public static BinaryExpression decode(DecoderContext buffer) throws IOException {
@@ -117,7 +110,7 @@ public record BinaryExpression(Op op, Expression first, Expression second) imple
             }
 
             @Override
-            public Value perform(Evaluator evaluator, Expression first, Expression second) {
+            public Value performRaw(Evaluator evaluator, Expression<?> first, Expression<?> second) {
                 return BoolValue.wrap(evaluator.getBooleanOrThrow(evaluator.eval0(first)) &&
                                       evaluator.getBooleanOrThrow(evaluator.eval0(second)));
             }
@@ -130,7 +123,7 @@ public record BinaryExpression(Op op, Expression first, Expression second) imple
             }
 
             @Override
-            public Value perform(Evaluator evaluator, Expression first, Expression second) {
+            public Value performRaw(Evaluator evaluator, Expression<?> first, Expression<?> second) {
                 return BoolValue.wrap(evaluator.getBooleanOrThrow(evaluator.eval0(first)) ||
                                       evaluator.getBooleanOrThrow(evaluator.eval0(second)));
             }
@@ -177,13 +170,12 @@ public record BinaryExpression(Op op, Expression first, Expression second) imple
 
         };
 
-        public static final EnumCodec<Op> CODEC = new EnumCodec<>(values());
+        public static final BinaryCodec<Op> CODEC = BinaryCodec.enumCodec(values());
 
         public abstract Value perform(Evaluator evaluator, Value first, Value second);
 
-        public Value perform(Evaluator evaluator, Expression first, Expression second) {
+        public Value performRaw(Evaluator evaluator, Expression<?> first, Expression<?> second) {
             return perform(evaluator, evaluator.eval0(first), evaluator.eval0(second));
         }
-
     }
 }

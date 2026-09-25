@@ -1,30 +1,21 @@
 package tech.thatgravyboat.repolib.v2.expl.expression;
 
-import tech.thatgravyboat.repolib.v2.binary.DecoderContext;
-import tech.thatgravyboat.repolib.v2.binary.EncoderContext;
+import tech.thatgravyboat.repolib.v2.binary.BinaryCodec;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypes;
-import tech.thatgravyboat.repolib.v2.binary.NameTable;
 
-public final class DebugExpression implements Expression {
+public final class DebugExpression implements Expression<DebugExpression> {
 
     public static DebugExpression INSTANCE = new DebugExpression();
+
+    public static final BinaryCodec<DebugExpression> CODEC = BinaryCodec.unit(INSTANCE);
 
     private DebugExpression() {}
 
     @Override
-    public ExpressionTypeRegistry.Type<?> expressionId() {
+    public ExpressionTypeRegistry.Type<DebugExpression> expressionId() {
         return ExpressionTypes.DEBUG;
     }
 
-    @Override
-    public void precode(NameTable table) {}
-
-    @Override
-    public void encode(EncoderContext buffer) {}
-
-    public static DebugExpression decode(DecoderContext buffer) {
-        return new DebugExpression();
-    }
 
 }

@@ -17,12 +17,13 @@ public interface RepoLoader {
     List<LoadingErrors> load() throws IOException;
     Map<String, FunctionValueFile<?>> files();
     ModuleFile rootFile();
-    Expression rootList();
+    Expression<?> rootList();
     Map<String, StackFile> stackFiles();
     RepoInstance create();
     StackFile stackFile(String name);
     FunctionValue module(String name);
     Collection<String> modules();
     Evaluator createEvaluator();
-    boolean shouldCompile();
+
+    RepoBundle bundle();
 }

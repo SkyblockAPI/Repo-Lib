@@ -3,13 +3,11 @@ package tech.thatgravyboat.repolib.v2.expl;
 import tech.thatgravyboat.repolib.v2.RepoConfig;
 import tech.thatgravyboat.repolib.v2.RepoConstants;
 import tech.thatgravyboat.repolib.v2.RepoLoader;
+import tech.thatgravyboat.repolib.v2.binary.BinaryCodec;
 import tech.thatgravyboat.repolib.v2.binary.BinaryFileTypeRegistry;
-import tech.thatgravyboat.repolib.v2.binary.DecoderContext;
-import tech.thatgravyboat.repolib.v2.binary.EncoderContext;
-import tech.thatgravyboat.repolib.v2.binary.ExpressionCodec;
+import tech.thatgravyboat.repolib.v2.binary.BinaryRecordBuilder;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
 import tech.thatgravyboat.repolib.v2.binary.FileTypes;
-import tech.thatgravyboat.repolib.v2.binary.NameTable;
 import tech.thatgravyboat.repolib.v2.binary.TypedFile;
 import tech.thatgravyboat.repolib.v2.builtin.Constants;
 import tech.thatgravyboat.repolib.v2.expl.expression.Expression;
@@ -24,66 +22,130 @@ import tech.thatgravyboat.repolib.v2.expl.value.MutableStructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.StructValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
-import java.io.IOException;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-public interface StackFile extends SelfEvaluatingExpression, TypedFile<StackFile> {
+public final class StackFile implements SelfEvaluatingExpression<StackFile>, TypedFile<StackFile> {
 
-    Expression SCRIPT = Expression.parse("include(\"item\");");
-    Supplier<Expression> DEFAULT_SCRIPT = () -> SCRIPT;
+    public static final BinaryCodec<StackFile> CODEC = BinaryRecordBuilder.of(
+        BinaryCodec.STRING.forGetter(StackFile::name),
+        BinaryCodec.NULLABLE_EXPRESSION.forGetter(StackFile::metaScript),
+        BinaryCodec.NULLABLE_EXPRESSION.forGetter(StackFile::script),
+        StackFile::new
+    );
 
-    boolean hasInitialized();
+    private static final Expression<?> SCRIPT = Expression.parse("include(\"item\");");
+    public static final Supplier<Expression<?>> DEFAULT_SCRIPT = () -> SCRIPT;
+    private final String name;
+    private final Expression<?> script;
+    private final Expression<?> metaScript;
+    private KeyValue meta;
+    private boolean isInitializing = false;
 
-    default void init(RepoLoader loader, RepoConstants constants) {
+    public StackFile(String name, Expression<?> meta, Expression<?> script) {
+        this.name = name;
+        this.script = script;
+        this.metaScript = meta;
+    }
+
+    public boolean needsInitialization() {
+        return meta == null;
+    }
+
+    public void init(RepoLoader loader, RepoConstants constants) {
+        if (this.isInitializing) {
+            throw new IllegalStateException("Stack is currently being initialized!");
+        }
+        this.isInitializing = true;
+
         var struct = new MutableStructValue();
+        struct.set(
+            "include", Constants.Builder.FunctionBuilder.create(function -> {
+                function.arity(1);
+                function.execute((evaluator, args) -> {
+                    var value = evaluator.getStringOrThrow(args.getFirst());
+                    var requested = loader.module(value);
+                    if (requested == null) {
+                        return evaluator.panic("Requested include " + value + " doesn't exist!");
+                    }
+                    evaluator.pushPop(
+                        value, () -> {
+                            evaluator.evaluate(requested);
+                            return Value.NIL;
+                        });
+
+                    return Value.NIL;
+                });
+            }));
+        struct.set(
+            "static", Constants.Builder.FunctionBuilder.create(function -> {
+                function.arity(1);
+                function.execute((evaluator, args) -> {
+                    var value = evaluator.getStringOrThrow(args.getFirst());
+                    var requested = loader.module(value);
+                    if (requested == null) {
+                        return evaluator.panic("Requested include " + value + " doesn't exist!");
+                    }
+                    if (requested instanceof ModuleFile module) {
+                        return module.staticData();
+                    }
+
+                    return evaluator.panic("Can't access static data of non module file!");
+                });
+            }));
         struct.set("categories", MutableArrayValue.create());
         var evaluator = new Evaluator(new LayeredStructValue(struct, constants), loader::module);
-        this.evaluateMetaScript(evaluator);
+        evaluator.evaluate(this.metaScript);
         struct.fields().remove("include");
-        this.meta(struct);
+        this.meta = struct.toFullyImmutable();
     }
 
     @Override
-    default Value evaluate(Evaluator evaluator) {
+    public Value evaluate(Evaluator evaluator) {
         evaluateScript(evaluator);
         return Value.NIL;
     }
 
-    KeyValue meta();
-    void meta(KeyValue meta);
-    Expression script();
-    Expression metaScript();
-    void evaluateMetaScript(Evaluator evaluator);
-    String name();
+    public KeyValue meta() {
+        return meta;
+    }
 
-    default Evaluator createEvaluator(StructValue overrides, Function<String, FunctionValue> lookup) {
+    public String name() {
+        return name;
+    }
+
+    private Expression<?> metaScript() {
+        return metaScript;
+    }
+    private Expression<?> script() {
+        return script;
+    }
+
+    public Evaluator createEvaluator(StructValue overrides, Function<String, FunctionValue> lookup) {
         return createEvaluator(overrides, ImmutableStructValue.EMPTY, RepoConfig.DEFAULT, lookup);
     }
 
-    default Evaluator createEvaluator(StructValue overrides, StructValue data, Function<String, FunctionValue> lookup) {
+    public Evaluator createEvaluator(StructValue overrides, StructValue data, Function<String, FunctionValue> lookup) {
         return createEvaluator(overrides, data, RepoConfig.DEFAULT, lookup);
     }
 
-    default Evaluator createEvaluator(
-            StructValue overrides,
-            StructValue data,
-            RepoConfig config,
-            Function<String, FunctionValue> lookup
+    public Evaluator createEvaluator(
+        StructValue overrides,
+        StructValue data,
+        RepoConfig config,
+        Function<String, FunctionValue> lookup
     ) {
         return this.createEvaluator(overrides, data, ImmutableStructValue.EMPTY, config, lookup);
     }
 
-    default Evaluator createEvaluator(
-            StructValue overrides,
-            StructValue data,
-            StructValue profile,
-            RepoConfig config,
-            Function<String, FunctionValue> lookup
+    public Evaluator createEvaluator(
+        StructValue overrides,
+        StructValue data,
+        StructValue profile,
+        RepoConfig config,
+        Function<String, FunctionValue> lookup
     ) {
-
         var inputs = new MutableStructValue();
 
         for (var entry : overrides) {
@@ -98,7 +160,14 @@ public interface StackFile extends SelfEvaluatingExpression, TypedFile<StackFile
                     var section = new AtomicBoolean();
 
                     lore.function(
-                        "empty", (function) -> function.runs((() -> entries.add(ImmutableStructValue.EMPTY))));
+                        "empty", (function) -> {
+                            function.vararg(true);
+                            function.execute(((evaluator, values) -> {
+                                entries.add(ImmutableStructValue.EMPTY);
+
+                                return Value.NIL;
+                            }));
+                        });
                     lore.function(
                         "beginSection", (function) -> function.runs(() -> {
                             if (section.get()) {
@@ -125,7 +194,7 @@ public interface StackFile extends SelfEvaluatingExpression, TypedFile<StackFile
                     lore.function(
                         "addAll", function -> {
                             function.arity(1);
-                            function.executeSimpleVoid((args) -> {
+                            function.executeVoid((evaluator, args) -> {
                                 var values = ArrayValue.flatten(args);
                                 if (values.isEmpty()) {
                                     return;
@@ -139,104 +208,28 @@ public interface StackFile extends SelfEvaluatingExpression, TypedFile<StackFile
         inputs.set("data", data);
         inputs.set("categories", MutableArrayValue.create());
         inputs.set("profile", profile);
-        inputs.set("meta", this.meta());
+        inputs.set("meta", this.meta);
 
         return new Evaluator(inputs, lookup);
     }
 
-    StructValue evaluateScript(Evaluator evaluator);
+    public StructValue evaluateScript(Evaluator evaluator) {
+        evaluator.evaluate(script);
 
-    default KeyValue evaluate(StructValue overrides, Function<String, FunctionValue> lookup) {
+        return evaluator.defaults.get("stack") instanceof StructValue value ? value : ImmutableStructValue.EMPTY;
+    }
+
+    public KeyValue evaluate(StructValue overrides, Function<String, FunctionValue> lookup) {
         return evaluateScript(createEvaluator(overrides, lookup));
     }
 
     @Override
-    default void encode(EncoderContext buffer) {
-        buffer.writeLiteral(this.name());
-        ExpressionCodec.writeNullable(this.metaScript(), buffer);
-        buffer.writeBoolean(this.script() != SCRIPT);
-        if (this.script() != SCRIPT) {
-            ExpressionCodec.write(this.script(), buffer);
-        }
-    }
-
-    @Override
-    default void precode(NameTable table) {
-        table.insert(this.name());
-        table.insert(this.metaScript());
-        if (this.script() != SCRIPT) {
-            this.script().precode(table);
-        }
-    }
-
-    static StackFile decode(DecoderContext buffer) throws IOException {
-        String name = buffer.readLiteral();
-        Expression meta = ExpressionCodec.readNullable(buffer);
-        Expression script = ExpressionCodec.readNullable(buffer);
-
-        return new Impl(name, meta, Objects.requireNonNullElseGet(script, DEFAULT_SCRIPT));
-    }
-
-    @Override
-    default BinaryFileTypeRegistry.Type<StackFile> fileId() {
+    public BinaryFileTypeRegistry.Type<StackFile> fileId() {
         return FileTypes.STACK;
     }
 
     @Override
-    default ExpressionTypeRegistry.Type<StackFile> expressionId() {
+    public ExpressionTypeRegistry.Type<StackFile> expressionId() {
         throw new UnsupportedOperationException();
-    }
-
-    class Impl implements StackFile {
-        private final String name;
-        private final Expression script;
-        private final Expression metaScript;
-        private KeyValue meta;
-
-        public Impl(String name, Expression meta, Expression script) {
-            this.name = name;
-            this.script = script;
-            this.metaScript = meta;
-        }
-
-        public boolean hasInitialized() {
-            return meta != null;
-        }
-
-        public void evaluateMetaScript(Evaluator evaluator) {
-            evaluator.evaluate(this.metaScript);
-        }
-
-        @Override
-        public void meta(KeyValue meta) {
-            this.meta = meta;
-        }
-
-        public KeyValue meta() {
-            return meta;
-        }
-
-        @Override
-        public Expression script() {
-            return this.script;
-        }
-
-        @Override
-        public Expression metaScript() {
-            return this.metaScript;
-        }
-
-        @Override
-        public String name() {
-            return this.name;
-        }
-
-        @Override
-        public StructValue evaluateScript(Evaluator evaluator) {
-            evaluator.evaluate(script);
-
-            return evaluator.defaults.get("stack") instanceof StructValue value ? value : ImmutableStructValue.EMPTY;
-        }
-
     }
 }

@@ -13,25 +13,12 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 
-public final class NameTable {
-    private final Collection<String> names;
-
-    private NameTable(Collection<String> data) {
-        this.names = data;
-    }
-
+public final record NameTable(Collection<String> names) {
+    public static final BinaryCodec<NameTable> CODEC = BinaryCodec.LITERAL_STRING.collection().mapped(NameTable::new, NameTable::names);
     public static NameTable builder() {
         return new NameTable(new HashSet<>());
     }
 
-    public static NameTable decode(ByteBuffer buffer) throws IOException {
-        var builder = new ArrayList<String>();
-        var amount = buffer.readInt();
-        for (int i = 0; i < amount; i++) {
-            builder.add(buffer.readString());
-        }
-        return new NameTable(builder);
-    }
 
     public void insert(String name) {
         this.names.add(name);
@@ -49,19 +36,5 @@ public final class NameTable {
         }
 
         return map;
-    }
-
-    public void encode(ByteBuffer buffer) {
-        buffer.writeInt(this.names.size());
-        for (var name : this.names) {
-            buffer.writeString(name);
-        }
-    }
-
-    public void insert(@Nullable Encodable expression) {
-        if (expression == null) {
-            return;
-        }
-        expression.precode(this);
     }
 }

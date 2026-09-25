@@ -97,7 +97,7 @@ public class FolderLoader implements FileVisitor<Path>, RepoLoader {
 
     public StackFile stackFile(String fileName) {
         StackFile stackFile = stackFiles.get(fileName);
-        if (stackFile != null && !stackFile.hasInitialized()) {
+        if (stackFile != null && stackFile.needsInitialization()) {
             stackFile.init(this, constants);
         }
         return stackFile;
@@ -185,11 +185,6 @@ public class FolderLoader implements FileVisitor<Path>, RepoLoader {
         return FileVisitResult.CONTINUE;
     }
 
-    @Override
-    public boolean shouldCompile() {
-        return true;
-    }
-
     public byte[] buildRepoBundle() {
         try (var stream = new ByteArrayOutputStream()) {
             RepoBinaryUtils.bundle(stream, this);
@@ -197,6 +192,17 @@ public class FolderLoader implements FileVisitor<Path>, RepoLoader {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+
+    @Override
+    public RepoBundle bundle() {
+        return new RepoBundle(
+            this.rootFile,
+            this.rootList,
+            this.stackFiles,
+            this.files
+        );
     }
 
     public Map<String, FunctionValueFile<?>> files() {

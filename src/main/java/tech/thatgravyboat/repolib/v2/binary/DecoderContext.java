@@ -14,13 +14,16 @@ public class DecoderContext implements ByteBuffer.Forwarding {
     Int2ObjectMap<String> nameTable;
     private final ByteBuffer buffer;
 
-    public DecoderContext(Int2ObjectMap<String> nameTable, ByteBuffer buffer) {
-        this.nameTable = nameTable;
+    public DecoderContext(ByteBuffer buffer) {
         this.buffer = buffer;
     }
 
     public String readLiteral() throws IOException {
         return this.nameTable.get(buffer.readInt());
+    }
+
+    public void updateTable(Int2ObjectMap<String> newTable) {
+        this.nameTable = newTable;
     }
 
     public <Data> Collection<Data> readCollection(Decoder<Data> decoder) throws IOException {

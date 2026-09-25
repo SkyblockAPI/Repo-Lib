@@ -1,39 +1,25 @@
 package tech.thatgravyboat.repolib.v2.expl.expression;
 
-import java.io.IOException;
-import tech.thatgravyboat.repolib.v2.binary.DecoderContext;
-import tech.thatgravyboat.repolib.v2.binary.EncoderContext;
-import tech.thatgravyboat.repolib.v2.binary.ExpressionCodec;
+import tech.thatgravyboat.repolib.v2.binary.BinaryCodec;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypes;
-import tech.thatgravyboat.repolib.v2.binary.NameTable;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.ExecutionExceptions;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
-public record ReturnExpression(Expression retExpr) implements SelfEvaluatingExpression {
+public record ReturnExpression(Expression<?> retExpr) implements SelfEvaluatingExpression<ReturnExpression> {
+
+    public static final BinaryCodec<ReturnExpression> CODEC =
+        BinaryCodec.EXPRESSION.mapped(ReturnExpression::new, ReturnExpression::retExpr);
+
     @Override
     public Value evaluate(Evaluator evaluator) {
         throw new ExecutionExceptions.Return(evaluator.eval0(retExpr));
     }
 
     @Override
-    public ExpressionTypeRegistry.Type<?> expressionId() {
+    public ExpressionTypeRegistry.Type<ReturnExpression> expressionId() {
         return ExpressionTypes.RETURN;
-    }
-
-    @Override
-    public void precode(NameTable table) {
-        table.insert(this.retExpr);
-    }
-
-    @Override
-    public void encode(EncoderContext buffer) {
-        ExpressionCodec.write(this.retExpr, buffer);
-    }
-
-    public static ReturnExpression decode(DecoderContext buffer) throws IOException {
-        return new ReturnExpression(ExpressionCodec.read(buffer));
     }
 
 }

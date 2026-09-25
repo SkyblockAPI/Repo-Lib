@@ -1,20 +1,30 @@
 package tech.thatgravyboat.repolib.v2.expl.expression;
 
-import java.io.IOException;
 import java.util.LinkedList;
-import tech.thatgravyboat.repolib.v2.binary.DecoderContext;
-import tech.thatgravyboat.repolib.v2.binary.EncoderContext;
-import tech.thatgravyboat.repolib.v2.binary.ExpressionCodec;
+import tech.thatgravyboat.repolib.v2.binary.BinaryCodec;
+import tech.thatgravyboat.repolib.v2.binary.BinaryRecordBuilder;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypes;
-import tech.thatgravyboat.repolib.v2.binary.NameTable;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.value.MutableArrayValue;
 import tech.thatgravyboat.repolib.v2.expl.value.NumValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
-public record RangeExpression(boolean inclusiveStart, boolean inclusiveEnd, Expression from, Expression to)
-    implements SelfEvaluatingExpression {
+public record RangeExpression(boolean inclusiveStart, boolean inclusiveEnd, Expression<?> from, Expression<?> to)
+    implements SelfEvaluatingExpression<RangeExpression> {
+
+    public static final BinaryCodec<RangeExpression> CODEC = BinaryRecordBuilder.of(
+        BinaryCodec.BYTE.forGetter(owner -> {
+            byte set = (byte) (owner.inclusiveStart ? 1 : 0);
+            if (owner.inclusiveEnd) {
+                set |= 2;
+            }
+            return set;
+        }),
+        BinaryCodec.EXPRESSION.forGetter(RangeExpression::from),
+        BinaryCodec.EXPRESSION.forGetter(RangeExpression::to),
+        (packed, from, to) -> new RangeExpression((packed & 1) == 1, (packed & 2) == 2, from, to));
+
     @Override
     public Value evaluate(Evaluator evaluator) {
         var number = evaluator.getNumberOrThrow(evaluator.eval0(from));
@@ -32,34 +42,7 @@ public record RangeExpression(boolean inclusiveStart, boolean inclusiveEnd, Expr
     }
 
     @Override
-    public ExpressionTypeRegistry.Type<?> expressionId() {
+    public ExpressionTypeRegistry.Type<RangeExpression> expressionId() {
         return ExpressionTypes.RANGE;
-    }
-
-    @Override
-    public void precode(NameTable table) {
-        table.insert(this.from);
-        table.insert(this.to);
-    }
-
-    @Override
-    public void encode(EncoderContext buffer) {
-        byte set = (byte) (inclusiveStart ? 1 : 0);
-        if (inclusiveEnd) {
-            set |= 2;
-        }
-        buffer.writeByte(set);
-        ExpressionCodec.write(this.from, buffer);
-        ExpressionCodec.write(this.to, buffer);
-    }
-
-    public static RangeExpression decode(DecoderContext buffer) throws IOException {
-        byte set = buffer.readByte();
-
-        return new RangeExpression(
-            (set & 1) == 1,
-            (set & 2) == 2,
-            ExpressionCodec.read(buffer),
-            ExpressionCodec.read(buffer));
     }
 }

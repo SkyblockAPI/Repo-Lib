@@ -1,19 +1,17 @@
 package tech.thatgravyboat.repolib.v2.expl.expression;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
-import tech.thatgravyboat.repolib.v2.binary.DecoderContext;
-import tech.thatgravyboat.repolib.v2.binary.EncoderContext;
-import tech.thatgravyboat.repolib.v2.binary.ExpressionCodec;
+import tech.thatgravyboat.repolib.v2.binary.BinaryCodec;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypes;
-import tech.thatgravyboat.repolib.v2.binary.NameTable;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
-public record BlockExpression(Collection<Expression> exprs) implements Expression {
+public record BlockExpression(Collection<Expression<?>> exprs) implements Expression<BlockExpression> {
+    public static final BinaryCodec<BlockExpression> CODEC =
+        BinaryCodec.EXPRESSION.collection().mapped(BlockExpression::new, BlockExpression::exprs);
 
     @Override
     public @NotNull String toString() {
@@ -24,27 +22,15 @@ public record BlockExpression(Collection<Expression> exprs) implements Expressio
     }
 
     @Override
-    public ExpressionTypeRegistry.Type<?> expressionId() {
+    public ExpressionTypeRegistry.Type<BlockExpression> expressionId() {
         return ExpressionTypes.BLOCK;
     }
 
-    @Override
-    public void precode(NameTable table) {
-        for (var expr : exprs) {
-            expr.precode(table);
-        }
-    }
 
-    @Override
-    public void encode(EncoderContext buffer) {
-        buffer.writeCollection(this.exprs, ExpressionCodec::write);
-    }
+    public record LastElement(Expression<?> expression) implements SelfEvaluatingExpression<LastElement> {
+        public static final BinaryCodec<LastElement> CODEC =
+            BinaryCodec.EXPRESSION.mapped(LastElement::new, LastElement::expression);
 
-    public static BlockExpression decode(DecoderContext buffer) throws IOException {
-        return new BlockExpression(buffer.readCollection(ExpressionCodec::read));
-    }
-
-    public record LastElement(Expression expression) implements SelfEvaluatingExpression {
         @Override
         public Value evaluate(Evaluator evaluator) {
             return evaluator.eval0(this.expression);
@@ -56,24 +42,9 @@ public record BlockExpression(Collection<Expression> exprs) implements Expressio
         }
 
         @Override
-        public ExpressionTypeRegistry.Type<?> expressionId() {
+        public ExpressionTypeRegistry.Type<LastElement> expressionId() {
             return ExpressionTypes.BLOCK_LAST_ELEMENT;
         }
-
-        @Override
-        public void encode(EncoderContext buffer) {
-            ExpressionCodec.write(this.expression, buffer);
-        }
-
-        @Override
-        public void precode(NameTable table) {
-            table.insert(this.expression);
-        }
-
-        public static LastElement decode(DecoderContext buffer) throws IOException {
-            return new LastElement(ExpressionCodec.read(buffer));
-        }
-
     }
 
     @Override

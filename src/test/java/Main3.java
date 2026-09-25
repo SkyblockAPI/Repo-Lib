@@ -17,10 +17,6 @@ public class Main3 {
         Path repoPath = Path.of("Repo-Data").toRealPath().normalize().toAbsolutePath();
         RepoLoader loader = new FolderLoader(repoPath);
         RepoLoader noCompileLoader = new FolderLoader(repoPath) {
-            @Override
-            public boolean shouldCompile() {
-                return false;
-            }
         };
         var instance = loader.create();
         var noCompileInstance = noCompileLoader.create();

@@ -1,10 +1,8 @@
 package tech.thatgravyboat.repolib.v2;
 
-import tech.thatgravyboat.repolib.v2.binary.BinaryFileTypeRegistry;
+import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import tech.thatgravyboat.repolib.v2.binary.ByteBufferImpl;
 import tech.thatgravyboat.repolib.v2.binary.DecoderContext;
-import tech.thatgravyboat.repolib.v2.binary.ExpressionCodec;
-import tech.thatgravyboat.repolib.v2.binary.FileTypes;
 import tech.thatgravyboat.repolib.v2.binary.NameTable;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.FunctionValueFile;
@@ -34,7 +32,7 @@ public class BundleLoader implements RepoLoader {
     private Map<String, FunctionValueFile<?>> modules = new HashMap<>();
     private Map<String, StackFile> stackFiles = new HashMap<>();
     private ModuleFile rootFile = null;
-    private Expression rootList = null;
+    private Expression<?> rootList = null;
     private final RepoConstants constants = new RepoConstants(this);
 
     public BundleLoader(Path bundle) {
@@ -58,36 +56,15 @@ public class BundleLoader implements RepoLoader {
                 throw new UnsupportedOperationException("File was compiled by a newer version!");
             }
 
-            var table = NameTable.decode(buffer).freezeForDecode();
-            var context = new DecoderContext(table, buffer);
+            var context = new DecoderContext(buffer);
+            context.updateTable(NameTable.CODEC.decode(context).freezeForDecode());
 
-            ModuleFile root;
-            if (context.readBoolean()) {
-                root = BinaryFileTypeRegistry.readUntyped(FileTypes.MODULE, context);
-            } else {
-                root = null;
-            }
+            var bundle = RepoBundle.CODEC.decode(context);
 
-            Expression list = ExpressionCodec.readNullable(context);
-
-            Map<String, StackFile> stacks = new HashMap<>();
-
-            context.readCollection(_ -> {
-                stacks.put(context.readLiteral(), BinaryFileTypeRegistry.readUntyped(FileTypes.STACK, context));
-                return null;
-            });
-
-            Map<String, FunctionValueFile<?>> modules = new HashMap<>();
-
-            context.readCollection(_ -> {
-                modules.put(context.readLiteral(), (FunctionValueFile<?>) BinaryFileTypeRegistry.read(context));
-                return null;
-            });
-
-            this.modules = modules;
-            this.stackFiles = stacks;
-            this.rootList = list;
-            this.rootFile = root;
+            this.modules = bundle.modules();
+            this.stackFiles = bundle.stackFiles();
+            this.rootList = bundle.rootList();
+            this.rootFile = bundle.rootFile();
         }
         return List.of();
     }
@@ -103,7 +80,7 @@ public class BundleLoader implements RepoLoader {
     }
 
     @Override
-    public Expression rootList() {
+    public Expression<?> rootList() {
         return this.rootList;
     }
 
@@ -120,7 +97,7 @@ public class BundleLoader implements RepoLoader {
     @Override
     public StackFile stackFile(String name) {
         StackFile stackFile = stackFiles.get(name);
-        if (stackFile != null && !stackFile.hasInitialized()) {
+        if (stackFile != null && stackFile.needsInitialization()) {
             stackFile.init(this, constants);
         }
         return stackFile;
@@ -141,8 +118,13 @@ public class BundleLoader implements RepoLoader {
     }
 
     @Override
-    public boolean shouldCompile() {
-        return true;
+    public RepoBundle bundle() {
+        return new RepoBundle(
+            this.rootFile,
+            this.rootList,
+            this.stackFiles,
+            this.modules
+        );
     }
 
     public Evaluator createEvaluator() {

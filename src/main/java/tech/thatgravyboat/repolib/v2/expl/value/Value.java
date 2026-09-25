@@ -44,15 +44,6 @@ public sealed interface Value extends Comparable<Value>, SelfEvaluatingExpressio
         return this;
     }
 
-
-    @Override
-    default void encode(EncoderContext buffer) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    default void precode(NameTable table) {}
-
     @Override
     default ExpressionTypeRegistry.Type<?> expressionId() {
         throw new UnsupportedOperationException();

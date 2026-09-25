@@ -1,20 +1,24 @@
 package tech.thatgravyboat.repolib.v2.expl.expression;
 
-import java.io.IOException;
 import org.jetbrains.annotations.NotNull;
-import tech.thatgravyboat.repolib.v2.binary.DecoderContext;
-import tech.thatgravyboat.repolib.v2.binary.EncoderContext;
-import tech.thatgravyboat.repolib.v2.binary.ExpressionCodec;
+import tech.thatgravyboat.repolib.v2.binary.BinaryCodec;
+import tech.thatgravyboat.repolib.v2.binary.BinaryRecordBuilder;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypes;
-import tech.thatgravyboat.repolib.v2.binary.NameTable;
 import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.ExecutionExceptions;
 import tech.thatgravyboat.repolib.v2.expl.value.NilValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
-public record ForEachExpression(AccessExpression field, Expression array, Expression body)
-    implements SelfEvaluatingExpression {
+public record ForEachExpression(AccessExpression field, Expression<?> array, Expression<?> body)
+    implements SelfEvaluatingExpression<ForEachExpression> {
+
+    public static final BinaryCodec<ForEachExpression> CODEC = BinaryRecordBuilder.of(
+        AccessExpression.CODEC.forGetter(ForEachExpression::field),
+        BinaryCodec.EXPRESSION.forGetter(ForEachExpression::array),
+        BinaryCodec.EXPRESSION.forGetter(ForEachExpression::field),
+        ForEachExpression::new);
+
     @Override
     public Value evaluate(Evaluator evaluator) {
         var values = evaluator.getArrayOrThrow(evaluator.eval0(array));
@@ -46,28 +50,8 @@ public record ForEachExpression(AccessExpression field, Expression array, Expres
     }
 
     @Override
-    public ExpressionTypeRegistry.Type<?> expressionId() {
+    public ExpressionTypeRegistry.Type<ForEachExpression> expressionId() {
         return ExpressionTypes.FOR_EACH;
     }
 
-    @Override
-    public void precode(NameTable table) {
-        this.field.precode(table);
-        this.array.precode(table);
-        this.body.precode(table);
-    }
-
-    @Override
-    public void encode(EncoderContext buffer) {
-        ExpressionCodec.writeUntyped(this.field, buffer);
-        ExpressionCodec.write(this.array, buffer);
-        ExpressionCodec.write(this.body, buffer);
-    }
-
-    public static ForEachExpression decode(DecoderContext buffer) throws IOException {
-        return new ForEachExpression(
-            ExpressionCodec.readUntyped(ExpressionTypes.ACCESS, buffer),
-            ExpressionCodec.read(buffer),
-            ExpressionCodec.read(buffer));
-    }
 }

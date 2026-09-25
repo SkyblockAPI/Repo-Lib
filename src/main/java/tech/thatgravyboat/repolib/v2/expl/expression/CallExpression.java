@@ -1,17 +1,19 @@
 package tech.thatgravyboat.repolib.v2.expl.expression;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
-import tech.thatgravyboat.repolib.v2.binary.DecoderContext;
-import tech.thatgravyboat.repolib.v2.binary.EncoderContext;
-import tech.thatgravyboat.repolib.v2.binary.ExpressionCodec;
+import tech.thatgravyboat.repolib.v2.binary.BinaryCodec;
+import tech.thatgravyboat.repolib.v2.binary.BinaryRecordBuilder;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypes;
-import tech.thatgravyboat.repolib.v2.binary.NameTable;
 
-public record CallExpression(Expression lhs, Collection<Expression> args) implements Expression {
+public record CallExpression(Expression<?> lhs, Collection<Expression<?>> args) implements Expression<CallExpression> {
+
+    public static final BinaryCodec<CallExpression> CODEC = BinaryRecordBuilder.of(
+        BinaryCodec.EXPRESSION.forGetter(CallExpression::lhs),
+        BinaryCodec.EXPRESSION.collection().forGetter(CallExpression::args),
+        CallExpression::new);
 
     @Override
     public @NotNull String toString() {
@@ -19,26 +21,9 @@ public record CallExpression(Expression lhs, Collection<Expression> args) implem
     }
 
     @Override
-    public ExpressionTypeRegistry.Type<?> expressionId() {
+    public ExpressionTypeRegistry.Type<CallExpression> expressionId() {
         return ExpressionTypes.CALL;
     }
 
-    @Override
-    public void precode(NameTable table) {
-        this.lhs.precode(table);
-        for (var arg : args) {
-            arg.precode(table);
-        }
-    }
-
-    @Override
-    public void encode(EncoderContext buffer) {
-        ExpressionCodec.write(this.lhs, buffer);
-        buffer.writeCollection(this.args, ExpressionCodec::write);
-    }
-
-    public static CallExpression decode(DecoderContext buffer) throws IOException {
-        return new CallExpression(ExpressionCodec.read(buffer), buffer.readCollection(ExpressionCodec::read));
-    }
 
 }

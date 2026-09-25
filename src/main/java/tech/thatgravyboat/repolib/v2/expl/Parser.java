@@ -48,6 +48,7 @@ public final class Parser {
     static class Holder<Type> {
 
         final String name;
+        @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
         Optional<Type> expression = Optional.empty();
 
         Holder(String name) {
@@ -72,8 +73,8 @@ public final class Parser {
     }
 
     public StackFile parseFile(RepoLoader loader, String name) {
-        Holder<Expression> meta = new Holder<>("meta");
-        Holder<Expression> script = new Holder<>("script");
+        Holder<Expression<?>> meta = new Holder<>("meta");
+        Holder<Expression<?>> script = new Holder<>("script");
 
         while (lexer.peek() == Lexer.Token.IDENT) {
             lexer.next();
@@ -83,12 +84,11 @@ public final class Parser {
             }
         }
 
-        var stack = new StackFile.Impl(name, meta.get(), script.get(StackFile.DEFAULT_SCRIPT));
-        return stack;
+        return new StackFile(name, meta.get(), script.get(StackFile.DEFAULT_SCRIPT));
     }
 
     public ModuleFile parseModuleFile(String name, RepoLoader loader) {
-        Holder<Expression> struct = new Holder<>("static");
+        Holder<Expression<?>> struct = new Holder<>("static");
 
         if (lexer.peek() == Lexer.Token.IDENT && "static".equals(lexer.peekSpan())) {
             lexer.next();
@@ -109,7 +109,7 @@ public final class Parser {
             lexer.expect(Lexer.Token.SEMICOLON);
         }
 
-        return new ModuleFile.Impl(name, struct.get(() -> null), parseExpression());
+        return new ModuleFile(name, struct.get(() -> null), parseExpression());
     }
 
     public FunctionFile parseFunctionFile(String name, RepoLoader loader) {
@@ -122,11 +122,11 @@ public final class Parser {
             lexer.expect(Lexer.Token.OR);
         }
 
-        return new FunctionFile.Impl(name, arguments, parseExpression());
+        return new FunctionFile(name, arguments, parseExpression());
     }
 
-    public Expression parseExpression() {
-        List<Expression> expressions = new ArrayList<>();
+    public Expression<?> parseExpression() {
+        List<Expression<?>> expressions = new ArrayList<>();
 
         while (this.lexer.peek() != null) {
             var expression = parseUntil(Lexer.Token.SEMICOLON, null);
@@ -147,11 +147,11 @@ public final class Parser {
         }
     }
 
-    public Expression parseBinaryOrNormalUntil(Lexer.Token... ends) {
+    public Expression<?> parseBinaryOrNormalUntil(Lexer.Token... ends) {
         return parseBinaryOrNormalUntil(true, ends);
     }
 
-    public Expression parseBinaryOrNormalUntil(boolean allowChainedPlus, Lexer.Token... ends) {
+    public Expression<?> parseBinaryOrNormalUntil(boolean allowChainedPlus, Lexer.Token... ends) {
         var end = join(ends, Lexer.Token.BINARY);
         var first = parseUntil(end);
 
@@ -237,7 +237,7 @@ public final class Parser {
         };
     }
 
-    public Expression memberAccessor(Expression expression, Lexer.Token... end) {
+    public Expression<?> memberAccessor(Expression<?> expression, Lexer.Token... end) {
         if (expression instanceof AccessExpression access) {
             var result = switch (lexer.peek()) {
 
@@ -290,7 +290,7 @@ public final class Parser {
             case Lexer.Token.L_PARENTHESES -> {
                 lexer.next();
 
-                List<Expression> args = new ArrayList<>();
+                List<Expression<?>> args = new ArrayList<>();
                 var next = lexer.peek();
 
                 if (next != null && next != Lexer.Token.R_PARENTHESES) {
@@ -332,7 +332,7 @@ public final class Parser {
         };
     }
 
-    public Expression parseUntil(Lexer.Token... end) {
+    public Expression<?> parseUntil(Lexer.Token... end) {
         var endings = new HashSet<>(Arrays.asList(end));
         var expression = switch (lexer.next()) {
             case DOUBLE_COLON -> memberAccessor(fileExpression(), end);
@@ -438,7 +438,7 @@ public final class Parser {
         lexer.expect(Lexer.Token.LAMBDA_FUNCTION_PARAMETERS);
     }
 
-    private Expression lambdaExpr(boolean withArguments) {
+    private Expression<?> lambdaExpr(boolean withArguments) {
         var arguments = new ArrayList<LambdaExpression.LambdaArgument>();
         if (withArguments) {
             arguments(arguments);
@@ -449,7 +449,7 @@ public final class Parser {
     }
 
     private StructExpression structExpr() {
-        Map<String, Expression> fields = new HashMap<>();
+        Map<String, Expression<?>> fields = new HashMap<>();
         AccessExpression accessor = null;
 
         while (lexer.peek() != Lexer.Token.R_BRACE) {
@@ -495,8 +495,8 @@ public final class Parser {
         return new StructExpression(fields, accessor);
     }
 
-    private Expression matchExpr() {
-        final Expression value;
+    private Expression<?> matchExpr() {
+        final Expression<?> value;
         if (lexer.peek() == Lexer.Token.L_PARENTHESES) {
             lexer.expect(Lexer.Token.L_PARENTHESES);
             value = parseBinaryOrNormalUntil(Lexer.Token.R_PARENTHESES);
@@ -535,13 +535,13 @@ public final class Parser {
         return new MatchExpression(value, branches);
     }
 
-    private Expression ifExpr() {
+    private Expression<?> ifExpr() {
         lexer.expect(Lexer.Token.L_PARENTHESES);
         var cond = parseBinaryOrNormalUntil(Lexer.Token.R_PARENTHESES);
         lexer.expect(Lexer.Token.R_PARENTHESES);
 
-        Expression thenExpr = scopeOrSingleStatement();
-        Expression elseExpr = null;
+        Expression<?> thenExpr = scopeOrSingleStatement();
+        Expression<?> elseExpr = null;
         if (lexer.peek() == Lexer.Token.ELSE) {
             lexer.next();
 
@@ -556,10 +556,10 @@ public final class Parser {
         return new IfExpression(cond, thenExpr, elseExpr);
     }
 
-    private Expression forExpr() {
+    private Expression<?> forExpr() {
         lexer.expect(Lexer.Token.L_PARENTHESES);
 
-        Expression init = parseUntil(Lexer.Token.SEMICOLON, Lexer.Token.COLON);
+        Expression<?> init = parseUntil(Lexer.Token.SEMICOLON, Lexer.Token.COLON);
 
         if (lexer.peek() == Lexer.Token.COLON && init instanceof AccessExpression access) {
             lexer.expect(Lexer.Token.COLON);
@@ -573,10 +573,10 @@ public final class Parser {
         } else {
             lexer.expect(Lexer.Token.SEMICOLON);
 
-            Expression cond = parseBinaryOrNormalUntil(Lexer.Token.SEMICOLON);
+            Expression<?> cond = parseBinaryOrNormalUntil(Lexer.Token.SEMICOLON);
             lexer.expect(Lexer.Token.SEMICOLON);
 
-            Expression incr = parseBinaryOrNormalUntil(Lexer.Token.R_PARENTHESES);
+            Expression<?> incr = parseBinaryOrNormalUntil(Lexer.Token.R_PARENTHESES);
             lexer.expect(Lexer.Token.R_PARENTHESES);
 
             var body = scopeOrSingleStatement();
@@ -585,19 +585,19 @@ public final class Parser {
         }
     }
 
-    private Expression scopeOrSingleStatement() {
+    private Expression<?> scopeOrSingleStatement() {
         return scopeOrSingleStatement(false);
     }
 
-    private Expression scopeOrSingleStatement(Lexer.Token... ends) {
+    private Expression<?> scopeOrSingleStatement(Lexer.Token... ends) {
         return scopeOrSingleStatement(false, ends);
     }
 
-    private Expression scopeOrSingleStatement(boolean allowBinary) {
+    private Expression<?> scopeOrSingleStatement(boolean allowBinary) {
         return scopeOrSingleStatement(allowBinary, Lexer.Token.SEMICOLON);
     }
 
-    private Expression scopeOrSingleStatement(boolean allowBinary, Lexer.Token... ends) {
+    private Expression<?> scopeOrSingleStatement(boolean allowBinary, Lexer.Token... ends) {
         if (lexer.peek() == Lexer.Token.L_BRACE) {
             return block();
         }
@@ -623,7 +623,7 @@ public final class Parser {
         return block;
     }
 
-    private AccessExpression memberAccess(Expression lhs) {
+    private AccessExpression memberAccess(Expression<?> lhs) {
         var access = new AccessExpression(lhs, new StrExpression(lexer.span()));
 
         Lexer.Token next;
@@ -652,7 +652,7 @@ public final class Parser {
 
     private FileAccessExpression fileExpression() {
 
-        List<Expression> path = new ArrayList<>();
+        List<Expression<?>> path = new ArrayList<>();
 
         Lexer.Token next;
         loop:

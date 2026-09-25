@@ -12,13 +12,23 @@ public class ExpressionTypeRegistry {
     static final AtomicInteger counter = new AtomicInteger();
     static final Byte2ObjectMap<ExpressionTypeRegistry.Type<?>> registry = new Byte2ObjectArrayMap<>();
 
-    public record Type<ExpressionType extends Expression & Encodable>(
-            Decoder<ExpressionType> decoder,
+    public record Type<ExpressionType extends Expression<ExpressionType>>(
+            BinaryCodec<ExpressionType> codec,
             byte id
-    ) implements DataType<ExpressionType> {
+    ) implements BinaryCodec<ExpressionType> {
         @Override
-        public ExpressionType decode(DecoderContext stream) throws IOException {
-            return decoder.decode(stream);
+        public ExpressionType decode(DecoderContext context) throws IOException {
+            return this.codec.decode(context);
+        }
+
+        @Override
+        public void encode(EncoderContext context, ExpressionType data) {
+            this.codec.encode(context, data);
+        }
+
+        @Override
+        public void collectLiterals(ExpressionType data, NameTable table) {
+            this.codec.collectLiterals(data, table);
         }
     }
 }
