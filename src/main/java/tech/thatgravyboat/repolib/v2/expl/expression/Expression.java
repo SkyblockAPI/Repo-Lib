@@ -3,15 +3,20 @@ package tech.thatgravyboat.repolib.v2.expl.expression;
 
 import tech.thatgravyboat.repolib.v2.RepoLoader;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
+import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.FunctionFile;
 import tech.thatgravyboat.repolib.v2.expl.ModuleFile;
 import tech.thatgravyboat.repolib.v2.expl.Parser;
 import tech.thatgravyboat.repolib.v2.expl.StackFile;
+import tech.thatgravyboat.repolib.v2.expl.value.MutableStructValue;
+import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
 public sealed interface Expression<ExpressionType extends Expression<ExpressionType>>
-    permits AccessExpression, AssignExpression, BlockExpression, BoolExpression, CallExpression, DebugExpression,
-    FileAccessExpression, ForExpression, IfExpression, InExpression, NumExpression, SelfEvaluatingExpression,
-    StatementExpression, StrExpression, StructExpression, UnaryExpression {
+    permits AccessExpression, ArrayExpression, AssignExpression, BinaryExpression, BlockExpression,
+    BlockExpression.LastElement, BoolExpression, CallExpression, DebugExpression, FileAccessExpression,
+    FileCallExpression, ForEachExpression, ForExpression, IfExpression, InExpression, LambdaExpression,
+    LambdaIdentityFunction, MatchExpression, NonSerializableExpression, NumExpression, RangeExpression,
+    ReturnExpression, StatementExpression, StrExpression, StructExpression, UnaryExpression {
 
     static StackFile parseFileOrThrow(RepoLoader loader, String source, String name) {
         return new Parser(source).parseFile(loader, name);
@@ -38,4 +43,9 @@ public sealed interface Expression<ExpressionType extends Expression<ExpressionT
     }
 
     ExpressionTypeRegistry.Type<ExpressionType> expressionId();
+
+    Value evaluate(Evaluator evaluator);
+    default Value evaluateStructValue(Evaluator evaluator, MutableStructValue self) {
+        return this.evaluate(evaluator);
+    }
 }

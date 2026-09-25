@@ -7,7 +7,7 @@ import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.ExecutionExceptions;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
-public record ReturnExpression(Expression<?> retExpr) implements SelfEvaluatingExpression<ReturnExpression> {
+public record ReturnExpression(Expression<?> retExpr) implements Expression<ReturnExpression> {
 
     public static final BinaryCodec<ReturnExpression> CODEC =
         BinaryCodec.EXPRESSION.mapped(ReturnExpression::new, ReturnExpression::retExpr);

@@ -30,14 +30,14 @@ public final class RepoConstants implements StructValue.Forwarding {
             function.arity(1, 2);
             function.vararg(true);
             function.execute((evaluator, args) -> {
-                var value = evaluator.getStringOrThrow(args.getFirst());
+                var value = args.getFirst().asString();
                 var requested = loader.module(value);
                 if (requested == null) {
                     return evaluator.panic("Requested include " + value + " doesn't exist!");
                 }
 
                 if (args.size() == 2) {
-                    var scope = evaluator.getMutableStructOrThrow(args.get(1));
+                    var scope = args.get(1).asMutableStruct();
                     return evaluator.pushPop(value, scope, () -> {
                         evaluator.evaluate(requested);
                         return Value.NIL;
@@ -55,13 +55,13 @@ public final class RepoConstants implements StructValue.Forwarding {
             function.arity(1, 2);
             function.vararg(true);
             function.execute((evaluator, args) -> {
-                var value = evaluator.getStringOrThrow(args.getFirst());
+                var value = args.getFirst().asString();
                 var requested = loader.module(value);
                 if (requested == null) {
                     return evaluator.panic("Requested include " + value + " doesn't exist!");
                 }
                 if (args.size() == 2) {
-                    var scope = evaluator.getMutableStructOrThrow(args.get(1));
+                    var scope = args.get(1).asMutableStruct();
                     return evaluator.pushPop(value, scope, () -> evaluator.evaluate(requested));
                 } else {
                     return evaluator.pushPop(value, () -> evaluator.evaluate(requested));
@@ -77,7 +77,7 @@ public final class RepoConstants implements StructValue.Forwarding {
                     return file.staticData();
                 }
 
-                var value = evaluator.getStringOrThrow(arg);
+                var value = arg.asString();
                 var requested = loader.module(value);
                 if (requested == null) {
                     return evaluator.panic("Requested include " + value + " doesn't exist!");
@@ -94,7 +94,7 @@ public final class RepoConstants implements StructValue.Forwarding {
             function.arity(1);
             function.execute((evaluator, args) -> {
                 var arg = args.getFirst();
-                var prefix = evaluator.getStringOrThrow(arg);
+                var prefix = arg.asString();
                 var allModules = loader.modules();
                 var resultList = MutableArrayValue.create();
                 for (String module : allModules) {
@@ -110,7 +110,7 @@ public final class RepoConstants implements StructValue.Forwarding {
             function.arity(1);
             function.execute((evaluator, args) -> {
                 var arg = args.getFirst();
-                var prefix = evaluator.getStringOrThrow(arg);
+                var prefix = arg.asString();
                 var allModules = loader.modules();
                 var resultList = MutableArrayValue.create();
                 for (String module : allModules) {

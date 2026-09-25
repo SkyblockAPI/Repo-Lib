@@ -41,7 +41,13 @@ public interface StructValue extends KeyValue, Iterable<Map.Entry<String, Value>
         return builder.toString();
     }
 
-    interface MutableStruct extends StructValue, KeyValue.Mutable {}
+    interface MutableStruct extends StructValue, KeyValue.Mutable {
+
+        @Override
+        default MutableStruct asMutableStruct() {
+            return this;
+        }
+    }
 
     interface Forwarding extends KeyValue.Forwarding, StructValue {
         @Override
@@ -65,5 +71,10 @@ public interface StructValue extends KeyValue, Iterable<Map.Entry<String, Value>
     @Override
     default String type() {
         return "struct";
+    }
+
+    @Override
+    default StructValue asStruct() {
+        return this;
     }
 }

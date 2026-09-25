@@ -41,7 +41,7 @@ public class BuiltinComponent {
                 "asRoman", function -> {
                     function.arity(1);
                     function.execute((evaluator, values) -> {
-                        var first = evaluator.getNumberOrThrow(values.getFirst());
+                        var first = values.getFirst().asNumber();
                         return new StrValue(toRomanNumeral((int) first));
                     });
                 });
@@ -49,7 +49,7 @@ public class BuiltinComponent {
         builder.function(
                 "splitToLength", function -> {
                     function.arity(2);
-                    function.execute((evaluator, values) -> splitToLength(evaluator, values.getFirst(), (int) evaluator.getNumberOrThrow(values.get(1))));
+                    function.execute((evaluator, values) -> splitToLength(evaluator, values.getFirst(), (int) values.get(1).asNumber()));
                 });
 
         builder.function(
@@ -90,7 +90,7 @@ public class BuiltinComponent {
         var currentLength = 0;
 
         for (var entry : accumulator) {
-            var literal = evaluator.getStringOrThrow(entry.get("text"));
+            var literal = entry.get("text").asString();
 
             if (currentLength + literal.length() >= maxLength && !literal.isBlank()) {
                 result.add(new MutableStructValue(new HashMap<>(Map.of("extra", current))));
@@ -119,7 +119,7 @@ public class BuiltinComponent {
         });
 
         if (text.contains("text")) {
-            var literalText = evaluator.getStringOrThrow(text.get("text"));
+            var literalText = text.get("text").asString();
             if (text.get("do_not_split") == BoolValue.TRUE) {
                 var entry = new MutableStructValue(parent);
                 entry.set("text", new StrValue(literalText));
@@ -146,7 +146,7 @@ public class BuiltinComponent {
         }
 
         if (text.contains("extra")) {
-            var extra = evaluator.getArrayOrThrow(text.get("extra"));
+            var extra = text.get("extra").asArray();
             for (var value : extra) {
                 var extraParent = new MutableStructValue(parent);
                 extractSections(evaluator, parseComponent(evaluator, value), accumulator, extraParent);
@@ -157,11 +157,11 @@ public class BuiltinComponent {
     private static void asString(Evaluator evaluator, Value values, StringBuilder stringBuilder) {
         if (values instanceof KeyValue kv) {
             if (kv.contains("text")) {
-                stringBuilder.append(evaluator.getStringOrThrow(kv.get("text")));
+                stringBuilder.append(kv.get("text").asString());
             }
 
             if (kv.contains("extra")) {
-                var extra = evaluator.getArrayOrThrow(kv.get("extra"));
+                var extra = kv.get("extra").asArray();
                 for (var value : extra) {
                     asString(evaluator, value, stringBuilder);
                 }

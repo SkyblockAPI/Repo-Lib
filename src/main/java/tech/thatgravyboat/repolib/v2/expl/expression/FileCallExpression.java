@@ -10,7 +10,7 @@ import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
 public record FileCallExpression(Expression<?> access, StructExpression expr)
-    implements SelfEvaluatingExpression<FileCallExpression> {
+    implements Expression<FileCallExpression> {
 
     public static final BinaryCodec<FileCallExpression> CODEC = BinaryRecordBuilder.of(
         BinaryCodec.EXPRESSION.forGetter(FileCallExpression::access),
@@ -24,8 +24,8 @@ public record FileCallExpression(Expression<?> access, StructExpression expr)
 
     @Override
     public Value evaluate(Evaluator evaluator) {
-        var function = evaluator.getStructuredFunctionOrThrow(evaluator.eval0(access));
-        var structValue = evaluator.evalStruct(expr);
+        var function = evaluator.eval0(access).asStructuredFunction();
+        var structValue = expr.evaluate(evaluator);
 
         return function.apply(evaluator, structValue);
     }

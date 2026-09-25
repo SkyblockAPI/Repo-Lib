@@ -34,4 +34,24 @@ public record StrValue(String value) implements Value {
     public String type() {
         return "string";
     }
+
+    @Override
+    public String asString() {
+        return this.value;
+    }
+
+    @Override
+    public String asStringOrNull() {
+        return this.value;
+    }
+
+    @Override
+    public boolean asBooleanConversion() {
+        return !this.value.isEmpty();
+    }
+
+    @Override
+    public Value containsValue(String value) {
+        return BoolValue.wrap(this.value.contains(value));
+    }
 }

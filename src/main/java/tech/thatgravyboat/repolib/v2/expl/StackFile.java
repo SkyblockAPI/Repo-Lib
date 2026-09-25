@@ -11,7 +11,7 @@ import tech.thatgravyboat.repolib.v2.binary.FileTypes;
 import tech.thatgravyboat.repolib.v2.binary.TypedFile;
 import tech.thatgravyboat.repolib.v2.builtin.Constants;
 import tech.thatgravyboat.repolib.v2.expl.expression.Expression;
-import tech.thatgravyboat.repolib.v2.expl.expression.SelfEvaluatingExpression;
+import tech.thatgravyboat.repolib.v2.expl.expression.NonSerializableExpression;
 import tech.thatgravyboat.repolib.v2.expl.value.ArrayValue;
 import tech.thatgravyboat.repolib.v2.expl.value.FunctionValue;
 import tech.thatgravyboat.repolib.v2.expl.value.ImmutableStructValue;
@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-public final class StackFile implements SelfEvaluatingExpression<StackFile>, TypedFile<StackFile> {
+public final class StackFile implements NonSerializableExpression, TypedFile<StackFile> {
 
     public static final BinaryCodec<StackFile> CODEC = BinaryRecordBuilder.of(
         BinaryCodec.STRING.forGetter(StackFile::name),
@@ -64,7 +64,7 @@ public final class StackFile implements SelfEvaluatingExpression<StackFile>, Typ
             "include", Constants.Builder.FunctionBuilder.create(function -> {
                 function.arity(1);
                 function.execute((evaluator, args) -> {
-                    var value = evaluator.getStringOrThrow(args.getFirst());
+                    var value = args.getFirst().asString();
                     var requested = loader.module(value);
                     if (requested == null) {
                         return evaluator.panic("Requested include " + value + " doesn't exist!");
@@ -82,7 +82,7 @@ public final class StackFile implements SelfEvaluatingExpression<StackFile>, Typ
             "static", Constants.Builder.FunctionBuilder.create(function -> {
                 function.arity(1);
                 function.execute((evaluator, args) -> {
-                    var value = evaluator.getStringOrThrow(args.getFirst());
+                    var value = args.getFirst().asString();
                     var requested = loader.module(value);
                     if (requested == null) {
                         return evaluator.panic("Requested include " + value + " doesn't exist!");
@@ -228,8 +228,4 @@ public final class StackFile implements SelfEvaluatingExpression<StackFile>, Typ
         return FileTypes.STACK;
     }
 
-    @Override
-    public ExpressionTypeRegistry.Type<StackFile> expressionId() {
-        throw new UnsupportedOperationException();
-    }
 }

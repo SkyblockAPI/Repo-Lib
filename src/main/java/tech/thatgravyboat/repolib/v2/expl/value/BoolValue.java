@@ -39,4 +39,13 @@ public final class BoolValue implements Value {
         return Boolean.hashCode(value);
     }
 
+    @Override
+    public boolean asBooleanConversion() {
+        return this.value;
+    }
+
+    @Override
+    public boolean asBoolean() {
+        return this.value;
+    }
 }

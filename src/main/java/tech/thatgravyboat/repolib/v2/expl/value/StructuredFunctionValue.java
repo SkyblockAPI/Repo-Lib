@@ -7,4 +7,9 @@ public interface StructuredFunctionValue extends FunctionValue {
 
     Value apply(Evaluator evaluator, StructValue structValue);
     Value apply(Evaluator evaluator, List<Value> args);
+
+    @Override
+    default StructuredFunctionValue asStructuredFunction() {
+        return this;
+    }
 }

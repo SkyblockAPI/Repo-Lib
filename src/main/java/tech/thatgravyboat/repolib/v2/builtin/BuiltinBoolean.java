@@ -29,15 +29,15 @@ public class BuiltinBoolean {
     }
 
     private static Value and(Evaluator evaluator, List<Value> values) {
-        var first = evaluator.getBooleanOrThrow(values.getFirst());
-        var second = evaluator.getBooleanOrThrow(values.get(1));
+        var first = values.getFirst().asBoolean();
+        var second = values.get(1).asBoolean();
 
         return wrap(first && second);
     }
 
     private static Value or(Evaluator evaluator, List<Value> values) {
-        var first = evaluator.getBooleanOrThrow(values.getFirst());
-        var second = evaluator.getBooleanOrThrow(values.get(1));
+        var first = values.getFirst().asBoolean();
+        var second = values.get(1).asBoolean();
 
         return wrap(first || second);
     }

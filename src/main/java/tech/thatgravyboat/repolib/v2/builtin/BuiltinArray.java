@@ -17,7 +17,7 @@ public class BuiltinArray {
             "sorted", function -> {
                 function.arity(1);
                 function.execute((evaluator, args) -> {
-                    var array = evaluator.getArrayOrThrow(args.getFirst());
+                    var array = args.getFirst().asArray();
                     var sorted = MutableArrayValue.create();
                     StreamSupport.stream(array.spliterator(), false)
                         .sorted(Comparator.comparing(Function.identity()))

@@ -10,7 +10,7 @@ import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.value.MutableArrayValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
-public record ArrayExpression(Collection<Expression<?>> list) implements SelfEvaluatingExpression<ArrayExpression> {
+public record ArrayExpression(Collection<Expression<?>> list) implements Expression<ArrayExpression> {
 
     public static final BinaryCodec<ArrayExpression> CODEC =
         BinaryCodec.EXPRESSION.collection().mapped(ArrayExpression::new, ArrayExpression::list);

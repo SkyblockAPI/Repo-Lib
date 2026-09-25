@@ -11,7 +11,7 @@ import tech.thatgravyboat.repolib.v2.expl.value.NumValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
 public record RangeExpression(boolean inclusiveStart, boolean inclusiveEnd, Expression<?> from, Expression<?> to)
-    implements SelfEvaluatingExpression<RangeExpression> {
+    implements Expression<RangeExpression> {
 
     public static final BinaryCodec<RangeExpression> CODEC = BinaryRecordBuilder.of(
         BinaryCodec.BYTE.forGetter(owner -> {
@@ -27,8 +27,8 @@ public record RangeExpression(boolean inclusiveStart, boolean inclusiveEnd, Expr
 
     @Override
     public Value evaluate(Evaluator evaluator) {
-        var number = evaluator.getNumberOrThrow(evaluator.eval0(from));
-        var second = evaluator.getNumberOrThrow(evaluator.eval0(to));
+        var number = evaluator.eval0(from).asNumber();
+        var second = evaluator.eval0(to).asNumber();
 
         var array = new LinkedList<Value>();
         var range = (second - number - (inclusiveEnd ? 0 : 1));

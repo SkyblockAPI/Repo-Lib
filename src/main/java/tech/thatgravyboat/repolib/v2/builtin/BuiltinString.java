@@ -32,8 +32,8 @@ public class BuiltinString {
         builder.function("eqIc", function -> {
             function.arity(2);
             function.execute((evaluator, values) -> {
-                var first = evaluator.getStringOrThrow(values.getFirst());
-                var second = evaluator.getStringOrThrow(values.get(1));
+                var first = values.getFirst().asString();
+                var second = values.get(1).asString();
 
                 return BoolValue.wrap(first.equalsIgnoreCase(second));
             });
@@ -59,7 +59,7 @@ public class BuiltinString {
             var format = new DecimalFormat("+#.####;-#.####", DecimalFormatSymbols.getInstance(Locale.ROOT));
             function.execute((evaluator, values) -> {
                 var arg = values.getFirst();
-                return new StrValue(format.format(evaluator.getNumberOrThrow(arg)));
+                return new StrValue(format.format(arg.asNumber()));
             });
         });
         builder.function("percentage", function -> {
@@ -67,7 +67,7 @@ public class BuiltinString {
             var format = new DecimalFormat("+#.####%;-#.####%", DecimalFormatSymbols.getInstance(Locale.ROOT));
             function.execute((evaluator, values) -> {
                 var arg = values.getFirst();
-                return new StrValue(format.format(evaluator.getNumberOrThrow(arg)));
+                return new StrValue(format.format(arg.asNumber()));
             });
         });
         builder.function("uFormatted", function -> {
@@ -75,7 +75,7 @@ public class BuiltinString {
             var format = new DecimalFormat("#.####;#.####", DecimalFormatSymbols.getInstance(Locale.ROOT));
             function.execute((evaluator, values) -> {
                 var arg = values.getFirst();
-                return new StrValue(format.format(evaluator.getNumberOrThrow(arg)));
+                return new StrValue(format.format(arg.asNumber()));
             });
         });
 
@@ -84,7 +84,7 @@ public class BuiltinString {
             var format = new DecimalFormat("+#;-#", DecimalFormatSymbols.getInstance(Locale.ROOT));
             function.execute((evaluator, values) -> {
                 var arg = values.getFirst();
-                return new StrValue(format.format(evaluator.getNumberOrThrow(arg)));
+                return new StrValue(format.format(arg.asNumber()));
             });
         });
         builder.function("percentageI", function -> {
@@ -92,7 +92,7 @@ public class BuiltinString {
             var format = new DecimalFormat("+#%;-#%", DecimalFormatSymbols.getInstance(Locale.ROOT));
             function.execute((evaluator, values) -> {
                 var arg = values.getFirst();
-                return new StrValue(format.format(evaluator.getNumberOrThrow(arg)));
+                return new StrValue(format.format(arg.asNumber()));
             });
         });
         builder.function("uFormattedI", function -> {
@@ -100,7 +100,7 @@ public class BuiltinString {
             var format = new DecimalFormat("#;#", DecimalFormatSymbols.getInstance(Locale.ROOT));
             function.execute((evaluator, values) -> {
                 var arg = values.getFirst();
-                return new StrValue(format.format(evaluator.getNumberOrThrow(arg)));
+                return new StrValue(format.format(arg.asNumber()));
             });
         });
         builder.function("compact", function -> {
@@ -119,25 +119,25 @@ public class BuiltinString {
                 var arg = values.getFirst();
                 int digits;
                 if (values.size() == 2) {
-                    digits = (int) evaluator.getNumberOrThrow(values.get(1));
+                    digits = (int) values.get(1).asNumber();
                 } else {
                     digits = 1;
                 }
 
                 format.setMinimumFractionDigits(digits);
                 format.setMaximumFractionDigits(digits);
-                return new StrValue(format.format(evaluator.getNumberOrThrow(arg)));
+                return new StrValue(format.format(arg.asNumber()));
             });
         });
     });
 
     private static Value uppercase(Evaluator evaluator, List<Value> args) {
-        return new StrValue(evaluator.getStringOrThrow(args.getFirst()).toUpperCase(Locale.ROOT));
+        return new StrValue(args.getFirst().asStringOrNull().toUpperCase(Locale.ROOT));
     }
     private static Value lowercase(Evaluator evaluator, List<Value> args) {
-        return new StrValue(evaluator.getStringOrThrow(args.getFirst()).toLowerCase(Locale.ROOT));
+        return new StrValue(args.getFirst().asStringOrNull().toLowerCase(Locale.ROOT));
     }
     private static Value snake_case(Evaluator evaluator, List<Value> args) {
-        return new StrValue(evaluator.getStringOrThrow(args.getFirst()).toLowerCase(Locale.ROOT).replace(" ", "_"));
+        return new StrValue(args.getFirst().asStringOrNull().toLowerCase(Locale.ROOT).replace(" ", "_"));
     }
 }

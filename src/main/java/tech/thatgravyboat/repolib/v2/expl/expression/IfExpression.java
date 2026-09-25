@@ -6,6 +6,8 @@ import tech.thatgravyboat.repolib.v2.binary.BinaryCodec;
 import tech.thatgravyboat.repolib.v2.binary.BinaryRecordBuilder;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypeRegistry;
 import tech.thatgravyboat.repolib.v2.binary.ExpressionTypes;
+import tech.thatgravyboat.repolib.v2.expl.Evaluator;
+import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
 public record IfExpression(Expression<?> cond, Expression<?> thenExpr, @Nullable Expression<?> elseExpr)
     implements Expression<IfExpression> {
@@ -32,5 +34,18 @@ public record IfExpression(Expression<?> cond, Expression<?> thenExpr, @Nullable
     @Override
     public ExpressionTypeRegistry.Type<IfExpression> expressionId() {
         return ExpressionTypes.IF;
+    }
+
+    @Override
+    public Value evaluate(Evaluator evaluator) {
+        var condition = evaluator.eval0(cond()).asBooleanConversion();
+
+        if (condition) {
+            return evaluator.pushPop("if (" + cond() + ")", () -> evaluator.eval0(thenExpr()));
+        } else if (elseExpr() != null) {
+            return evaluator.pushPop("if (" + cond() + ") { ... } else", () -> evaluator.eval0(elseExpr()));
+        }
+
+        return Value.NIL;
     }
 }

@@ -54,7 +54,7 @@ public record RepoInstance(
         constants.set("profile", Objects.requireNonNullElseGet(profile, this::getEmptyProfile));
         var evaluator = new Evaluator(constants, this.loader::module);
         evaluator.evaluate(loader.rootFile());
-        var file = evaluator.getStringOrNull(evaluator.getField("file"));
+        var file = evaluator.getField("file").asStringOrNull();
         if (file == null) {
             return null;
         }

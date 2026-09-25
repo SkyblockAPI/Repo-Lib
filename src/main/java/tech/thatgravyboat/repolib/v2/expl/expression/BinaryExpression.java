@@ -16,7 +16,7 @@ import tech.thatgravyboat.repolib.v2.expl.value.StrValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
 public record BinaryExpression(Op op, Expression<?> first, Expression<?> second)
-    implements SelfEvaluatingExpression<BinaryExpression> {
+    implements Expression<BinaryExpression> {
 
     public static final BinaryCodec<BinaryExpression> CODEC = BinaryRecordBuilder.of(
         Op.CODEC.forGetter(BinaryExpression::op),
@@ -62,16 +62,16 @@ public record BinaryExpression(Op op, Expression<?> first, Expression<?> second)
         MINUS {
             @Override
             public Value perform(Evaluator evaluator, Value first, Value second) {
-                var a = evaluator.getNumberOrThrow(first);
-                var b = evaluator.getNumberOrThrow(second);
+                var a = first.asNumber();
+                var b = second.asNumber();
                 return new NumValue(a - b);
             }
         },
         MUL {
             @Override
             public Value perform(Evaluator evaluator, Value first, Value second) {
-                var a = evaluator.getNumberOrThrow(first);
-                var b = evaluator.getNumberOrThrow(second);
+                var a = first.asNumber();
+                var b = second.asNumber();
                 return new NumValue(a * b);
             }
 
@@ -79,8 +79,8 @@ public record BinaryExpression(Op op, Expression<?> first, Expression<?> second)
         DIV {
             @Override
             public Value perform(Evaluator evaluator, Value first, Value second) {
-                var a = evaluator.getNumberOrThrow(first);
-                var b = evaluator.getNumberOrThrow(second);
+                var a = first.asNumber();
+                var b = second.asNumber();
                 return new NumValue(a / b);
             }
 
@@ -88,8 +88,8 @@ public record BinaryExpression(Op op, Expression<?> first, Expression<?> second)
         MOD {
             @Override
             public Value perform(Evaluator evaluator, Value first, Value second) {
-                var a = evaluator.getNumberOrThrow(first);
-                var b = evaluator.getNumberOrThrow(second);
+                var a = first.asNumber();
+                var b = second.asNumber();
                 return new NumValue(a % b);
             }
 
@@ -97,8 +97,8 @@ public record BinaryExpression(Op op, Expression<?> first, Expression<?> second)
         POW {
             @Override
             public Value perform(Evaluator evaluator, Value first, Value second) {
-                var a = evaluator.getNumberOrThrow(first);
-                var b = evaluator.getNumberOrThrow(second);
+                var a = first.asNumber();
+                var b = second.asNumber();
                 return new NumValue(Math.pow(a, b));
             }
 
@@ -106,58 +106,57 @@ public record BinaryExpression(Op op, Expression<?> first, Expression<?> second)
         AND {
             @Override
             public Value perform(Evaluator evaluator, Value first, Value second) {
-                return BoolValue.wrap(evaluator.getBooleanOrThrow(first) && evaluator.getBooleanOrThrow(second));
+                return BoolValue.wrap(first.asBoolean() && second.asBoolean());
             }
 
             @Override
             public Value performRaw(Evaluator evaluator, Expression<?> first, Expression<?> second) {
-                return BoolValue.wrap(evaluator.getBooleanOrThrow(evaluator.eval0(first)) &&
-                                      evaluator.getBooleanOrThrow(evaluator.eval0(second)));
+                return BoolValue.wrap(evaluator.eval0(first).asBoolean() && evaluator.eval0(second).asBoolean());
             }
 
         },
         OR {
             @Override
             public Value perform(Evaluator evaluator, Value first, Value second) {
-                return BoolValue.wrap(evaluator.getBooleanOrThrow(first) || evaluator.getBooleanOrThrow(second));
+                return BoolValue.wrap(first.asBoolean() || second.asBoolean());
             }
 
             @Override
             public Value performRaw(Evaluator evaluator, Expression<?> first, Expression<?> second) {
-                return BoolValue.wrap(evaluator.getBooleanOrThrow(evaluator.eval0(first)) ||
-                                      evaluator.getBooleanOrThrow(evaluator.eval0(second)));
+                return BoolValue.wrap(evaluator.eval0(first).asBoolean() ||
+                                      evaluator.eval0(second).asBoolean());
             }
 
         },
         GT {
             @Override
             public Value perform(Evaluator evaluator, Value first, Value second) {
-                var a = evaluator.getNumberOrThrow(first);
-                var b = evaluator.getNumberOrThrow(second);
+                var a = first.asNumber();
+                var b = second.asNumber();
                 return BoolValue.wrap(a > b);
             }
         },
         GTE {
             @Override
             public Value perform(Evaluator evaluator, Value first, Value second) {
-                var a = evaluator.getNumberOrThrow(first);
-                var b = evaluator.getNumberOrThrow(second);
+                var a = first.asNumber();
+                var b = second.asNumber();
                 return BoolValue.wrap(a >= b);
             }
         },
         LT {
             @Override
             public Value perform(Evaluator evaluator, Value first, Value second) {
-                var a = evaluator.getNumberOrThrow(first);
-                var b = evaluator.getNumberOrThrow(second);
+                var a = first.asNumber();
+                var b = second.asNumber();
                 return BoolValue.wrap(a < b);
             }
         },
         LTE {
             @Override
             public Value perform(Evaluator evaluator, Value first, Value second) {
-                var a = evaluator.getNumberOrThrow(first);
-                var b = evaluator.getNumberOrThrow(second);
+                var a = first.asNumber();
+                var b = second.asNumber();
                 return BoolValue.wrap(a <= b);
             }
 

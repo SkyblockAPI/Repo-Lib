@@ -10,7 +10,7 @@ import tech.thatgravyboat.repolib.v2.expl.Evaluator;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
 public record MatchExpression(Expression<?> value, Collection<MatchBranch> branches)
-    implements SelfEvaluatingExpression<MatchExpression> {
+    implements Expression<MatchExpression> {
 
     public static final BinaryCodec<MatchExpression> CODEC = BinaryRecordBuilder.of(
         BinaryCodec.EXPRESSION.forGetter(MatchExpression::value),
@@ -64,32 +64,32 @@ public record MatchExpression(Expression<?> value, Collection<MatchBranch> branc
         LT {
             @Override
             public boolean compare(Evaluator evaluator, Value value, Value testValue) {
-                var first = evaluator.getNumberOrThrow(value);
-                var second = evaluator.getNumberOrThrow(testValue);
+                var first = value.asNumber();
+                var second = testValue.asNumber();
                 return first < second;
             }
         },
         GT {
             @Override
             public boolean compare(Evaluator evaluator, Value value, Value testValue) {
-                var first = evaluator.getNumberOrThrow(value);
-                var second = evaluator.getNumberOrThrow(testValue);
+                var first = value.asNumber();
+                var second = testValue.asNumber();
                 return first > second;
             }
         },
         LTE {
             @Override
             public boolean compare(Evaluator evaluator, Value value, Value testValue) {
-                var first = evaluator.getNumberOrThrow(value);
-                var second = evaluator.getNumberOrThrow(testValue);
+                var first = value.asNumber();
+                var second = testValue.asNumber();
                 return first <= second;
             }
         },
         GTE {
             @Override
             public boolean compare(Evaluator evaluator, Value value, Value testValue) {
-                var first = evaluator.getNumberOrThrow(value);
-                var second = evaluator.getNumberOrThrow(testValue);
+                var first = value.asNumber();
+                var second = testValue.asNumber();
                 return first >= second;
             }
         },

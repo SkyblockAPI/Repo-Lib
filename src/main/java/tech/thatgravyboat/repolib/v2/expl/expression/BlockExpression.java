@@ -26,8 +26,21 @@ public record BlockExpression(Collection<Expression<?>> exprs) implements Expres
         return ExpressionTypes.BLOCK;
     }
 
+    @Override
+    public Value evaluate(Evaluator evaluator) {
+        Value last = Value.NIL;
+        for (var expr : exprs()) {
+            if (expr.canReturnValueBeReturned()) {
+                last = evaluator.eval0(expr);
+            } else {
+                evaluator.eval0(expr);
+            }
+        }
 
-    public record LastElement(Expression<?> expression) implements SelfEvaluatingExpression<LastElement> {
+        return last;
+    }
+
+    public record LastElement(Expression<?> expression) implements Expression<LastElement> {
         public static final BinaryCodec<LastElement> CODEC =
             BinaryCodec.EXPRESSION.mapped(LastElement::new, LastElement::expression);
 
@@ -45,6 +58,7 @@ public record BlockExpression(Collection<Expression<?>> exprs) implements Expres
         public ExpressionTypeRegistry.Type<LastElement> expressionId() {
             return ExpressionTypes.BLOCK_LAST_ELEMENT;
         }
+
     }
 
     @Override

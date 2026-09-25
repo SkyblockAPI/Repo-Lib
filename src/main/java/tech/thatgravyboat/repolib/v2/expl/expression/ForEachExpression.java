@@ -11,7 +11,7 @@ import tech.thatgravyboat.repolib.v2.expl.value.NilValue;
 import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
 public record ForEachExpression(AccessExpression field, Expression<?> array, Expression<?> body)
-    implements SelfEvaluatingExpression<ForEachExpression> {
+    implements Expression<ForEachExpression> {
 
     public static final BinaryCodec<ForEachExpression> CODEC = BinaryRecordBuilder.of(
         AccessExpression.CODEC.forGetter(ForEachExpression::field),
@@ -21,7 +21,7 @@ public record ForEachExpression(AccessExpression field, Expression<?> array, Exp
 
     @Override
     public Value evaluate(Evaluator evaluator) {
-        var values = evaluator.getArrayOrThrow(evaluator.eval0(array));
+        var values = evaluator.eval0(array).asArray();
 
         try {
             values.forEach(value -> {

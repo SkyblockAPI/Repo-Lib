@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.jetbrains.annotations.Contract;
@@ -22,7 +21,6 @@ import tech.thatgravyboat.repolib.v2.expl.expression.InExpression;
 import tech.thatgravyboat.repolib.v2.expl.expression.LambdaExpression;
 import tech.thatgravyboat.repolib.v2.expl.expression.LambdaIdentityFunction;
 import tech.thatgravyboat.repolib.v2.expl.expression.NumExpression;
-import tech.thatgravyboat.repolib.v2.expl.expression.SelfEvaluatingExpression;
 import tech.thatgravyboat.repolib.v2.expl.expression.StatementExpression;
 import tech.thatgravyboat.repolib.v2.expl.expression.StrExpression;
 import tech.thatgravyboat.repolib.v2.expl.expression.StructExpression;
@@ -45,7 +43,7 @@ import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
 public class Evaluator {
 
-    private static final int MAX_ITERATIONS = Short.MAX_VALUE;
+    public static final int MAX_ITERATIONS = Short.MAX_VALUE;
 
     public final KeyValue defaults;
     private final Scope scope;
@@ -67,6 +65,10 @@ public class Evaluator {
     public void pop() {
         this.scope.pop();
         this.stack.removeLast();
+    }
+
+    public KeyValue scope() {
+        return this.scope.get();
     }
 
     public Value pushPop(String stack, StructValue.MutableStruct scope, Supplier<Value> supplier) {
@@ -166,250 +168,15 @@ public class Evaluator {
         }
     }
 
-    public String getStringOrNull(Value value) {
-        if (value instanceof StrValue(String literal)) {
-            return literal;
-        }
-        return null;
-    }
-
-    public String getStringOrThrow(Value value) {
-        if (value instanceof StrValue(String literal)) {
-            return literal;
-        }
-        throw new Panic("Failed to convert " + value + " into a string");
-    }
-
-    public StructuredFunctionValue getStructuredFunctionOrThrow(Value value) {
-        if (value instanceof StructuredFunctionValue str) {
-            return str;
-        }
-        throw new Panic("Failed to convert " + value + " into a Structured Function");
-    }
-
-    public LambdaFunctionValue getLambdaOrThrow(Value value) {
-        if (value instanceof LambdaFunctionValue function) {
-            return function;
-        }
-        throw new Panic("Failed to convert " + value + " into a function");
-    }
-
-    public double getNumber(Value value, double defaultValue) {
-        if (value instanceof NumValue(double literal)) {
-            return literal;
-        }
-        return defaultValue;
-    }
-
-    public double getNumberOrThrow(Value value) {
-        if (value instanceof NumValue(double literal)) {
-            return literal;
-        }
-        throw new Panic("Failed to convert " + value + " into a number");
-    }
-
-    public boolean getBooleanOrThrow(Value value) {
-        if (value instanceof BoolValue bool) {
-            return bool.value();
-        }
-        throw new Panic("Failed to convert " + value + " into a boolean");
-    }
-
-    public boolean asBooleanConversion(Value value) {
-        return asBool(value);
-    }
-
-    public ArrayValue getArrayOrThrow(Value value) {
-        if (value instanceof ArrayValue array) {
-            return array;
-        }
-        throw new Panic("Failed to convert " + value + " into an array");
-    }
-
-    public KeyValue getKeyValueOrThrow(Value value) {
-        if (value instanceof KeyValue kv) {
-            return kv;
-        }
-        throw new Panic("Failed to convert " + value + " into a key value");
-    }
-
-    public StructValue.MutableStruct getMutableStructOrThrow(Value value) {
-        if (value instanceof StructValue.MutableStruct msv) {
-            return msv;
-        }
-        throw new Panic("Failed to convert " + value + " into a mutable struct");
-    }
-
-    public StructValue getStructOrThrow(Value value) {
-        if (value instanceof StructValue msv) {
-            return msv;
-        }
-        throw new Panic("Failed to convert " + value + " into a struct");
-    }
-
     public Value eval0(Expression<?> expression) {
         try {
-            return switch (expression) {
-                case FileAccessExpression access -> evalFileAccess(access);
-                case AccessExpression access -> evalAccess(access);
-                case AssignExpression assign -> evalAssign(assign);
-                case StructExpression struct -> evalStruct(struct);
-                case DebugExpression ignored -> pauseForDebug();
-                case BlockExpression block -> evalBlock(block);
-                case UnaryExpression unary -> evalUnary(unary);
-                case CallExpression call -> evalCall(call);
-                case BoolExpression bool -> BoolValue.wrap(bool.value());
-                case StrExpression str -> new StrValue(str.value());
-                case NumExpression num -> new NumValue(num.value());
-                case ForExpression aFor -> evalFor(aFor);
-                case IfExpression anIf -> evalIf(anIf);
-                case InExpression in -> evalIn(in);
-                case StatementExpression token -> {
-                    switch (token.op()) {
-                        case RETURN -> throw ExecutionExceptions.RETURN;
-                        case BREAK -> throw ExecutionExceptions.BREAK;
-                        case CONTINUE -> throw ExecutionExceptions.CONTINUE;
-                    }
-                    throw new Panic("Unexpected statement expression " + token);
-                }
-                case SelfEvaluatingExpression<?> self -> self.evaluate(this);
-                case null -> Value.NIL;
-            };
+            if (expression != null) {
+                return expression.evaluate(this);
+            }
         } catch (Panic e) {
             error(e.getMessage());
         }
         return Value.NIL;
-    }
-
-    private Value pauseForDebug() {
-        return Value.NIL;
-    }
-
-    private Value evalIn(InExpression in) {
-        var holder = evalAccess(in.holder());
-        String field = this.getStringOrThrow(this.eval0(in.field()));
-        if (holder instanceof KeyValue keyValue) {
-            return BoolValue.wrap(keyValue.contains(field));
-        } else if (holder instanceof StrValue(String value)) {
-            return BoolValue.wrap(value.contains(field));
-        }
-        throw new Panic(
-            "Can't check if '" + in.field() + "/\\" + field + "' is in non string or keyvalue type " + holder);
-    }
-
-    private Value evalUnary(UnaryExpression unary) {
-        return switch (unary.op()) {
-            case NOT -> BoolValue.wrap(!asBool(eval0(unary.rhs())));
-            case NEGATE -> new NumValue(-getNumberOrThrow(eval0(unary.rhs())));
-        };
-    }
-
-    private Value evalStructValue(MutableStructValue self, Expression<?> expression) {
-        if (expression instanceof LambdaIdentityFunction(LambdaExpression lambdaExpression)) {
-            return new LambdaExpression(lambdaExpression.arguments(), lambdaExpression.body(), self).function();
-        }
-        return this.eval0(expression);
-    }
-
-    public StructValue evalStruct(StructExpression struct) {
-        var fields = new MutableStructValue(new HashMap<>());
-
-        for (var entry : struct.fields().entrySet()) {
-            fields.set(entry.getKey(), evalStructValue(fields, entry.getValue()));
-        }
-
-        if (struct.spread() != null) {
-            return new LayeredStructValue(fields, getStructOrThrow(this.eval0(struct.spread())));
-        }
-
-        return fields;
-    }
-
-    public boolean asBool(Value value) {
-        return switch (value) {
-            case NilValue ignored -> false;
-            case BoolValue bool -> bool.value();
-            case StrValue str -> !str.value().isEmpty();
-            case NumValue num -> ((int) num.value()) != 0;
-            case KeyValue kv -> !kv.isEmpty();
-            default -> throw new Panic("Unable to convert " + value + " into boolean.");
-        };
-    }
-
-    private Value evalIf(IfExpression anIf) {
-        var condition = asBool(eval0(anIf.cond()));
-
-        if (condition) {
-            return pushPop("if (" + anIf.cond() + ")", () -> eval0(anIf.thenExpr()));
-        } else if (anIf.elseExpr() != null) {
-            return pushPop("if (" + anIf.cond() + ") { ... } else", () -> eval0(anIf.elseExpr()));
-        }
-
-        return Value.NIL;
-    }
-
-    private Value evalFor(ForExpression aFor) {
-        var init = aFor.init();
-        if (init != null) {
-            eval0(init);
-        }
-
-        int iteration = 0;
-
-        while (true) {
-            if (iteration > MAX_ITERATIONS) {
-                throw new Panic("For loop has iterated more than %d times, aborting to prevent infinite loop.".formatted(
-                    MAX_ITERATIONS));
-            }
-
-            var cond = aFor.cond();
-            if (cond != null && !asBool(eval0(cond))) {
-                break;
-            }
-
-            try {
-                pushPop("for (...; " + aFor.cond() + "; ...)", () -> eval0(aFor.body()));
-            } catch (ExecutionExceptions.Break e) {
-                break;
-            } catch (ExecutionExceptions.Continue e) {
-                // do nothing, just continue to the next iteration.
-            }
-
-            var incr = aFor.incr();
-            if (incr != null) {
-                eval0(incr);
-            }
-
-            iteration++;
-        }
-
-        return Value.NIL;
-    }
-
-    private Value evalCall(CallExpression call) {
-        var left = eval0(call.lhs());
-        if (left instanceof FunctionValue function) {
-            var args = new ArrayList<Value>();
-            for (var arg : call.args()) {
-                args.add(eval0(arg));
-            }
-
-            return pushPop(call.lhs().toString(), () -> function.apply(this, args));
-        }
-
-        throw new Panic("Unable to call invoke on non function type " + call.lhs());
-    }
-
-    private Value evalBlock(BlockExpression block) {
-        Value last = Value.NIL;
-        for (var expr : block.exprs()) {
-            if (expr.canReturnValueBeReturned()) {
-                last = eval0(expr);
-            } else {
-                eval0(expr);
-            }
-        }
-        return last;
     }
 
     public void set(String fieldName, Value value) {
@@ -427,60 +194,12 @@ public class Evaluator {
         throw new Panic("Unable to set property '" + fieldName + "' on non key/value " + value);
     }
 
-    private Value evalAssign(AssignExpression assign) {
-        var access = assign.lhs();
-        final Value field;
-        if (access.lhs() == null) {
-            field = scope.get();
-        } else {
-            field = eval0(access.lhs());
-        }
-
-        return set(field, getStringOrThrow(eval0(access.field())), eval0(assign.value()));
-    }
-
-
-    private Value evalAccess(AccessExpression expression) {
-        var lhs = expression.lhs();
-        var field = eval0(expression.field());
-
-        if (lhs == null) {
-            return scope.get().get(getStringOrThrow(field));
-        }
-        var left = eval0(lhs);
-        if (left instanceof ArrayValue arrayValue && field instanceof NumValue(double value)) {
-            return arrayValue.get((int) value);
-        }
-        if (left instanceof KeyValue keyValue) {
-            keyValue.get(getStringOrThrow(field));
-            return Objects.requireNonNullElse(keyValue.get(getStringOrThrow(field)), Value.NIL);
-        }
-
-        throw new Panic("Unable to access property " + expression.field() + " of non key/value " + lhs);
-    }
-
     public FunctionValue getFileAccess(String name) {
         var file = fileFunction.apply(name);
         if (file == null) {
             throw new Panic("requested include " + name + " not found!");
         }
         return file;
-    }
-
-    private Value evalFileAccess(FileAccessExpression expression) {
-        var list = new ArrayList<String>();
-
-        for (var expr : expression.path()) {
-            list.add(getStringOrThrow(this.eval0(expr)));
-        }
-
-        var result = this.fileFunction.apply(String.join("/", list));
-
-        if (result == null) {
-            throw new Panic("failed to find " + String.join("/", list));
-        }
-
-        return result;
     }
 
     public static class Panic extends RuntimeException {

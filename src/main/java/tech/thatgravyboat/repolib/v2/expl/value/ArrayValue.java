@@ -63,7 +63,7 @@ public non-sealed interface ArrayValue extends Value, KeyValue, Iterable<Value> 
 
                 builder.function("get", function -> {
                     function.arity(1);
-                    function.execute((evaluator, args) -> ArrayValue.get(entries, (int)  evaluator.getNumberOrThrow(args.getFirst())));
+                    function.execute((evaluator, args) -> ArrayValue.get(entries, (int) args.getFirst().asNumber()));
                 });
 
                 builder.function("contains", function -> {
@@ -74,7 +74,7 @@ public non-sealed interface ArrayValue extends Value, KeyValue, Iterable<Value> 
                 builder.function("chunked", function -> {
                     function.arity(1);
                     function.execute((evaluator, values) -> {
-                        var amount = evaluator.getNumberOrThrow(values.getFirst());
+                        var amount = values.getFirst().asNumber();
 
                         var array = MutableArrayValue.create();
 
@@ -98,7 +98,7 @@ public non-sealed interface ArrayValue extends Value, KeyValue, Iterable<Value> 
                 builder.function("forEach", function -> {
                     function.arity(1);
                     function.executeVoid((evaluator, values) -> {
-                        var lambda = evaluator.getLambdaOrThrow(values.getFirst());
+                        var lambda = values.getFirst().asLambda();
                         if (lambda.arityMin() == 1 || (lambda.vararg() && lambda.arityMin() >= 1)) {
                             for (var entry : entries) {
                                 lambda.apply(evaluator, List.of(entry));
@@ -111,7 +111,7 @@ public non-sealed interface ArrayValue extends Value, KeyValue, Iterable<Value> 
                 builder.function("forEachIndexed", function -> {
                     function.arity(1);
                     function.executeVoid((evaluator, values) -> {
-                        var lambda = evaluator.getLambdaOrThrow(values.getFirst());
+                        var lambda = values.getFirst().asLambda();
                         if (lambda.arityMin() == 2 || (lambda.vararg() && lambda.arityMin() >= 2)) {
                             for (var i = 0; i < entries.size(); i++) {
                                 lambda.apply(evaluator, List.of(entries.get(i), new NumValue(i)));
@@ -128,7 +128,7 @@ public non-sealed interface ArrayValue extends Value, KeyValue, Iterable<Value> 
                     function.execute((evaluator, values) -> {
                         var result = MutableArrayValue.create();
 
-                        var lambda = evaluator.getLambdaOrThrow(values.getFirst());
+                        var lambda = values.getFirst().asLambda();
                         if (lambda.arityMin() == 1 || (lambda.vararg() && lambda.arityMin() >= 1)) {
                             for (var entry : entries) {
                                 result.add(lambda.apply(evaluator, List.of(entry)));
@@ -145,7 +145,7 @@ public non-sealed interface ArrayValue extends Value, KeyValue, Iterable<Value> 
                     function.execute((evaluator, values) -> {
                         var result = MutableArrayValue.create();
 
-                        var lambda = evaluator.getLambdaOrThrow(values.getFirst());
+                        var lambda = values.getFirst().asLambda();
                         if (lambda.arityMin() == 2 || (lambda.vararg() && lambda.arityMin() >= 2)) {
                             for (var i = 0; i < entries.size(); i++) {
                                 result.add(lambda.apply(evaluator, List.of(entries.get(i), new NumValue(i))));
@@ -184,7 +184,7 @@ public non-sealed interface ArrayValue extends Value, KeyValue, Iterable<Value> 
                         "set", function -> {
                             function.arity(2);
                             function.executeVoid((evaluator, args) -> {
-                                var index = evaluator.getNumberOrThrow(args.getFirst());
+                                var index = args.getFirst().asNumber();
                                 entries.set((int) index, args.get(1));
                             });
                         });
@@ -225,4 +225,8 @@ public non-sealed interface ArrayValue extends Value, KeyValue, Iterable<Value> 
 
     }
 
+    @Override
+    default ArrayValue asArray() {
+        return this;
+    }
 }

@@ -22,7 +22,7 @@ import tech.thatgravyboat.repolib.v2.expl.value.*;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class Main2 extends WebSocketServer {
-    private List<WebSocket> connections = new ArrayList<>();
+    private final List<WebSocket> connections = new ArrayList<>();
     public String lastModifiedItem = "items/aspect_of_the_void";
 
     boolean running = true;

@@ -25,4 +25,9 @@ non-sealed public interface FunctionValue extends Value {
     default String type() {
         return "function";
     }
+
+    @Override
+    default FunctionValue asFunctionValue() {
+        return this;
+    }
 }

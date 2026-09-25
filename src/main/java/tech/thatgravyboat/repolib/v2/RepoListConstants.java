@@ -20,7 +20,7 @@ public class RepoListConstants implements StructValue.Forwarding {
                 function.execute((evaluator, values) -> {
                     var array = MutableArrayValue.create();
 
-                    var prefix = evaluator.getStringOrThrow(values.getFirst());
+                    var prefix = values.getFirst().asString();
                     for (var stackEntry : loader.stackFiles().entrySet()) {
                         if (stackEntry.getKey().startsWith(prefix)) {
                             array.add(stackEntry.getValue().meta());

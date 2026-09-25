@@ -13,7 +13,7 @@ public class BuiltinRarities {
         builder.arity(0);
         builder.executeArgless(evaluator -> {
             var meta = evaluator.getField("meta");
-            var baseRarity = evaluator.getStringOrNull(evaluator.getField(meta, "rarity"));
+            var baseRarity = evaluator.getField(meta, "rarity").asString();
             if (baseRarity == null) {
                 return evaluator.panic("Item doesn't have a base rarity!");
             }
@@ -27,7 +27,7 @@ public class BuiltinRarities {
 
             var data = evaluator.getField("data");
 
-            var rarityUpgrades = evaluator.getNumber(evaluator.getField(data, "rarity_upgrades"), 0);
+            var rarityUpgrades = evaluator.getField(data, "rarity_upgrades").asNumber(0);
             if (rarityUpgrades > 0) {
                 while (rarityUpgrades > 0) {
                     currentRarity = currentRarity.next();
@@ -35,7 +35,7 @@ public class BuiltinRarities {
                 }
             }
 
-            if (evaluator.getNumber(evaluator.getField(data, "baseStatBoostPercentage"), 0) >= 50) {
+            if (evaluator.getField(data, "baseStatBoostPercentage").asNumber(0) >= 50) {
                 currentRarity = currentRarity.next();
             }
 
@@ -48,7 +48,7 @@ public class BuiltinRarities {
         builder.executeArgless(evaluator -> {
             var data = evaluator.getField("data");
 
-            var rarityUpgrades = evaluator.getNumber(evaluator.getField(data, "rarity_upgrades"), 0);
+            var rarityUpgrades = evaluator.getField(data, "rarity_upgrades").asNumber(0);
             if (rarityUpgrades > 0) {
                 return BoolValue.TRUE;
             }
@@ -63,7 +63,7 @@ public class BuiltinRarities {
             function.arity(1);
             function.execute((evaluator, values) -> {
                 var first = values.getFirst();
-                var rarity = evaluator.getStringOrNull(first);
+                var rarity = first.asStringOrNull();
                 if (rarity == null) {
                     return evaluator.panic("Provided rarity is not a string!");
                 }
@@ -81,7 +81,7 @@ public class BuiltinRarities {
             function.arity(1);
             function.execute((evaluator, values) -> {
                 var first = values.getFirst();
-                var rarity = evaluator.getStringOrNull(first);
+                var rarity = first.asStringOrNull();
                 if (rarity == null) {
                     return evaluator.panic("Provided rarity is not a string!");
                 }
@@ -103,7 +103,7 @@ public class BuiltinRarities {
             function.arity(2);
             function.execute((evaluator, values) -> {
                 var first = values.getFirst();
-                var rarity = evaluator.getStringOrThrow(first);
+                var rarity = first.asString();
                 var rarityValue = SkyblockRarity.fromString(rarity);
 
                 if (rarityValue.isEmpty()) {
@@ -111,7 +111,7 @@ public class BuiltinRarities {
                 }
 
                 var rarityResult = rarityValue.get();
-                var upgrade = (int) evaluator.getNumberOrThrow(values.get(1));
+                var upgrade = (int) values.get(1).asNumber();
                 for (int i = 0; i < upgrade; i++) {
                     rarityResult = rarityResult.next();
                 }

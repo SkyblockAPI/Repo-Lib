@@ -82,4 +82,19 @@ non-sealed public interface KeyValue extends Value {
     default String type() {
         return "object";
     }
+
+    @Override
+    default boolean asBooleanConversion() {
+        return !this.isEmpty();
+    }
+
+    @Override
+    default KeyValue asKeyValue() {
+        return this;
+    }
+
+    @Override
+    default Value containsValue(String value) {
+        return BoolValue.wrap(this.contains(value));
+    }
 }

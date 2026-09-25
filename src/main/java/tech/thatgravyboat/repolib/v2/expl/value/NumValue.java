@@ -38,4 +38,19 @@ public record NumValue(double value) implements Value {
     public String type() {
         return "number";
     }
+
+    @Override
+    public boolean asBooleanConversion() {
+        return this.value != 0;
+    }
+
+    @Override
+    public double asNumber() {
+        return this.value;
+    }
+
+    @Override
+    public double asNumber(double defaultValue) {
+        return this.value;
+    }
 }

@@ -11,7 +11,7 @@ import tech.thatgravyboat.repolib.v2.expl.value.Value;
 
 public record LambdaExpression(
     Collection<LambdaArgument> arguments, Expression<?> body, Value function, boolean requiresSemicolon
-) implements SelfEvaluatingExpression<LambdaExpression> {
+) implements Expression<LambdaExpression> {
 
     public static final BinaryCodec<LambdaExpression> CODEC = BinaryRecordBuilder.of(
         LambdaArgument.CODEC.collection().forGetter(LambdaExpression::arguments),

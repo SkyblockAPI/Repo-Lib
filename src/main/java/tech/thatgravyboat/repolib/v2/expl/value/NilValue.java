@@ -12,4 +12,9 @@ public record NilValue() implements Value {
     public String type() {
         return "null";
     }
+
+    @Override
+    public boolean asBooleanConversion() {
+        return false;
+    }
 }

@@ -89,7 +89,7 @@ public final class ModuleFile implements FunctionValueFile<ModuleFile> {
     @Override
     public Value apply(Evaluator evaluator, List<Value> args) {
         if (args.size() == 1) {
-            var scope = evaluator.getMutableStructOrThrow(args.getFirst());
+            var scope = args.getFirst().asMutableStruct();
             return evaluator.pushPop(name, scope, () -> this.evaluate0(evaluator));
         } else {
             return evaluator.pushPop(name, () -> this.evaluate0(evaluator));
