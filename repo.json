@@ -3,13 +3,15 @@
     "1_21_5"
   ],
   "versioned": [
+    "attributes.min.json",
+    "enchantments.min.json",
+    "id_overlays.min.json",
     "items.min.json",
     "mobs.min.json",
     "pets.min.json",
-    "recipes.min.json",
-    "runes.min.json",
     "potions.min.json",
-    "id_overlays.min.json"
+    "recipes.min.json",
+    "runes.min.json"
   ],
   "static": [
     "constants.min.json",

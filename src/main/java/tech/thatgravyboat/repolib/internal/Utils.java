@@ -9,6 +9,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.stream.JsonReader;
 import java.util.function.Supplier;
+import java.util.zip.GZIPInputStream;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -65,7 +66,7 @@ public class Utils {
         var stream = Utils.class.getResourceAsStream("/backup/" + path);
         if (stream == null) throw new IOException("Resource not found: " + path);
         try (var resource = stream) {
-            return GSON.fromJson(new JsonReader(new InputStreamReader(resource)), JsonElement.class);
+            return GSON.fromJson(new JsonReader(new InputStreamReader(new GZIPInputStream(resource))), JsonElement.class);
         } catch (IOException e) {
             throw new IOException("Failed to read resource: " + path, e);
         }

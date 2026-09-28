@@ -1,6 +1,7 @@
 import com.google.gson.JsonParser
 import java.net.URI
 import java.nio.file.StandardOpenOption
+import java.util.zip.GZIPOutputStream
 import kotlin.io.path.*
 
 plugins {
@@ -35,6 +36,7 @@ dependencies {
 java {
     sourceCompatibility = JavaVersion.VERSION_21
     targetCompatibility = JavaVersion.VERSION_21
+    withSourcesJar()
 }
 
 tasks.jar {
@@ -42,17 +44,12 @@ tasks.jar {
     from(neoforge.output)
 }
 
-tasks.register<Jar>("sourcesJar") {
-    group = "build"
-    archiveClassifier.set("sources")
-    sourceSets.map { it.allSource }.forEach {
-        from(it)
-    }
-}
+tasks.test { enabled = false }
 
 val baseUrl = "https://raw.githubusercontent.com/SkyblockAPI/Repo/refs/heads/main/cloudflare"
 
-val downloadRepo = tasks.create("downloadRepo") {
+val downloadRepo = tasks.register("downloadRepo") {
+    description = "Downloads the backup repository"
     val outDir = layout.buildDirectory.dir("backup_repo")
     val outDirPath = outDir.get().asFile.toPath().resolve("backup")
     outputs.dir(outDir)
@@ -81,18 +78,18 @@ val downloadRepo = tasks.create("downloadRepo") {
             if (file.parent.notExists()) {
                 file.parent.createDirectories()
             }
-            file.writeText(
-                content,
-                Charsets.UTF_8,
+            GZIPOutputStream(file.outputStream(
                 StandardOpenOption.CREATE,
                 StandardOpenOption.TRUNCATE_EXISTING
-            )
+            )).use {
+                it.write(content.toByteArray(Charsets.UTF_8))
+            }
         }
     }
 }
 
 sourceSets.main.configure {
-    resources.srcDir(downloadRepo.outputs)
+    resources.srcDir(downloadRepo.map { it.outputs })
 }
 
 tasks.build.configure {
