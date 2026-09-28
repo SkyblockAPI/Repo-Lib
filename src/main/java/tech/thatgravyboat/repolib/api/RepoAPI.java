@@ -104,7 +104,7 @@ public final class RepoAPI {
         if (!shasMatch || !Files.exists(loc)) {
             RepoLibLogger.trace("Downloading " + key + " from remote!");
             JsonElement element = Utils.getJsonFromApi(urlpath);
-            if (false) {
+            if (element != null) {
                 Files.writeString(loc, element.toString());
                 return element;
             }

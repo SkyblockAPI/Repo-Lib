@@ -71,6 +71,7 @@ val downloadRepo = tasks.register("downloadRepo") {
 
     doFirst {
         logger.info("Downloading backup repo!")
+        outDirPath.resolve("_readme.txt").writeText("All files contain gzipped json", options = arrayOf(StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING))
 
         getRepoPaths().forEach { constant ->
             val file = outDirPath.resolve(constant)
