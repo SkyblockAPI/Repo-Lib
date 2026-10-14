@@ -6,6 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import tech.thatgravyboat.repolib.internal.JsonHelper;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -52,7 +53,7 @@ public final class PotionsAPI {
             @NotNull String name,
             @Nullable String type,
             @Nullable String internalPotion,
-            @NotNull String vanillaEffect
+            @Deprecated(forRemoval = true) @NotNull String vanillaEffect
     ) {
         public static Potion fromJson(String id, JsonObject object) {
             try {
@@ -78,7 +79,7 @@ public final class PotionsAPI {
     public record PotionLevel(
             int level,
             @NotNull String literalLevel,
-            @Deprecated @NotNull List<String> lore,
+            @Deprecated(forRemoval = true) @NotNull List<String> lore,
             boolean splash,
             @NotNull JsonObject item
     ) {
@@ -86,7 +87,7 @@ public final class PotionsAPI {
             return new PotionLevel(
                     JsonHelper.getInt(object, "level", 1),
                     JsonHelper.getString(object, "literal_level", "I"),
-                    object.getAsJsonArray("lore").asList().stream().map(JsonElement::getAsString).toList(),
+                    new ArrayList<>(),
                     JsonHelper.getBoolean(object, "splash", false),
                     object.getAsJsonObject("item")
             );
