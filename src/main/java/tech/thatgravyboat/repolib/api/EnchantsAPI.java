@@ -75,12 +75,10 @@ public final class EnchantsAPI {
             @NotNull JsonObject item
     ) {
         public static EnchantLevel fromJson(JsonObject object) {
-            var lore = object.has("lore") ?
-                    object.getAsJsonArray("lore").asList().stream().map(JsonElement::getAsString).toList() : new ArrayList<String>();
             return new EnchantLevel(
                     object.get("level").getAsInt(),
                     object.get("literal_level").getAsString(),
-                    lore,
+                    new ArrayList<>(),
                     object.getAsJsonObject("item")
             );
         }
