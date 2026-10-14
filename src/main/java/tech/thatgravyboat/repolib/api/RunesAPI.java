@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -42,9 +43,9 @@ public class RunesAPI {
     public record Rune(
             String id,
             int tier,
-            @Deprecated String texture,
-            @Deprecated String name,
-            @Deprecated List<String> lore,
+            @Deprecated(forRemoval = true) String texture,
+            @Deprecated(forRemoval = true) String name,
+            @Deprecated(forRemoval = true) List<String> lore,
             @NotNull JsonObject item
     ) {
         static Rune fromJson(String id, JsonObject json) {
@@ -53,10 +54,7 @@ public class RunesAPI {
                     json.get("tier").getAsInt(),
                     json.get("texture").getAsString(),
                     json.get("name").getAsString(),
-                    json.getAsJsonArray("lore").asList()
-                            .stream()
-                            .map(JsonElement::getAsString)
-                            .toList(),
+                    new ArrayList<>(),
                     json.getAsJsonObject("item")
             );
         }

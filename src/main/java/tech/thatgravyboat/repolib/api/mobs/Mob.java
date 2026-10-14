@@ -10,8 +10,8 @@ import java.util.List;
 public record Mob(
         @Nullable String island,
         @Nullable Position position,
-        @Deprecated @Nullable String texture,
-        @Deprecated @NotNull String itemId,
+        @Deprecated(forRemoval = true) @Nullable String texture,
+        @Deprecated(forRemoval = true) @NotNull String itemId,
         @NotNull String name,
         @Nullable String type,
         List<LootTable> lootTables,
