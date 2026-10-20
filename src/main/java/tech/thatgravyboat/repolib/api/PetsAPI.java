@@ -19,6 +19,8 @@ import java.util.function.DoubleUnaryOperator;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import tech.thatgravyboat.repolib.internal.JsonHelper;
 import tech.thatgravyboat.repolib.internal.Utils;
 
 public final class PetsAPI {
@@ -143,7 +145,7 @@ public final class PetsAPI {
 
             private static Tier fromJson(JsonObject json) {
                 return new Tier(
-                        json.get("texture").getAsString(),
+                        JsonHelper.getString(json , "texture", ""),
                         new ArrayList<>(),
                         json.get("variables").getAsJsonObject().entrySet().stream()
                                 .map(entry -> new Pair<>(

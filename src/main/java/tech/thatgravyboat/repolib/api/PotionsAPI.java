@@ -68,7 +68,7 @@ public final class PotionsAPI {
                         object.get("name").getAsString(),
                         JsonHelper.getString(object, "type", null),
                         JsonHelper.getString(object, "internal_potion", null),
-                        object.get("vanilla_effect").getAsString()
+                        JsonHelper.getString(object, "vanilla_effect", "")
                 );
             } catch (Exception e) {
                 throw new IllegalArgumentException("Invalid Potion JSON: " + object, e);
