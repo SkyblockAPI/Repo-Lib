@@ -36,6 +36,7 @@ public final class IdOverlaysAPI {
             @Nullable WikiData wiki,
             boolean vanilla,
             @Nullable List<Requirement> requirements,
+            @Nullable List<String> abiphoneCallnames,
             JsonObject rawObject
     ) {
         public static OverlayData fromJson(JsonObject json) {
@@ -43,6 +44,7 @@ public final class IdOverlaysAPI {
                     json.has("wiki") ? WikiData.fromJson(json.getAsJsonObject("wiki")) : null,
                     JsonHelper.getBoolean(json, "vanilla", false),
                     json.has("requirements") ? JsonHelper.getList(json, "requirements", e -> Requirement.parse(e.getAsJsonObject())) : null,
+                    json.has("abiphone_callnames") ? JsonHelper.getList(json, "abiphone_callnames", JsonElement::getAsString) : null,
                     json
             );
         }
