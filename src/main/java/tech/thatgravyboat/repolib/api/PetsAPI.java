@@ -9,6 +9,7 @@ import tech.thatgravyboat.repolib.api.types.DoubleDoublePair;
 import tech.thatgravyboat.repolib.api.types.Pair;
 
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -18,6 +19,8 @@ import java.util.function.DoubleUnaryOperator;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import tech.thatgravyboat.repolib.internal.JsonHelper;
 import tech.thatgravyboat.repolib.internal.Utils;
 
 public final class PetsAPI {
@@ -102,8 +105,8 @@ public final class PetsAPI {
         }
 
         public record Tier(
-                @Deprecated String texture,
-                @Deprecated List<String> lore,
+                @Deprecated(forRemoval = true) String texture,
+                @Deprecated(forRemoval = true) List<String> lore,
                 Map<String, DoubleDoublePair> variables,
                 int variablesOffset,
                 @NotNull JsonObject item
@@ -124,7 +127,7 @@ public final class PetsAPI {
                 return this.getStat(key, level, null);
             }
 
-            @Deprecated
+            @Deprecated(forRemoval = true)
             public List<String> getFormattedLore(int level, @Nullable String heldItem) {
                 return this.lore.stream()
                         .map(line -> VARIABLE_PATTERN.matcher(line).replaceAll(match -> {
@@ -135,19 +138,15 @@ public final class PetsAPI {
                         .toList();
             }
 
-            @Deprecated
+            @Deprecated(forRemoval = true)
             public List<String> getFormattedLore(int level) {
                 return getFormattedLore(level, null);
             }
 
             private static Tier fromJson(JsonObject json) {
-                JsonArray lore = json.get("lore").getAsJsonArray();
                 return new Tier(
-                        json.get("texture").getAsString(),
-                        IntStream.range(0, lore.size())
-                                .mapToObj(lore::get)
-                                .map(JsonElement::getAsString)
-                                .toList(),
+                        JsonHelper.getString(json , "texture", ""),
+                        new ArrayList<>(),
                         json.get("variables").getAsJsonObject().entrySet().stream()
                                 .map(entry -> new Pair<>(
                                         entry.getKey(),

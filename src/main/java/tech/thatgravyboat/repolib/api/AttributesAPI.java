@@ -5,12 +5,17 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.*;
 import tech.thatgravyboat.repolib.internal.Utils;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+
 public final class AttributesAPI {
-    
+
     private final Map<String, Attribute> attributes = new HashMap<>();
 
     void load(JsonElement json) {
@@ -45,13 +50,13 @@ public final class AttributesAPI {
 
     public record Attribute(
             @NotNull String id,
-            @Deprecated @NotNull List<String> lore,
+            @Deprecated(forRemoval = true) @NotNull List<String> lore,
             @NotNull String attributeId,
             @NotNull String shardName,
             @NotNull String shardId,
             @NotNull String name,
-            @Deprecated @NotNull String item,
-            @Deprecated @Nullable String texture,
+            @Deprecated(forRemoval = true) @NotNull String item,
+            @Deprecated(forRemoval = true) @Nullable String texture,
             @NotNull String rarity,
             int max,
             @NotNull JsonObject itemStack
@@ -59,13 +64,13 @@ public final class AttributesAPI {
         public static Attribute fromJson(JsonObject jsonObject) {
             return new Attribute(
                     jsonObject.get("id").getAsString(),
-                    jsonObject.getAsJsonArray("lore").asList().stream().map(JsonElement::getAsString).toList(),
+                    new ArrayList<>(),
                     jsonObject.get("attribute_id").getAsString(),
                     jsonObject.get("shard_name").getAsString(),
                     jsonObject.get("shard_id").getAsString(),
                     jsonObject.get("name").getAsString(),
-                    jsonObject.get("item").getAsString(),
-                    Optional.ofNullable(jsonObject.get("texture")).map(JsonElement::getAsString).orElse(null),
+                    jsonObject.getAsJsonObject("itemStack").getAsJsonPrimitive("id").getAsString(),
+                    null,
                     jsonObject.get("rarity").getAsString(),
                     jsonObject.get("max").getAsInt(),
                     jsonObject.getAsJsonObject("itemStack")

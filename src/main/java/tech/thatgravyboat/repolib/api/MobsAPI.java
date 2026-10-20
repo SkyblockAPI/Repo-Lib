@@ -30,8 +30,8 @@ public final class MobsAPI {
                 this.mobs.put(id.toUpperCase(Locale.ROOT), new Mob(
                         JsonHelper.getStringOrNull(mobObject, "island"),
                         mobObject.has("position") ? Position.fromJson(mobObject.getAsJsonObject("position")) : null,
-                        JsonHelper.getStringOrNull(mobObject, "texture"),
-                        mobObject.get("itemId").getAsString(),
+                        null,
+                        mobObject.getAsJsonObject("item").getAsJsonPrimitive("id").getAsString(),
                         mobObject.get("name").getAsString(),
                         JsonHelper.getStringOrNull(mobObject, "type"),
                         mobObject.has("lootTables") ?

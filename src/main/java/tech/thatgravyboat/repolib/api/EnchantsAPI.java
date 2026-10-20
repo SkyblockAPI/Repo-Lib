@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -70,14 +71,14 @@ public final class EnchantsAPI {
     public record EnchantLevel(
             int level,
             @NotNull String literalLevel,
-            @Deprecated @NotNull List<String> lore,
+            @Deprecated(forRemoval = true) @NotNull List<String> lore,
             @NotNull JsonObject item
     ) {
         public static EnchantLevel fromJson(JsonObject object) {
             return new EnchantLevel(
                     object.get("level").getAsInt(),
                     object.get("literal_level").getAsString(),
-                    object.getAsJsonArray("lore").asList().stream().map(JsonElement::getAsString).toList(),
+                    new ArrayList<>(),
                     object.getAsJsonObject("item")
             );
         }
