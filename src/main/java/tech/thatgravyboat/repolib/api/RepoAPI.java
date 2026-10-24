@@ -122,11 +122,11 @@ public final class RepoAPI {
         Files.createDirectories(impl.getRepoPath());
         RepoLibLogger.debug("Loading repo with path " + impl.getRepoPath().toString());
 
-        JsonObject shas = Utils.mapNotNull(Utils.getJsonFromApi("shas.json"), JsonElement::getAsJsonObject);
+        JsonObject shas = Utils.mapThrowingNotNull(() -> Utils.getJsonFromApi("shas.json"), JsonElement::getAsJsonObject, "remote index");
         if (shas == null) {
             RepoLibLogger.warn("Unable to retrieve shas.json from remote!");
         }
-        JsonObject localShas = Utils.mapNotNull(Utils.getJsonFromFile(impl.getShasFile()), JsonElement::getAsJsonObject);
+        JsonObject localShas = Utils.mapThrowingNotNull(() -> Utils.getJsonFromFile(impl.getShasFile()), JsonElement::getAsJsonObject, "local index");
         if (localShas == null) {
             RepoLibLogger.info("Unable to read shas.json from local cache!");
         }

@@ -81,11 +81,31 @@ public class Utils {
         }
     }
 
-    public static <I, O> O mapNotNull(@Nullable I value, Function<@NotNull I, O> mapper) {
+    public static <In, Out> Out mapNotNull(@Nullable In value, Function<@NotNull In, Out> mapper) {
         if (value == null) return null;
         return mapper.apply(value);
     }
-    public static <I, O> O mapNotNullOrDefault(@Nullable I value, Function<@NotNull I, O> mapper, Supplier<O> defaultSupplier) {
+
+    public interface ThrowingFunction<Out> {
+        Out get() throws Exception;
+    }
+
+    public static <In, Out> Out mapThrowingNotNull(
+        ThrowingFunction<@Nullable In> value,
+        Function<@NotNull In, Out> mapper,
+        String operation) {
+        try {
+            var in = value.get();
+            if (in == null) return null;
+
+            return mapper.apply(in);
+        } catch (Exception e) {
+            RepoLibLogger.error("Failed to get or map: " + operation, e);
+            return null;
+        }
+    }
+
+    public static <In, Out> Out mapNotNullOrDefault(@Nullable In value, Function<@NotNull In, Out> mapper, Supplier<Out> defaultSupplier) {
         if (value == null) return defaultSupplier.get();
         return mapper.apply(value);
     }
